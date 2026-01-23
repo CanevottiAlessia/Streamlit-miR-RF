@@ -149,13 +149,13 @@ tissue_sidebar_names = tissue_cols[:]
 # Tissue "tree" definition
 # -----------------------------------------------------------
 SYSTEM_TISSUES = {
-    "1. Cardiorespiratory": [
+    "1. Cardiorespiratory system": [
         "heart", "ventricle",
         "artery", "vein",
         "blood", "plasma", "serum", "platelet",
         "lung", "bronchus", "pleurae", "larynx", "pharynx",
     ],
-    "2. Digestive & Metabolic": [
+    "2. Digestive & Metabolic system": [
         "oral_cavity", "esophagus", "stomach",
         "duodenum", "ileum", "colon",
         "liver",
@@ -163,7 +163,7 @@ SYSTEM_TISSUES = {
         "salivary_glands",
         "feces",
     ],
-    "3. Neuro-Endocrine": [
+    "3. Neuro-Endocrine system": [
         "brain", "cortex", "cerebellum", "hippocampus",
         "spinal_cord", "grey_matter", "meninges",
         "choroid_plexus", "csf",
@@ -171,7 +171,7 @@ SYSTEM_TISSUES = {
         "neuron", "astrocyte",
         "adrenal_gland", "thyroid", "pituitary_gland",
     ],
-    "4. Immune / Hematolymphoid": [
+    "4. Immune / Hematolymphoid system": [
         "PBMC", "mononuclear_cells",
         "lymphocyte", "lymphocyte_B",
         "cd4", "cd19", "cd34",
@@ -179,13 +179,13 @@ SYSTEM_TISSUES = {
         "natural_killer", "basophils",
         "tonsil", "bone_marrow",
     ],
-    "5. Musculoskeletal & Integumentary": [
+    "5. Musculoskeletal & Integumentary system": [
         "bone", "cartilage", "temporomandibular_joint",
         "limb_muscle", "fast_twitch",
         "skin", "epidermis", "dermis",
         "keratinocyte", "melanocyte", "foreskin",
     ],
-    "6. Urogenital & Reproductive": [
+    "6. Urogenital & Reproductive system": [
         "kidney", "bladder", "urine",
         "uterus", "cervix", "ovary", "testis", "prostate",
         "vaginal_tissue",
@@ -194,7 +194,7 @@ SYSTEM_TISSUES = {
         "oocyte", "sperm", "semen",
         "follicular_fluid", "amniotic_fluid", "theca",
     ],
-    "Other": [
+    "Other system": [
         "adipose", "epithelium", "podocyte", "milk",
         "mesenchymal_stromal_cells", "mesenchymal_stem_cells",
         "nucleus_pulposus", "glandular_breast_tissue",
@@ -1039,6 +1039,7 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
