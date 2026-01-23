@@ -1,3 +1,4 @@
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 import altair as alt
@@ -22,7 +23,10 @@ df = load_data()
 # -----------------------------------------------------------
 @st.cache_resource
 def load_icons():
-    def safe_open(path):
+    base_dir = Path(__file__).resolve().parent  # cartella dove sta questo .py
+
+    def safe_open(filename):
+        path = base_dir / filename
         try:
             return Image.open(path)
         except Exception:
@@ -1035,6 +1039,7 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
