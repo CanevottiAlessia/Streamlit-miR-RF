@@ -10,6 +10,53 @@ from PIL import Image
 st.set_page_config(layout="wide")
 
 # -----------------------------------------------------------
+# GLOBAL THEME: BLACK BACKGROUND
+# -----------------------------------------------------------
+st.markdown(
+    """
+    <style>
+    /* main app background */
+    html, body, [data-testid="stAppViewContainer"]{
+        background: #000 !important;
+        color: #fff !important;
+    }
+
+    /* header / toolbar */
+    [data-testid="stHeader"], [data-testid="stToolbar"]{
+        background: #000 !important;
+    }
+
+    /* sidebar */
+    section[data-testid="stSidebar"]{
+        background: #000 !important;
+        color: #fff !important;
+        border-right: 1px solid rgba(255,255,255,0.12);
+    }
+    section[data-testid="stSidebar"] *{
+        color: #fff !important;
+    }
+
+    /* inputs background (testo leggibile su nero) */
+    .stTextInput input, .stSelectbox div, .stMultiSelect div, .stNumberInput input{
+        background: #111 !important;
+        color: #fff !important;
+    }
+
+    /* expander */
+    [data-testid="stExpander"]{
+        background: #050505 !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        border-radius: 10px;
+    }
+
+    /* markdown links */
+    a { color: #7cc7ff !important; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# -----------------------------------------------------------
 # Load data
 # -----------------------------------------------------------
 @st.cache_data
@@ -215,17 +262,50 @@ st.sidebar.header("Filters")
 
 search_term = st.sidebar.text_input("Search any column:")
 
-conservation_filter = st.sidebar.selectbox("Conservation:", ["Show all", "PASSED", "NOT PASSED"])
-expression_filter   = st.sidebar.selectbox("Expression:",   ["Show all", "PASSED", "NOT PASSED"])
-structure_filter    = st.sidebar.selectbox("Structure:",    ["Show all", "PASSED", "NOT PASSED"])
+# -----------------------------------------------------------
+# SIDEBAR: BASIC FILTERS (always visible) — MULTISELECT STYLE
+# -----------------------------------------------------------
 
-family_filter = st.sidebar.selectbox(
-    "Family:",
-    ["Show all", "Single miRNAs – miRBase", "Single miRNAs – MirGeneDB",
-     "miRNAs in family – miRBase", "miRNAs in family – MirGeneDB"]
+# PASSED/NOT PASSED as multiselect (like Repeat Class)
+pass_options = ["PASSED", "NOT PASSED"]
+
+conservation_selected = st.sidebar.multiselect(
+    "Conservation:",
+    pass_options,
+    default=pass_options
+)
+expression_selected = st.sidebar.multiselect(
+    "Expression:",
+    pass_options,
+    default=pass_options
+)
+structure_selected = st.sidebar.multiselect(
+    "Structure:",
+    pass_options,
+    default=pass_options
 )
 
-hsa_filter = st.sidebar.selectbox("hsa specificity:", ["Show all", "Only hsa-specific", "Not hsa-specific"])
+# Family: 4 categories, selectable together
+family_options = [
+    "Single miRNAs – miRBase",
+    "Single miRNAs – MirGeneDB",
+    "miRNAs in family – miRBase",
+    "miRNAs in family – MirGeneDB",
+]
+family_selected = st.sidebar.multiselect(
+    "Family:",
+    family_options,
+    default=family_options
+)
+
+# hsa specificity: selectable together
+hsa_options = ["Only hsa-specific", "Not hsa-specific"]
+hsa_selected = st.sidebar.multiselect(
+    "hsa specificity:",
+    hsa_options,
+    default=hsa_options
+)
+
 
 repeats_selected = st.sidebar.multiselect(
     "Repeat class:",
@@ -397,23 +477,35 @@ df["MirGeneDB_family_display"] = df.apply(
 # -----------------------------------------------------------
 filtered = df.copy()
 
-# PASSED/NOT PASSED (original)
-if conservation_filter == "PASSED":
-    filtered = filtered[filtered["_Conservation_tf"] == "TRUE"]
-elif conservation_filter == "NOT PASSED":
-    filtered = filtered[filtered["_Conservation_tf"] == "FALSE"]
+# --- PASSED/NOT PASSED (multi) ---
+# Assumes you defined in sidebar:
+# pass_options = ["PASSED","NOT PASSED"]
+# conservation_selected, expression_selected, structure_selected
 
-if expression_filter == "PASSED":
-    filtered = filtered[filtered["_Expression_tf"] == "TRUE"]
-elif expression_filter == "NOT PASSED":
-    filtered = filtered[filtered["_Expression_tf"] == "FALSE"]
+def apply_pass_filter(data: pd.DataFrame, selected: list, helper_col: str) -> pd.DataFrame:
+    """
+    selected: subset of ["PASSED","NOT PASSED"]
+    helper_col: column containing 'TRUE'/'FALSE' (strings already uppercased)
+    """
+    # if user selected both (or none) -> no filtering
+    if (not selected) or (set(selected) == {"PASSED", "NOT PASSED"}):
+        return data
 
-if structure_filter == "PASSED":
-    filtered = filtered[filtered["_Structure_tf"] == "TRUE"]
-elif structure_filter == "NOT PASSED":
-    filtered = filtered[filtered["_Structure_tf"] == "FALSE"]
+    want_true = "PASSED" in selected
+    want_false = "NOT PASSED" in selected
 
-# Conservation 3-way filter uses SHOWN SPECIES (animals_to_show) with AND logic
+    if want_true and not want_false:
+        return data[data[helper_col] == "TRUE"]
+    if want_false and not want_true:
+        return data[data[helper_col] == "FALSE"]
+
+    return data  # fallback
+
+filtered = apply_pass_filter(filtered, conservation_selected, "_Conservation_tf")
+filtered = apply_pass_filter(filtered, expression_selected,   "_Expression_tf")
+filtered = apply_pass_filter(filtered, structure_selected,    "_Structure_tf")
+
+# --- Conservation 3-way filter uses SHOWN SPECIES (animals_to_show) with AND logic ---
 if conservation_state_filter != "Show all":
     if animals_to_show:
         tmp = filtered[animals_to_show]
@@ -428,52 +520,73 @@ if conservation_state_filter != "Show all":
         elif conservation_state_filter == "Not conserved":
             filtered = filtered[all_na]
 
-# Class filter
+# --- Class filter ---
 if classes_selected and "Class_miRBase" in filtered.columns:
     filtered = filtered[filtered["Class_miRBase"].isin(classes_selected)]
 
-# Database filter
+# --- Database filter ---
 if mirgene_filter == "In both":
     filtered = filtered[filtered["Class_miRBase"] == filtered["Class_MirGeneDB"]]
 elif mirgene_filter == "Only in miRBase":
     filtered = filtered[(filtered["Class_miRBase"].notna()) & (filtered["Class_MirGeneDB"] == "—")]
 
-# Family filter
-if family_filter == "Single miRNAs – miRBase":
-    filtered = filtered[filtered["miRBase family"] == "NO"]
-elif family_filter == "miRNAs in family – miRBase":
-    filtered = filtered[filtered["miRBase family"] == "YES"]
-elif family_filter == "Single miRNAs – MirGeneDB":
-    filtered = filtered[filtered["MirGeneDB family"] == "NO"]
-elif family_filter == "miRNAs in family – MirGeneDB":
-    filtered = filtered[filtered["MirGeneDB family"] == "YES"]
+# --- Family (multi) — OR logic across selected categories ---
+# Assumes you defined in sidebar:
+# family_options (list of 4 strings) and family_selected (multiselect)
+if family_selected and set(family_selected) != set(family_options):
+    fam_mask = pd.Series(False, index=filtered.index)
 
-# hsa specificity
-if hsa_filter == "Only hsa-specific":
-    filtered = filtered[filtered["hsa-specificity"] == "YES"]
-elif hsa_filter == "Not hsa-specific":
-    filtered = filtered[filtered["hsa-specificity"] == "NO"]
+    # miRBase family flags: YES/NO
+    mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
+    mirgenedb_flag = filtered["MirGeneDB family"].astype(str).str.strip().str.upper()
 
-# Repeat filter
+    if "Single miRNAs – miRBase" in family_selected:
+        fam_mask |= (mirbase_flag == "NO")
+    if "miRNAs in family – miRBase" in family_selected:
+        fam_mask |= (mirbase_flag == "YES")
+
+    if "Single miRNAs – MirGeneDB" in family_selected:
+        fam_mask |= (mirgenedb_flag == "NO")
+    if "miRNAs in family – MirGeneDB" in family_selected:
+        fam_mask |= (mirgenedb_flag == "YES")
+
+    filtered = filtered[fam_mask]
+
+# --- hsa specificity (multi) ---
+# Assumes you defined in sidebar:
+# hsa_options = ["Only hsa-specific","Not hsa-specific"] and hsa_selected
+if hsa_selected and set(hsa_selected) != set(hsa_options):
+    hsa_flag = filtered["hsa-specificity"].astype(str).str.strip().str.upper()
+    hsa_mask = pd.Series(False, index=filtered.index)
+
+    if "Only hsa-specific" in hsa_selected:
+        hsa_mask |= (hsa_flag == "YES")
+    if "Not hsa-specific" in hsa_selected:
+        hsa_mask |= (hsa_flag == "NO")
+
+    filtered = filtered[hsa_mask]
+
+# --- Repeat filter ---
 if repeats_selected:
     filtered = filtered[filtered["Repeat_Class"].isin(repeats_selected)]
 
-# Conserved in species (AND): require TRUE in all selected species
+# --- Conserved in species (AND): require TRUE in all selected species ---
 if species_filter_cols:
     filtered = filtered[(filtered[species_filter_cols] == True).all(axis=1)]
 
-# Expressed in tissues (AND): each selected tissue must be >= 1.5
+# --- Expressed in tissues (AND): each selected tissue must be >= 1.5 ---
 if tissues_filter:
     tissue_num = filtered[tissues_filter].apply(pd.to_numeric, errors="coerce")
     expressed_mask = (tissue_num >= 1.5).all(axis=1)
     filtered = filtered[expressed_mask]
 
-# Search (keep last)
+# --- Search (keep last) ---
 if search_term:
     mask = filtered.astype(str).apply(
         lambda col: col.str.contains(search_term, case=False, na=False)
     ).any(axis=1)
     filtered = filtered[mask]
+
 
 # -----------------------------------------------------------
 # FASTA EXPORT
@@ -1039,6 +1152,7 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
