@@ -272,20 +272,24 @@ pass_options = ["PASSED", "NOT PASSED"]
 conservation_selected = st.sidebar.multiselect(
     "Conservation:",
     pass_options,
-    default=pass_options
+    default=[],                 # <- vuoto di default
+    key="ms_conservation",
 )
+
 expression_selected = st.sidebar.multiselect(
     "Expression:",
     pass_options,
-    default=pass_options
+    default=[],
+    key="ms_expression",
 )
+
 structure_selected = st.sidebar.multiselect(
     "Structure:",
     pass_options,
-    default=pass_options
+    default=[],
+    key="ms_structure",
 )
 
-# Family: 4 categories, selectable together
 family_options = [
     "Single miRNAs – miRBase",
     "Single miRNAs – MirGeneDB",
@@ -295,17 +299,17 @@ family_options = [
 family_selected = st.sidebar.multiselect(
     "Family:",
     family_options,
-    default=family_options
+    default=[],
+    key="ms_family",
 )
 
-# hsa specificity: selectable together
 hsa_options = ["Only hsa-specific", "Not hsa-specific"]
 hsa_selected = st.sidebar.multiselect(
     "hsa specificity:",
     hsa_options,
-    default=hsa_options
+    default=[],
+    key="ms_hsa",
 )
-
 
 repeats_selected = st.sidebar.multiselect(
     "Repeat class:",
@@ -483,23 +487,22 @@ filtered = df.copy()
 # conservation_selected, expression_selected, structure_selected
 
 def apply_pass_filter(data: pd.DataFrame, selected: list, helper_col: str) -> pd.DataFrame:
-    """
-    selected: subset of ["PASSED","NOT PASSED"]
-    helper_col: column containing 'TRUE'/'FALSE' (strings already uppercased)
-    """
-    # if user selected both (or none) -> no filtering
-    if (not selected) or (set(selected) == {"PASSED", "NOT PASSED"}):
-        return data
+    # selected: [] oppure subset di ["PASSED","NOT PASSED"]
+    if not selected:
+        return data  # <-- vuoto = non filtrare
 
     want_true = "PASSED" in selected
     want_false = "NOT PASSED" in selected
 
-    if want_true and not want_false:
+    # se selezioni entrambi, equivale a "show all"
+    if want_true and want_false:
+        return data
+    if want_true:
         return data[data[helper_col] == "TRUE"]
-    if want_false and not want_true:
+    if want_false:
         return data[data[helper_col] == "FALSE"]
 
-    return data  # fallback
+    return data
 
 filtered = apply_pass_filter(filtered, conservation_selected, "_Conservation_tf")
 filtered = apply_pass_filter(filtered, expression_selected,   "_Expression_tf")
@@ -533,10 +536,9 @@ elif mirgene_filter == "Only in miRBase":
 # --- Family (multi) — OR logic across selected categories ---
 # Assumes you defined in sidebar:
 # family_options (list of 4 strings) and family_selected (multiselect)
-if family_selected and set(family_selected) != set(family_options):
+if family_selected:
     fam_mask = pd.Series(False, index=filtered.index)
 
-    # miRBase family flags: YES/NO
     mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
     mirgenedb_flag = filtered["MirGeneDB family"].astype(str).str.strip().str.upper()
 
@@ -552,10 +554,11 @@ if family_selected and set(family_selected) != set(family_options):
 
     filtered = filtered[fam_mask]
 
+
 # --- hsa specificity (multi) ---
 # Assumes you defined in sidebar:
 # hsa_options = ["Only hsa-specific","Not hsa-specific"] and hsa_selected
-if hsa_selected and set(hsa_selected) != set(hsa_options):
+if hsa_selected:
     hsa_flag = filtered["hsa-specificity"].astype(str).str.strip().str.upper()
     hsa_mask = pd.Series(False, index=filtered.index)
 
@@ -565,6 +568,7 @@ if hsa_selected and set(hsa_selected) != set(hsa_options):
         hsa_mask |= (hsa_flag == "NO")
 
     filtered = filtered[hsa_mask]
+
 
 # --- Repeat filter ---
 if repeats_selected:
@@ -1152,6 +1156,7 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
