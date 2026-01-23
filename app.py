@@ -721,7 +721,7 @@ html_table = styled_df.hide(axis="index").to_html(escape=False)
 # -----------------------------------------------------------
 custom_css = r"""
 <style>
-/* Sidebar: make widget labels uniform (same size, not bold) */
+/* ---------------- Sidebar normalization ---------------- */
 section[data-testid="stSidebar"] label{
   font-weight: 400 !important;
   font-size: 16px !important;
@@ -731,123 +731,137 @@ section[data-testid="stSidebar"] .stMarkdown p{
   font-size: 16px !important;
 }
 
-/* Table container */
-.table-container {
-    max-height: 600px;
-    overflow: auto;
-    border: 2px solid black;
-    margin-bottom: 16px;
-}
-table {
-    border-collapse: separate !important;
-    border-spacing: 0;
-    width: 100% !important;
-    table-layout: fixed !important;
-}
-th, td {
-    border: 1px solid black !important;
-    border-radius: 8px !important;
-    padding: 6px !important;
-    min-width: 95px !important;
-
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    text-align: center !important;
-
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: black !important;
-}
-th {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: #222 !important;
-    color: white !important;
-    font-size: 18px !important;
-    font-weight: 800 !important;
-}
-td:first-child {
-    position: sticky;
-    left: 0;
-    width: 150px !important;
-    min-width: 150px !important;
-    max-width: 150px !important;
-    background-color: #333 !important;
-    color: white !important;
-    z-index: 999 !important;
-    font-size: 18px !important;
-    font-weight: 800 !important;
-}
-th:first-child {
-    position: sticky;
-    top: 0;
-    left: 0;
-    width: 150px !important;
-    min-width: 150px !important;
-    max-width: 150px !important;
-    background-color: #222 !important;
-    color: white !important;
-    z-index: 1001 !important;
-    font-size: 18px !important;
-    font-weight: 800 !important;
+/* ---------------- TABLE: reliable vertical+horizontal scroll ---------------- */
+.table-container{
+  max-height: 600px;
+  overflow-y: auto !important;
+  overflow-x: auto !important;   /* <-- forza scroll orizzontale */
+  border: 2px solid black;
+  margin-bottom: 16px;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Legend layout: base legend as columns */
-.base-legend-columns{
-  display:flex;
-  gap:28px;
-  align-items:flex-start;
-  flex-wrap:wrap;
-  margin-top:10px;
-  margin-bottom:6px;
-}
-.base-col{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  min-width:220px;
-  font-size:16px;
-  font-weight:400;
-}
-.base-title{
-  font-size:16px;
-  font-weight:400;
-}
-.base-options{
-  display:flex;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:6px;
-  font-size:16px;
-  font-weight:400;
+/* wrapper that can grow beyond container width */
+.table-inner{
+  display: inline-block !important;
+  min-width: 100% !important;     /* se la tabella è stretta, riempie */
+  width: max-content !important;  /* se è larga, può superare il container */
 }
 
-.legend-grid {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin-top: 10px;
+/* the table can expand when there are many columns, but fills when few */
+.table-inner table{
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+
+  display: inline-table !important; /* <-- IMPORTANTISSIMO: evita compressione a 100% */
+  width: max-content !important;    /* <-- la tabella cresce con le colonne */
+  min-width: 100% !important;       /* <-- ma se poche colonne, full width */
+
+  table-layout: fixed !important;   /* <-- colonne tutte uguali */
 }
-.legend-item {
-    width: calc(50% - 7px);
-    min-width: 320px;
-    font-size: 16px;
-    line-height: 1.45;
-    font-weight: 400;
+
+/* equal columns for all cells (except first column overridden below) */
+.table-inner th,
+.table-inner td{
+  border: 1px solid black !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+
+  width: 180px !important;        /* <-- ALL columns same width */
+  min-width: 180px !important;
+  max-width: 180px !important;
+
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+
+  text-align: center !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: black !important;
 }
-.legend-title {
-    font-weight: 400;
-    font-size: 16px;
+
+/* sticky header */
+.table-inner th{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #222 !important;
+  color: white !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
 }
-.swatch {
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-    vertical-align: middle;
-    border: 1px solid rgba(0,0,0,0.25);
-    margin-right: 6px;
+
+/* sticky first column (miRNA) */
+.table-inner th:first-child{
+  position: sticky !important;
+  left: 0;
+  z-index: 30 !important;              /* sopra tutto */
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  background-color: #222 !important;
+  color: white !important;
+  background-clip: padding-box;
+}
+
+.table-inner td:first-child{
+  position: sticky !important;
+  left: 0;
+  z-index: 25 !important;              /* sopra le altre celle */
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  background-color: #333 !important;
+  color: white !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  background-clip: padding-box;
+}
+
+/* ---------------- LEGEND: unified + responsive ---------------- */
+.legend-wrap{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  align-items: flex-start;
+  margin-top: 10px;
+}
+
+.legend-card{
+  flex: 1 1 260px;                /* responsive cards */
+  min-width: 260px;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.legend-title{
+  font-size: 16px;
+  font-weight: 400;
+  margin-bottom: 6px;
+}
+
+.legend-row{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+}
+
+.legend-item{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch{
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  vertical-align: middle;
+  border: 1px solid rgba(0,0,0,0.25);
 }
 </style>
 """
@@ -856,93 +870,103 @@ th:first-child {
 # SHOW TABLE
 # -----------------------------------------------------------
 st.write(f"Rows shown: **{len(filtered)}**")
-st.markdown(custom_css + "<div class='table-container'>" + html_table + "</div>", unsafe_allow_html=True)
+st.markdown(
+    custom_css
+    + "<div class='table-container'><div class='table-inner'>"
+    + html_table
+    + "</div></div>",
+    unsafe_allow_html=True
+)
 
 # -----------------------------------------------------------
 # LEGEND (below table)
 # -----------------------------------------------------------
-base_legend_html = f"""
-<div class="base-legend-columns">
+legend_cards = []
 
-  <div class="base-col">
-    <div class="base-title">Filter</div>
-    <div class="base-options">
-      <span class="swatch" style="background:{TRUE_COLOR};"></span><span>PASSED</span>
-      <span class="swatch" style="background:{FALSE_COLOR}; margin-left:10px;"></span><span>NOT PASSED</span>
-    </div>
+# --- Filter PASSED/NOT PASSED
+legend_cards.append(f"""
+<div class="legend-card">
+  <div class="legend-title">Filter</div>
+  <div class="legend-row">
+    <span class="legend-item"><span class="swatch" style="background:{TRUE_COLOR};"></span>PASSED</span>
+    <span class="legend-item"><span class="swatch" style="background:{FALSE_COLOR};"></span>NOT PASSED</span>
   </div>
-
-  <div class="base-col">
-    <div class="base-title">Family</div>
-    <div class="base-options">
-      <span class="swatch" style="background:{FAM_YES_COLOR};"></span><span>In family</span>
-      <span class="swatch" style="background:{FAM_NO_COLOR}; margin-left:10px;"></span><span>Single</span>
-    </div>
-  </div>
-
-  <div class="base-col">
-    <div class="base-title">hsa specificity</div>
-    <div class="base-options">
-      <span class="swatch" style="background:#f1b6da;"></span><span>hsa-specific</span>
-      <span class="swatch" style="background:#0072B2; margin-left:10px;"></span><span>Not hsa-specific</span>
-    </div>
-  </div>
-
-  <div class="base-col">
-    <div class="base-title">Repeat Class</div>
-    <div class="base-options">
-      <span class="swatch" style="background:{REPEAT_NOREPEAT_COLOR};"></span><span>No repeat</span>
-      <span class="swatch" style="background:{REPEAT_OTHER_COLOR}; margin-left:10px;"></span><span>Repeat present</span>
-    </div>
-  </div>
-
 </div>
-"""
+""")
 
-legend_blocks = []
+# --- Family
+legend_cards.append(f"""
+<div class="legend-card">
+  <div class="legend-title">Family</div>
+  <div class="legend-row">
+    <span class="legend-item"><span class="swatch" style="background:{FAM_YES_COLOR};"></span>In family</span>
+    <span class="legend-item"><span class="swatch" style="background:{FAM_NO_COLOR};"></span>Single</span>
+  </div>
+</div>
+""")
 
-# Conditional: Species legend
+# --- hsa specificity
+legend_cards.append(f"""
+<div class="legend-card">
+  <div class="legend-title">hsa specificity</div>
+  <div class="legend-row">
+    <span class="legend-item"><span class="swatch" style="background:#f1b6da;"></span>hsa-specific</span>
+    <span class="legend-item"><span class="swatch" style="background:#0072B2;"></span>Not hsa-specific</span>
+  </div>
+</div>
+""")
+
+# --- Repeat class
+legend_cards.append(f"""
+<div class="legend-card">
+  <div class="legend-title">Repeat Class</div>
+  <div class="legend-row">
+    <span class="legend-item"><span class="swatch" style="background:{REPEAT_NOREPEAT_COLOR};"></span>No repeat</span>
+    <span class="legend-item"><span class="swatch" style="background:{REPEAT_OTHER_COLOR};"></span>Repeat present</span>
+  </div>
+</div>
+""")
+
+# --- Species (conditional)
 if visible_species_cols:
-    legend_blocks.append(f"""
-<div class="legend-item">
-  <span class="legend-title">Species conservation</span><br>
-  <span class="swatch" style="background:#fdb863;"></span> Conserved (stable structure)
-  <span class="swatch" style="background:#b2abd2; margin-left:12px;"></span> Conserved (unstable structure)
-  <span class="swatch" style="background:{NA_SPECIES_COLOR}; margin-left:12px;"></span> Not conserved
+    legend_cards.append(f"""
+<div class="legend-card">
+  <div class="legend-title">Species conservation</div>
+  <div class="legend-row">
+    <span class="legend-item"><span class="swatch" style="background:#fdb863;"></span>Conserved (stable structure)</span>
+    <span class="legend-item"><span class="swatch" style="background:#b2abd2;"></span>Conserved (unstable structure)</span>
+    <span class="legend-item"><span class="swatch" style="background:{NA_SPECIES_COLOR};"></span>Not conserved</span>
+  </div>
 </div>
 """)
 
-# Conditional: Tissue legend
+# --- Tissue (conditional)
 if visible_tissue_cols:
-    legend_blocks.append(f"""
-<div class="legend-item">
-  <span class="legend-title">Tissue value</span><br>
-  <span class="swatch" style="background:{TISSUE_HIGH_BG};"></span> RPMM>=1.5
-  <span class="swatch" style="background:{TISSUE_LOW_BG}; margin-left:12px;"></span> RPMM&lt;1.5
+    legend_cards.append(f"""
+<div class="legend-card">
+  <div class="legend-title">Tissue value</div>
+  <div class="legend-row">
+    <span class="legend-item"><span class="swatch" style="background:{TISSUE_HIGH_BG};"></span>RPMM≥1.5</span>
+    <span class="legend-item"><span class="swatch" style="background:{TISSUE_LOW_BG};"></span>RPMM&lt;1.5</span>
+  </div>
 </div>
 """)
 
-# Conditional: Class legend
+# --- Class (conditional)
 if visible_class_cols:
-    legend_blocks.append(f"""
-<div class="legend-item">
-  <span class="legend-title">Class (miRBase / MirGeneDB)</span><br>
-  <span class="swatch" style="background:{CLASS_R_BG};"></span> R
-  <span class="swatch" style="background:{CLASS_D_BG}; margin-left:12px;"></span> D
-  <span class="swatch" style="background:{CLASS_I_BG}; margin-left:12px;"></span> I
-  <span class="swatch" style="background:{CLASS_S_BG}; margin-left:12px;"></span> S
+    legend_cards.append(f"""
+<div class="legend-card">
+  <div class="legend-title">Class (miRBase / MirGeneDB)</div>
+  <div class="legend-row">
+    <span class="legend-item"><span class="swatch" style="background:{CLASS_R_BG};"></span>R</span>
+    <span class="legend-item"><span class="swatch" style="background:{CLASS_D_BG};"></span>D</span>
+    <span class="legend-item"><span class="swatch" style="background:{CLASS_I_BG};"></span>I</span>
+    <span class="legend-item"><span class="swatch" style="background:{CLASS_S_BG};"></span>S</span>
+  </div>
 </div>
 """)
 
-conditional_legend_html = ""
-if legend_blocks:
-    conditional_legend_html = f"""
-<div class="legend-grid">
-{''.join(legend_blocks)}
-</div>
-"""
-
-st.markdown(base_legend_html + conditional_legend_html, unsafe_allow_html=True)
+st.markdown(f"<div class='legend-wrap'>{''.join(legend_cards)}</div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------
 # DOWNLOAD BUTTONS (TSV + FASTA)
