@@ -29,12 +29,12 @@ def load_icons():
             return None
 
     return {
-        "1. Cardiorespiratory system": safe_open("cardio.png"),
-        "2. Digestive & Metabolic system": safe_open("gastro.png"),
-        "3. Neuro-Endocrine system": safe_open("neuro.png"),
-        "4. Immune / Hematolymphoid system": safe_open("immune.png"),
-        "5. Musculoskeletal & Integumentary system": safe_open("muscle.png"),
-        "6. Urogenital & Reproductive system": safe_open("reproductive.png"),
+        "1. Cardiorespiratory": safe_open("cardio.png"),
+        "2. Digestive & Metabolic": safe_open("gastro.png"),
+        "3. Neuro-Endocrine": safe_open("neuro.png"),
+        "4. Immune / Hematolymphoid": safe_open("immune.png"),
+        "5. Musculoskeletal & Integumentary": safe_open("muscle.png"),
+        "6. Urogenital & Reproductive": safe_open("reproductive.png"),
         "Other": safe_open("other.png"),
     }
 
@@ -1035,5 +1035,6 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
