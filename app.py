@@ -733,7 +733,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
 
 /* ---------------- TABLE: reliable vertical+horizontal scroll ---------------- */
 .table-container{
-  max-height: 600px;
+  max-height: 560px;
   overflow-y: auto !important;
   overflow-x: auto !important;   /* <-- forza scroll orizzontale */
   border: 2px solid black;
@@ -766,11 +766,11 @@ section[data-testid="stSidebar"] .stMarkdown p{
 .table-inner td{
   border: 1px solid black !important;
   border-radius: 8px !important;
-  padding: 6px !important;
+  padding: 4px !important;
 
-  width: 180px !important;        /* <-- ALL columns same width */
-  min-width: 180px !important;
-  max-width: 180px !important;
+  width: 160px !important;        /* <-- ALL columns same width */
+  min-width: 160px !important;
+  max-width: 160px !important;
 
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -798,9 +798,9 @@ section[data-testid="stSidebar"] .stMarkdown p{
   position: sticky !important;
   left: 0;
   z-index: 30 !important;              /* sopra tutto */
-  width: 220px !important;
-  min-width: 220px !important;
-  max-width: 220px !important;
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
   background-color: #222 !important;
   color: white !important;
   background-clip: padding-box;
@@ -810,12 +810,12 @@ section[data-testid="stSidebar"] .stMarkdown p{
   position: sticky !important;
   left: 0;
   z-index: 25 !important;              /* sopra le altre celle */
-  width: 220px !important;
-  min-width: 220px !important;
-  max-width: 220px !important;
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
   background-color: #333 !important;
   color: white !important;
-  font-size: 18px !important;
+  font-size: 15px !important;
   font-weight: 800 !important;
   background-clip: padding-box;
 }
@@ -832,7 +832,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
 .legend-card{
   flex: 1 1 260px;                /* responsive cards */
   min-width: 260px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.45;
 }
@@ -1035,4 +1035,5 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
