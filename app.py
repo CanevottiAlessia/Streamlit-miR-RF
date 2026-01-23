@@ -29,13 +29,13 @@ def load_icons():
             return None
 
     return {
-        "1. Cardiorespiratory": safe_open("cardio.png"),
-        "2. Digestive & Metabolic": safe_open("gastro.png"),
-        "3. Neuro-Endocrine": safe_open("neuro.png"),
-        "4. Immune / Hematolymphoid": safe_open("immune.png"),
-        "5. Musculoskeletal & Integumentary": safe_open("muscle.png"),
-        "6. Urogenital & Reproductive": safe_open("reproductive.png"),
-        "Other": safe_open("other.png"),
+        "1. Cardiorespiratory system": safe_open("cardio.png"),
+        "2. Digestive & Metabolic system": safe_open("gastro.png"),
+        "3. Neuro-Endocrine system": safe_open("neuro.png"),
+        "4. Immune / Hematolymphoid system": safe_open("immune.png"),
+        "5. Musculoskeletal & Integumentary system": safe_open("muscle.png"),
+        "6. Urogenital & Reproductive system": safe_open("reproductive.png"),
+        "Other system": safe_open("other.png"),
     }
 
 SYSTEM_ICONS = load_icons()
@@ -145,13 +145,13 @@ tissue_sidebar_names = tissue_cols[:]
 # Tissue "tree" definition
 # -----------------------------------------------------------
 SYSTEM_TISSUES = {
-    "1. Cardiorespiratory system": [
+    "1. Cardiorespiratory": [
         "heart", "ventricle",
         "artery", "vein",
         "blood", "plasma", "serum", "platelet",
         "lung", "bronchus", "pleurae", "larynx", "pharynx",
     ],
-    "2. Digestive & Metabolic system": [
+    "2. Digestive & Metabolic": [
         "oral_cavity", "esophagus", "stomach",
         "duodenum", "ileum", "colon",
         "liver",
@@ -159,7 +159,7 @@ SYSTEM_TISSUES = {
         "salivary_glands",
         "feces",
     ],
-    "3. Neuro-Endocrine system": [
+    "3. Neuro-Endocrine": [
         "brain", "cortex", "cerebellum", "hippocampus",
         "spinal_cord", "grey_matter", "meninges",
         "choroid_plexus", "csf",
@@ -167,7 +167,7 @@ SYSTEM_TISSUES = {
         "neuron", "astrocyte",
         "adrenal_gland", "thyroid", "pituitary_gland",
     ],
-    "4. Immune / Hematolymphoid system": [
+    "4. Immune / Hematolymphoid": [
         "PBMC", "mononuclear_cells",
         "lymphocyte", "lymphocyte_B",
         "cd4", "cd19", "cd34",
@@ -175,13 +175,13 @@ SYSTEM_TISSUES = {
         "natural_killer", "basophils",
         "tonsil", "bone_marrow",
     ],
-    "5. Musculoskeletal & Integumentary system": [
+    "5. Musculoskeletal & Integumentary": [
         "bone", "cartilage", "temporomandibular_joint",
         "limb_muscle", "fast_twitch",
         "skin", "epidermis", "dermis",
         "keratinocyte", "melanocyte", "foreskin",
     ],
-    "6. Urogenital & Reproductive system": [
+    "6. Urogenital & Reproductive": [
         "kidney", "bladder", "urine",
         "uterus", "cervix", "ovary", "testis", "prostate",
         "vaginal_tissue",
