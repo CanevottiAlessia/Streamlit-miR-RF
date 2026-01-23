@@ -724,11 +724,11 @@ custom_css = r"""
 /* ---------------- Sidebar normalization ---------------- */
 section[data-testid="stSidebar"] label{
   font-weight: 400 !important;
-  font-size: 16px !important;
+  font-size: 14px !important;
 }
 section[data-testid="stSidebar"] .stMarkdown p{
   font-weight: 400 !important;
-  font-size: 16px !important;
+  font-size: 14px !important;
 }
 
 /* ---------------- TABLE: reliable vertical+horizontal scroll ---------------- */
@@ -1035,3 +1035,4 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
