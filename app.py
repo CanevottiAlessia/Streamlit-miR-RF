@@ -10,7 +10,9 @@ from PIL import Image
 st.set_page_config(layout="wide")
 
 # -----------------------------------------------------------
-# GLOBAL THEME: BLACK BACKGROUND
+# GLOBAL THEME: BLACK BACKGROUND + SIDEBAR IMPROVEMENTS
+# - Fix "halo" under labels by removing generic div styling
+# - Make expanders look like real cards
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -36,20 +38,53 @@ st.markdown(
         color: #fff !important;
     }
 
-    /* inputs background (readable on black) */
-    .stTextInput input, .stSelectbox div, .stMultiSelect div, .stNumberInput input{
+    /* inputs background (readable on black) - DO NOT style generic divs (avoids label "halo") */
+    .stTextInput input, .stNumberInput input{
         background: #111 !important;
         color: #fff !important;
     }
 
-    /* expander */
-    [data-testid="stExpander"]{
-        background: #050505 !important;
-        border: 1px solid rgba(255,255,255,0.12) !important;
-        border-radius: 10px;
+    /* BaseWeb select controls (selectbox + multiselect) */
+    section[data-testid="stSidebar"] [data-baseweb="select"] > div{
+        background: #111 !important;
+        color: #fff !important;
+        box-shadow: none !important;
     }
 
-    /* markdown links */
+    /* remove any weird halo/shadow on labels */
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] .stMarkdown{
+        background: transparent !important;
+        box-shadow: none !important;
+        filter: none !important;
+        text-shadow: none !important;
+    }
+
+    /* expander as cards (global, but especially sidebar) */
+    [data-testid="stExpander"]{
+        background: #050505 !important;
+        border: 1px solid rgba(255,255,255,0.16) !important;
+        border-radius: 14px !important;
+        padding: 6px 8px !important;
+        margin: 10px 0 14px 0 !important;
+        box-shadow: none !important;
+    }
+
+    /* expander header text */
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
+        font-size: 16px !important;
+        font-weight: 650 !important;
+    }
+
+    /* subtle separators */
+    .subtle-hr{
+        border: 0;
+        border-top: 1px solid rgba(255,255,255,0.10);
+        margin: 10px 0;
+    }
+
+    /* links */
     a { color: #7cc7ff !important; }
     </style>
     """,
@@ -70,7 +105,7 @@ df = load_data()
 # -----------------------------------------------------------
 @st.cache_resource
 def load_icons():
-    base_dir = Path(__file__).resolve().parent  # folder of this .py
+    base_dir = Path(__file__).resolve().parent
 
     def safe_open(filename):
         path = base_dir / filename
@@ -250,7 +285,7 @@ SYSTEM_TISSUES = {
 }
 
 # -----------------------------------------------------------
-# SPECIES MAPPING: True/False/NA robust
+# SPECIES MAPPING: True/False/NA robust  (must be BEFORE any species filtering)
 # -----------------------------------------------------------
 binary_map = {
     "TRUE": True, True: True, 1: True,
@@ -261,7 +296,7 @@ if animal_cols:
     df[animal_cols] = df[animal_cols].applymap(lambda x: binary_map.get(x, pd.NA))
 
 # -----------------------------------------------------------
-# Helper columns + DISPLAY columns (IMPORTANT: before filters/table)
+# Helper columns for filtering + display helpers
 # -----------------------------------------------------------
 df["_Structure_tf"] = df["Structure"].astype(str).str.upper()
 df["_Expression_tf"] = df["Expression"].astype(str).str.upper()
@@ -270,7 +305,7 @@ df["_Conservation_tf"] = df["Conservation"].astype("string").str.strip().str.upp
 df["_miRBase_family_flag"] = df["miRBase family"].astype(str).str.upper()
 df["_MirGeneDB_family_flag"] = df["MirGeneDB family"].astype(str).str.upper()
 
-# counts for table
+# Display counters
 df["Conservation_display"] = (
     df[animal_cols].apply(lambda r: r.isin([True, False]).sum(), axis=1) if animal_cols else pd.NA
 )
@@ -316,48 +351,13 @@ df["MirGeneDB_family_display"] = df.apply(
 )
 
 # -----------------------------------------------------------
-# Sidebar "cards"
-# -----------------------------------------------------------
-def sidebar_card_start(title: str):
-    st.sidebar.markdown(
-        f"""
-        <div style="
-            border: 1px solid rgba(255,255,255,0.16);
-            border-radius: 14px;
-            padding: 12px 12px 8px 12px;
-            background: #050505;
-            margin: 10px 0 14px 0;">
-          <div style="font-size:16px; font-weight:650; margin-bottom:10px;">
-            {title}
-          </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-def sidebar_card_end():
-    st.sidebar.markdown("</div>", unsafe_allow_html=True)
-
-def light_section_title(txt: str):
-    st.sidebar.markdown(
-        f"<div style='font-size:14px; font-weight:650; opacity:0.95; margin: 2px 0 6px 0;'>{txt}</div>",
-        unsafe_allow_html=True
-    )
-
-def light_divider():
-    st.sidebar.markdown(
-        "<div style='height:10px'></div>"
-        "<div style='border-top:1px solid rgba(255,255,255,0.10); margin: 6px 0 10px 0;'></div>",
-        unsafe_allow_html=True
-    )
-
-# -----------------------------------------------------------
 # TITLE
 # -----------------------------------------------------------
 st.title("pre-miRNA Annotation Browser")
 st.markdown("Explore pre-miRNA annotations, conservation, repeat classification, family membership and optional tissue/animal columns.")
 
 # -----------------------------------------------------------
-# SIDEBAR: BASIC FILTERS (always visible)
+# SIDEBAR: FILTERS (always visible)
 # -----------------------------------------------------------
 st.sidebar.header("Filters")
 
@@ -365,9 +365,26 @@ search_term = st.sidebar.text_input("Search any column:", key="search_any")
 
 pass_options = ["PASSED", "NOT PASSED"]
 
-conservation_selected = st.sidebar.multiselect("Conservation:", pass_options, default=[], key="ms_conservation")
-expression_selected   = st.sidebar.multiselect("Expression:",   pass_options, default=[], key="ms_expression")
-structure_selected    = st.sidebar.multiselect("Structure:",    pass_options, default=[], key="ms_structure")
+conservation_selected = st.sidebar.multiselect(
+    "Conservation:",
+    pass_options,
+    default=[],
+    key="ms_conservation",
+)
+
+expression_selected = st.sidebar.multiselect(
+    "Expression:",
+    pass_options,
+    default=[],
+    key="ms_expression",
+)
+
+structure_selected = st.sidebar.multiselect(
+    "Structure:",
+    pass_options,
+    default=[],
+    key="ms_structure",
+)
 
 family_options = [
     "Single miRNAs – miRBase",
@@ -375,10 +392,20 @@ family_options = [
     "miRNAs in family – miRBase",
     "miRNAs in family – MirGeneDB",
 ]
-family_selected = st.sidebar.multiselect("Family:", family_options, default=[], key="ms_family")
+family_selected = st.sidebar.multiselect(
+    "Family:",
+    family_options,
+    default=[],
+    key="ms_family",
+)
 
 hsa_options = ["Only hsa-specific", "Not hsa-specific"]
-hsa_selected = st.sidebar.multiselect("hsa specificity:", hsa_options, default=[], key="ms_hsa")
+hsa_selected = st.sidebar.multiselect(
+    "hsa specificity:",
+    hsa_options,
+    default=[],
+    key="ms_hsa",
+)
 
 repeats_selected = st.sidebar.multiselect(
     "Repeat class:",
@@ -388,130 +415,121 @@ repeats_selected = st.sidebar.multiselect(
 )
 
 # -----------------------------------------------------------
-# SIDEBAR: ADVANCED OPTIONS (switch)
+# SIDEBAR: ADVANCED OPTIONS (switch-like toggle + true wrappers)
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
+
 show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
 
 if show_adv:
-    # ==========================
-    # CARD FORTE: Show extra columns
-    # ==========================
-    sidebar_card_start("Show extra columns")
-
-    animals_to_show_sidebar = st.sidebar.multiselect(
-        "Show species columns:",
-        list(animal_sidebar_names.values()),
-        default=[],
-        key="show_species_cols",
-    )
-    animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
-
-    tissues_to_show = st.sidebar.multiselect(
-        "Show tissue columns:",
-        tissue_sidebar_names,
-        default=[],
-        key="show_tissue_cols",
-    )
-
-    show_class_cols = st.sidebar.checkbox("Show Class columns", value=False, key="show_class_cols")
-
-    sidebar_card_end()
-
-    # ==========================
-    # CARD FORTE: Filter extra columns
-    # ==========================
-    sidebar_card_start("Filter extra columns")
-
-    species_options = list(animal_sidebar_names.values())
-
-    # ---- Sezione "leggera" 1: Conservation
-    light_section_title("Conservation (by species)")
-
-    species_found_sidebar = st.sidebar.multiselect(
-        "Found in:",
-        species_options,
-        default=[],
-        key="cons_species_found",
-    )
-
-    if species_found_sidebar:
-        stable_unstable = st.sidebar.multiselect(
-            "Stable / Unstable:",
-            ["Stable", "Unstable"],
+    # ---------------------------
+    # Show extra columns (true wrapper)
+    # ---------------------------
+    with st.sidebar.expander("Show extra columns", expanded=True):
+        animals_to_show_sidebar = st.multiselect(
+            "Show species columns:",
+            list(animal_sidebar_names.values()),
             default=[],
-            key="cons_stability",
+            key="show_species_cols",
         )
-    else:
-        stable_unstable = []
+        animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
 
-    species_na_sidebar = st.sidebar.multiselect(
-        "Not found in:",
-        species_options,
-        default=[],
-        key="cons_species_na",
-    )
+        tissues_to_show = st.multiselect(
+            "Show tissue columns:",
+            tissue_sidebar_names,
+            default=[],
+            key="show_tissue_cols",
+        )
 
-    light_divider()
+        show_class_cols = st.checkbox("Show Class columns", value=False, key="show_class_cols")
 
-    # ---- Sezione "leggera" 2: Tissues
-    light_section_title("Expressed in (select tissues by system)")
-    tissues_filter_set = set()
+    # ---------------------------
+    # Filter extra columns (true wrapper)
+    # ---------------------------
+    with st.sidebar.expander("Filter extra columns", expanded=True):
 
-    for system_name, sys_tissues in SYSTEM_TISSUES.items():
-        available = [t for t in sys_tissues if t in tissue_sidebar_names]
-        if not available:
-            continue
+        # ===== Conservation (by species)
+        st.markdown("**Conservation (by species)**")
+        species_options = list(animal_sidebar_names.values())
 
-        icon = SYSTEM_ICONS.get(system_name)
-        col_icon, col_exp = st.sidebar.columns([1, 10], gap="small")
+        species_found_sidebar = st.multiselect(
+            "Found in:",
+            species_options,
+            default=[],
+            key="cons_species_found",
+        )
 
-        with col_icon:
-            if icon is not None:
-                st.image(icon, width=56)
-            else:
-                st.write("")
+        if species_found_sidebar:
+            stable_unstable = st.multiselect(
+                "Stable / Unstable:",
+                ["Stable", "Unstable"],
+                default=[],
+                key="cons_stability",
+            )
+        else:
+            stable_unstable = []
 
-        with col_exp:
-            with st.expander(system_name, expanded=False):
-                picked = st.multiselect(
-                    "Select tissues",
-                    available,
-                    key=f"tree_{system_name}",
-                )
-                tissues_filter_set.update(picked)
+        species_na_sidebar = st.multiselect(
+            "Not found in:",
+            species_options,
+            default=[],
+            key="cons_species_na",
+        )
 
-    tissues_filter = sorted(tissues_filter_set)
+        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
-    light_divider()
+        # ===== Tissues
+        st.markdown("**Expressed in (select tissues by system)**")
+        tissues_filter_set = set()
 
-    # ---- Sezione "leggera" 3: Database / Class
-    light_section_title("Database / Class")
+        for system_name, sys_tissues in SYSTEM_TISSUES.items():
+            available = [t for t in sys_tissues if t in tissue_sidebar_names]
+            if not available:
+                continue
 
-    mirgene_filter = st.sidebar.selectbox(
-        "Database:",
-        ["Show all", "In both", "Only in miRBase"],
-        key="db_filter",
-    )
+            icon = SYSTEM_ICONS.get(system_name)
+            col_icon, col_exp = st.columns([1, 10], gap="small")
+            with col_icon:
+                if icon is not None:
+                    st.image(icon, width=56)
+                else:
+                    st.write("")
+            with col_exp:
+                with st.expander(system_name, expanded=False):
+                    picked = st.multiselect(
+                        "Select tissues",
+                        available,
+                        key=f"tree_{system_name}",
+                    )
+                    tissues_filter_set.update(picked)
 
-    classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
-    classes_selected = st.sidebar.multiselect("Class:", classes, default=[], key="class_filter")
+        tissues_filter = sorted(tissues_filter_set)
 
-    sidebar_card_end()
+        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+
+        # ===== Database / Class
+        st.markdown("**Database / Class**")
+
+        mirgene_filter = st.selectbox(
+            "Database:",
+            ["Show all", "In both", "Only in miRBase"],
+            key="db_filter",
+        )
+
+        classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
+        classes_selected = st.multiselect("Class:", classes, default=[], key="class_filter")
 
 else:
+    # Defaults when advanced options are hidden (avoid crashes)
     animals_to_show = []
     tissues_to_show = []
     show_class_cols = False
-
-    species_found_sidebar = []
-    stable_unstable = []
-    species_na_sidebar = []
-
     tissues_filter = []
-
     mirgene_filter = "Show all"
     classes_selected = []
+    species_na_sidebar = []
+    species_found_sidebar = []
+    stable_unstable = []
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -521,10 +539,8 @@ filtered = df.copy()
 def apply_pass_filter(data: pd.DataFrame, selected: list, helper_col: str) -> pd.DataFrame:
     if not selected:
         return data
-
     want_true = "PASSED" in selected
     want_false = "NOT PASSED" in selected
-
     if want_true and want_false:
         return data
     if want_true:
@@ -632,7 +648,7 @@ def generate_fasta(df_):
 # -----------------------------------------------------------
 df_display = filtered.copy()
 
-# now these exist for sure
+# Use helper columns that exist on df (they are carried into filtered via copy)
 df_display["Conservation"] = df_display["Conservation_display"]
 df_display["Expression"] = df_display["Expression_display"]
 df_display["Structure"] = df_display["Structure_display"]
@@ -1054,7 +1070,7 @@ legend_cards.append(f"""
 </div>
 """)
 
-# specie: mostra se colonne visibili O se filtro specie è attivo
+# Show species legend if species columns are visible OR if user is filtering by species
 species_filter_active = bool(species_found_cols or species_na_cols)
 if visible_species_cols or species_filter_active:
     legend_cards.append(f"""
