@@ -256,7 +256,7 @@ st.title("pre-miRNA Annotation Browser")
 st.markdown("Explore pre-miRNA annotations, conservation, repeat classification, family membership and optional tissue/animal columns.")
 
 # -----------------------------------------------------------
-# SIDEBAR: BASIC FILTERS (always visible) — REPEAT-LIKE
+# SIDEBAR: FILTERS (always visible)
 # -----------------------------------------------------------
 st.sidebar.header("Filters")
 
@@ -314,7 +314,7 @@ repeats_selected = st.sidebar.multiselect(
 )
 
 # -----------------------------------------------------------
-# SIDEBAR: ADVANCED OPTIONS (collapsible)
+# SIDEBAR: ADVANCED OPTIONS (collapsible, HIDDEN by default)
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
 with st.sidebar.expander("Show advanced options", expanded=False):
@@ -340,42 +340,35 @@ with st.sidebar.expander("Show advanced options", expanded=False):
     st.sidebar.markdown("---")
     st.sidebar.subheader("Filter extra columns")
 
-    # --- NEW conservation control: Found in / Not found in ---
+    # --- UPDATED conservation control: two lists, no mode buttons ---
     st.sidebar.markdown("**Conservation (by species)**")
-
-    found_mode = st.sidebar.radio(
-        "Conservation mode",
-        ["Found in", "Not found in"],
-        horizontal=True,
-        key="cons_mode",
-        label_visibility="collapsed",
-    )
 
     species_options = list(animal_sidebar_names.values())
 
-    if found_mode == "Not found in":
-        species_na_sidebar = st.sidebar.multiselect(
-            "Not found in:",
-            species_options,
-            default=[],
-            key="cons_species_na",
-        )
-        species_found_sidebar = []
-        stable_unstable = []
-    else:
-        species_found_sidebar = st.sidebar.multiselect(
-            "Found in:",
-            species_options,
-            default=[],
-            key="cons_species_found",
-        )
+    species_found_sidebar = st.sidebar.multiselect(
+        "Found in:",
+        species_options,
+        default=[],
+        key="cons_species_found",
+    )
+
+    # Stable/Unstable appears ONLY when Found in has something selected
+    if species_found_sidebar:
         stable_unstable = st.sidebar.multiselect(
             "Stable / Unstable:",
             ["Stable", "Unstable"],
             default=[],
             key="cons_stability",
         )
-        species_na_sidebar = []
+    else:
+        stable_unstable = []
+
+    species_na_sidebar = st.sidebar.multiselect(
+        "Not found in:",
+        species_options,
+        default=[],
+        key="cons_species_na",
+    )
 
     st.sidebar.markdown("Expressed in (select tissues by system):")
     tissues_filter_set = set()
@@ -427,8 +420,6 @@ if "mirgene_filter" not in locals():
     mirgene_filter = "Show all"
 if "classes_selected" not in locals():
     classes_selected = []
-if "found_mode" not in locals():
-    found_mode = "Found in"
 if "species_na_sidebar" not in locals():
     species_na_sidebar = []
 if "species_found_sidebar" not in locals():
@@ -507,15 +498,14 @@ df["MirGeneDB_family_display"] = df.apply(
 filtered = df.copy()
 
 def apply_pass_filter(data: pd.DataFrame, selected: list, helper_col: str) -> pd.DataFrame:
-    # selected: [] or subset of ["PASSED","NOT PASSED"]
     if not selected:
-        return data  # empty = no filter
+        return data
 
     want_true = "PASSED" in selected
     want_false = "NOT PASSED" in selected
 
     if want_true and want_false:
-        return data  # both = show all
+        return data
     if want_true:
         return data[data[helper_col] == "TRUE"]
     if want_false:
@@ -568,28 +558,30 @@ if hsa_selected:
 if repeats_selected:
     filtered = filtered[filtered["Repeat_Class"].isin(repeats_selected)]
 
-# --- Conservation species filter (NEW) ---
+# --- Conservation species filter (UPDATED: two lists, AND logic) ---
 species_na_cols = [animal_sidebar_rev[x] for x in species_na_sidebar] if species_na_sidebar else []
 species_found_cols = [animal_sidebar_rev[x] for x in species_found_sidebar] if species_found_sidebar else []
 
-if found_mode == "Not found in":
-    if species_na_cols:
-        tmp = filtered[species_na_cols]
-        filtered = filtered[tmp.isna().all(axis=1)]  # AND
-else:
-    if species_found_cols:
-        tmp = filtered[species_found_cols]
-        filtered = filtered[tmp.isin([True, False]).all(axis=1)]  # AND
+# Not found in (NA) -> AND across selected species
+if species_na_cols:
+    tmp_na = filtered[species_na_cols]
+    filtered = filtered[tmp_na.isna().all(axis=1)]
 
-        # Stable/Unstable optional
-        if stable_unstable:
-            allowed = []
-            if "Stable" in stable_unstable:
-                allowed.append(True)
-            if "Unstable" in stable_unstable:
-                allowed.append(False)
-            if allowed:
-                filtered = filtered[tmp.isin(allowed).all(axis=1)]
+# Found in (non-NA) -> AND across selected species
+if species_found_cols:
+    tmp_found = filtered[species_found_cols]
+    # must be True/False (i.e. not NA)
+    filtered = filtered[tmp_found.isin([True, False]).all(axis=1)]
+
+    # Stable/Unstable optional
+    if stable_unstable:
+        allowed = []
+        if "Stable" in stable_unstable:
+            allowed.append(True)
+        if "Unstable" in stable_unstable:
+            allowed.append(False)
+        if allowed:
+            filtered = filtered[tmp_found.isin(allowed).all(axis=1)]
 
 # --- Expressed in tissues (AND): each selected tissue must be >= 1.5 ---
 if tissues_filter:
@@ -1041,7 +1033,9 @@ legend_cards.append(f"""
 </div>
 """)
 
-if visible_species_cols:
+# Show species legend if species columns are visible OR if user is filtering by species
+species_filter_active = bool(species_found_cols or species_na_cols)
+if visible_species_cols or species_filter_active:
     legend_cards.append(f"""
 <div class="legend-card">
   <div class="legend-title">Species conservation</div>
