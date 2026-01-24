@@ -70,7 +70,7 @@ df = load_data()
 # -----------------------------------------------------------
 @st.cache_resource
 def load_icons():
-    base_dir = Path(__file__).resolve().parent  # folder of this .py
+    base_dir = Path(__file__).resolve().parent
 
     def safe_open(filename):
         path = base_dir / filename
@@ -264,26 +264,9 @@ search_term = st.sidebar.text_input("Search any column:", key="search_any")
 
 pass_options = ["PASSED", "NOT PASSED"]
 
-conservation_selected = st.sidebar.multiselect(
-    "Conservation:",
-    pass_options,
-    default=[],
-    key="ms_conservation",
-)
-
-expression_selected = st.sidebar.multiselect(
-    "Expression:",
-    pass_options,
-    default=[],
-    key="ms_expression",
-)
-
-structure_selected = st.sidebar.multiselect(
-    "Structure:",
-    pass_options,
-    default=[],
-    key="ms_structure",
-)
+conservation_selected = st.sidebar.multiselect("Conservation:", pass_options, default=[], key="ms_conservation")
+expression_selected   = st.sidebar.multiselect("Expression:",   pass_options, default=[], key="ms_expression")
+structure_selected    = st.sidebar.multiselect("Structure:",    pass_options, default=[], key="ms_structure")
 
 family_options = [
     "Single miRNAs – miRBase",
@@ -291,20 +274,10 @@ family_options = [
     "miRNAs in family – miRBase",
     "miRNAs in family – MirGeneDB",
 ]
-family_selected = st.sidebar.multiselect(
-    "Family:",
-    family_options,
-    default=[],
-    key="ms_family",
-)
+family_selected = st.sidebar.multiselect("Family:", family_options, default=[], key="ms_family")
 
 hsa_options = ["Only hsa-specific", "Not hsa-specific"]
-hsa_selected = st.sidebar.multiselect(
-    "hsa specificity:",
-    hsa_options,
-    default=[],
-    key="ms_hsa",
-)
+hsa_selected = st.sidebar.multiselect("hsa specificity:", hsa_options, default=[], key="ms_hsa")
 
 repeats_selected = st.sidebar.multiselect(
     "Repeat class:",
@@ -317,13 +290,9 @@ repeats_selected = st.sidebar.multiselect(
 # SIDEBAR: ADVANCED OPTIONS (TRULY hidden until user clicks)
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
-
 show_adv = st.sidebar.checkbox("Show advanced options", value=False, key="show_adv")
 
 if show_adv:
-    # ---------------------------
-    # Show extra columns
-    # ---------------------------
     st.sidebar.subheader("Show extra columns")
 
     animals_to_show_sidebar = st.sidebar.multiselect(
@@ -343,14 +312,11 @@ if show_adv:
 
     show_class_cols = st.sidebar.checkbox("Show Class columns", value=False, key="show_class_cols")
 
-    # spacer + divider (more separation)
+    # spacing
     st.sidebar.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
     st.sidebar.markdown("---")
     st.sidebar.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
-    # ---------------------------
-    # Filter extra columns
-    # ---------------------------
     st.sidebar.subheader("Filter extra columns")
 
     # ===== Conservation (by species)
@@ -406,11 +372,7 @@ if show_adv:
 
         with col_exp:
             with st.expander(system_name, expanded=False):
-                picked = st.multiselect(
-                    "Select tissues",
-                    available,
-                    key=f"tree_{system_name}",
-                )
+                picked = st.multiselect("Select tissues", available, key=f"tree_{system_name}")
                 tissues_filter_set.update(picked)
 
     tissues_filter = sorted(tissues_filter_set)
@@ -433,9 +395,6 @@ if show_adv:
     classes_selected = st.sidebar.multiselect("Class:", classes, default=[], key="class_filter")
 
 else:
-    # -------------------------------------------------------
-    # Defaults when advanced options are hidden (avoid crashes)
-    # -------------------------------------------------------
     animals_to_show = []
     tissues_to_show = []
     show_class_cols = False
@@ -446,6 +405,70 @@ else:
     species_found_sidebar = []
     stable_unstable = []
 
+# -----------------------------------------------------------
+# SPECIES MAPPING: True/False/NA robust (must be before filters)
+# -----------------------------------------------------------
+binary_map = {
+    "TRUE": True, True: True, 1: True,
+    "FALSE": False, False: False, 0: False,
+    "NA": pd.NA, None: pd.NA, pd.NA: pd.NA, "": pd.NA
+}
+if animal_cols:
+    df[animal_cols] = df[animal_cols].applymap(lambda x: binary_map.get(x, pd.NA))
+
+# -----------------------------------------------------------
+# Helper columns for coloring + display (must be before filters)
+# -----------------------------------------------------------
+df["_Structure_tf"] = df["Structure"].astype(str).str.upper()
+df["_Expression_tf"] = df["Expression"].astype(str).str.upper()
+df["_Conservation_tf"] = df["Conservation"].astype("string").str.strip().str.upper()
+
+df["_miRBase_family_flag"] = df["miRBase family"].astype(str).str.upper()
+df["_MirGeneDB_family_flag"] = df["MirGeneDB family"].astype(str).str.upper()
+
+df["Conservation_display"] = (
+    df[animal_cols].apply(lambda r: r.isin([True, False]).sum(), axis=1) if animal_cols else pd.NA
+)
+
+if tissue_cols:
+    tissue_num_all = df[tissue_cols].apply(pd.to_numeric, errors="coerce")
+    df["Expression_display"] = (tissue_num_all >= 1.5).sum(axis=1)
+else:
+    df["Expression_display"] = pd.NA
+
+def format_class_pair(row):
+    a = row.get("Class_miRBase", pd.NA)
+    b = row.get("Class_MirGeneDB", pd.NA)
+    a = "-" if pd.isna(a) or str(a).strip() == "" else str(a).strip()
+    b = "-" if pd.isna(b) or str(b).strip() in ["", "—"] else str(b).strip()
+    return f"{a}/{b}"
+
+df["Structure_display"] = df.apply(format_class_pair, axis=1)
+
+def family_name_or_single(flag_val, name_val, empty_as=None):
+    if str(flag_val).strip().upper() == "YES":
+        if pd.isna(name_val) or str(name_val).strip() == "":
+            return None
+        return str(name_val).strip()
+    return empty_as
+
+df["miRBase_family_display"] = df.apply(
+    lambda r: family_name_or_single(
+        r.get("miRBase family", "NO"),
+        r.get("family_name_mirbase", pd.NA),
+        empty_as=None,
+    ),
+    axis=1,
+)
+
+df["MirGeneDB_family_display"] = df.apply(
+    lambda r: family_name_or_single(
+        r.get("MirGeneDB family", "—"),
+        r.get("family_name_mirgene", pd.NA),
+        empty_as=None,
+    ),
+    axis=1,
+)
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -455,10 +478,8 @@ filtered = df.copy()
 def apply_pass_filter(data: pd.DataFrame, selected: list, helper_col: str) -> pd.DataFrame:
     if not selected:
         return data
-
     want_true = "PASSED" in selected
     want_false = "NOT PASSED" in selected
-
     if want_true and want_false:
         return data
     if want_true:
@@ -481,7 +502,7 @@ elif mirgene_filter == "Only in miRBase":
 if classes_selected and "Class_miRBase" in filtered.columns:
     filtered = filtered[filtered["Class_miRBase"].isin(classes_selected)]
 
-# --- Family (multi) OR across selected categories ---
+# --- Family filter (OR across categories) ---
 if family_selected:
     fam_mask = pd.Series(False, index=filtered.index)
     mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
@@ -499,7 +520,7 @@ if family_selected:
 
     filtered = filtered[fam_mask]
 
-# --- hsa specificity (multi) ---
+# --- hsa specificity ---
 if hsa_selected:
     hsa_flag = filtered["hsa-specificity"].astype(str).str.strip().str.upper()
     hsa_mask = pd.Series(False, index=filtered.index)
@@ -513,7 +534,7 @@ if hsa_selected:
 if repeats_selected:
     filtered = filtered[filtered["Repeat_Class"].isin(repeats_selected)]
 
-# --- Conservation species filter (UPDATED: two lists, AND logic) ---
+# --- Conservation species filter (two lists, AND logic) ---
 species_na_cols = [animal_sidebar_rev[x] for x in species_na_sidebar] if species_na_sidebar else []
 species_found_cols = [animal_sidebar_rev[x] for x in species_found_sidebar] if species_found_sidebar else []
 
@@ -525,10 +546,8 @@ if species_na_cols:
 # Found in (non-NA) -> AND across selected species
 if species_found_cols:
     tmp_found = filtered[species_found_cols]
-    # must be True/False (i.e. not NA)
     filtered = filtered[tmp_found.isin([True, False]).all(axis=1)]
 
-    # Stable/Unstable optional
     if stable_unstable:
         allowed = []
         if "Stable" in stable_unstable:
@@ -546,9 +565,7 @@ if tissues_filter:
 
 # --- Search (keep last) ---
 if search_term:
-    mask = filtered.astype(str).apply(
-        lambda col: col.str.contains(search_term, case=False, na=False)
-    ).any(axis=1)
+    mask = filtered.astype(str).apply(lambda col: col.str.contains(search_term, case=False, na=False)).any(axis=1)
     filtered = filtered[mask]
 
 # -----------------------------------------------------------
@@ -567,6 +584,7 @@ def generate_fasta(df_):
 # -----------------------------------------------------------
 df_display = filtered.copy()
 
+# Replace the summary columns
 df_display["Conservation"] = df_display["Conservation_display"]
 df_display["Expression"] = df_display["Expression_display"]
 df_display["Structure"] = df_display["Structure_display"]
@@ -586,8 +604,8 @@ df_display = df_display.rename(columns={
 })
 
 mandatory_display_cols = [
-    "miRNA","Conservation","Expression","Structure",
-    "MirGeneDB family","miRBase family","hsa-specificity","Repeat Class",
+    "miRNA", "Conservation", "Expression", "Structure",
+    "MirGeneDB family", "miRBase family", "hsa-specificity", "Repeat Class",
 ]
 
 animals_to_show_display = [animal_display_names[c] for c in animals_to_show if c in animal_display_names]
@@ -601,7 +619,7 @@ desired_order = (
     + tissues_to_show_display
     + ["Structure"]
     + class_to_show_display
-    + ["MirGeneDB family","miRBase family","hsa-specificity","Repeat Class"]
+    + ["MirGeneDB family", "miRBase family", "hsa-specificity", "Repeat Class"]
 )
 
 visible_cols = []
@@ -615,8 +633,8 @@ if not visible_cols:
 
 helper_cols = [
     "_Conservation_tf",
-    "_Expression_tf","_Structure_tf",
-    "_miRBase_family_flag","_MirGeneDB_family_flag",
+    "_Expression_tf", "_Structure_tf",
+    "_miRBase_family_flag", "_MirGeneDB_family_flag",
 ]
 helper_cols_present = [c for c in helper_cols if c in df_display.columns]
 df_display = df_display[visible_cols + helper_cols_present]
@@ -1029,7 +1047,7 @@ if visible_class_cols:
 st.markdown(f"<div class='legend-wrap'>{''.join(legend_cards)}</div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------
-# DOWNLOAD BUTTONS (TSV + FASTA) — reliable alignment using columns
+# DOWNLOAD BUTTONS (TSV + FASTA)
 # -----------------------------------------------------------
 spacer, c1, c2 = st.columns([6, 1.3, 1.0])
 with c1:
@@ -1095,4 +1113,3 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
