@@ -314,10 +314,16 @@ repeats_selected = st.sidebar.multiselect(
 )
 
 # -----------------------------------------------------------
-# SIDEBAR: ADVANCED OPTIONS (collapsible, HIDDEN by default)
+# SIDEBAR: ADVANCED OPTIONS (TRULY hidden until user clicks)
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
-with st.sidebar.expander("Show advanced options", expanded=False):
+
+show_adv = st.sidebar.checkbox("Show advanced options", value=False, key="show_adv")
+
+if show_adv:
+    # ---------------------------
+    # Show extra columns
+    # ---------------------------
     st.sidebar.subheader("Show extra columns")
 
     animals_to_show_sidebar = st.sidebar.multiselect(
@@ -337,12 +343,18 @@ with st.sidebar.expander("Show advanced options", expanded=False):
 
     show_class_cols = st.sidebar.checkbox("Show Class columns", value=False, key="show_class_cols")
 
+    # spacer + divider (more separation)
+    st.sidebar.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
     st.sidebar.markdown("---")
+    st.sidebar.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+
+    # ---------------------------
+    # Filter extra columns
+    # ---------------------------
     st.sidebar.subheader("Filter extra columns")
 
-    # --- UPDATED conservation control: two lists, no mode buttons ---
-    st.sidebar.markdown("**Conservation (by species)**")
-
+    # ===== Conservation (by species)
+    st.sidebar.markdown("### Conservation (by species)")
     species_options = list(animal_sidebar_names.values())
 
     species_found_sidebar = st.sidebar.multiselect(
@@ -352,7 +364,6 @@ with st.sidebar.expander("Show advanced options", expanded=False):
         key="cons_species_found",
     )
 
-    # Stable/Unstable appears ONLY when Found in has something selected
     if species_found_sidebar:
         stable_unstable = st.sidebar.multiselect(
             "Stable / Unstable:",
@@ -370,7 +381,13 @@ with st.sidebar.expander("Show advanced options", expanded=False):
         key="cons_species_na",
     )
 
-    st.sidebar.markdown("Expressed in (select tissues by system):")
+    # BIG separation between conservation and tissues
+    st.sidebar.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+    # ===== Tissues
+    st.sidebar.markdown("### Expressed in (select tissues by system)")
     tissues_filter_set = set()
 
     for system_name, sys_tissues in SYSTEM_TISSUES.items():
@@ -398,6 +415,14 @@ with st.sidebar.expander("Show advanced options", expanded=False):
 
     tissues_filter = sorted(tissues_filter_set)
 
+    # separation before db/class
+    st.sidebar.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+    # ===== Database / Class
+    st.sidebar.markdown("### Database / Class")
+
     mirgene_filter = st.sidebar.selectbox(
         "Database:",
         ["Show all", "In both", "Only in miRBase"],
@@ -407,90 +432,20 @@ with st.sidebar.expander("Show advanced options", expanded=False):
     classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
     classes_selected = st.sidebar.multiselect("Class:", classes, default=[], key="class_filter")
 
-# Defaults if advanced options never opened (avoid crashes)
-if "animals_to_show" not in locals():
+else:
+    # -------------------------------------------------------
+    # Defaults when advanced options are hidden (avoid crashes)
+    # -------------------------------------------------------
     animals_to_show = []
-if "tissues_to_show" not in locals():
     tissues_to_show = []
-if "show_class_cols" not in locals():
     show_class_cols = False
-if "tissues_filter" not in locals():
     tissues_filter = []
-if "mirgene_filter" not in locals():
     mirgene_filter = "Show all"
-if "classes_selected" not in locals():
     classes_selected = []
-if "species_na_sidebar" not in locals():
     species_na_sidebar = []
-if "species_found_sidebar" not in locals():
     species_found_sidebar = []
-if "stable_unstable" not in locals():
     stable_unstable = []
 
-# -----------------------------------------------------------
-# SPECIES MAPPING: True/False/NA robust
-# -----------------------------------------------------------
-binary_map = {
-    "TRUE": True, True: True, 1: True,
-    "FALSE": False, False: False, 0: False,
-    "NA": pd.NA, None: pd.NA, pd.NA: pd.NA, "": pd.NA
-}
-if animal_cols:
-    df[animal_cols] = df[animal_cols].applymap(lambda x: binary_map.get(x, pd.NA))
-
-# -----------------------------------------------------------
-# Helper columns for coloring + display columns for table
-# -----------------------------------------------------------
-df["_Structure_tf"] = df["Structure"].astype(str).str.upper()
-df["_Expression_tf"] = df["Expression"].astype(str).str.upper()
-df["_Conservation_tf"] = df["Conservation"].astype("string").str.strip().str.upper()
-
-df["_miRBase_family_flag"] = df["miRBase family"].astype(str).str.upper()
-df["_MirGeneDB_family_flag"] = df["MirGeneDB family"].astype(str).str.upper()
-
-df["Conservation_display"] = (
-    df[animal_cols].apply(lambda r: r.isin([True, False]).sum(), axis=1) if animal_cols else pd.NA
-)
-
-if tissue_cols:
-    tissue_num_all = df[tissue_cols].apply(pd.to_numeric, errors="coerce")
-    df["Expression_display"] = (tissue_num_all >= 1.5).sum(axis=1)
-else:
-    df["Expression_display"] = pd.NA
-
-def format_class_pair(row):
-    a = row.get("Class_miRBase", pd.NA)
-    b = row.get("Class_MirGeneDB", pd.NA)
-    a = "-" if pd.isna(a) or str(a).strip() == "" else str(a).strip()
-    b = "-" if pd.isna(b) or str(b).strip() in ["", "—"] else str(b).strip()
-    return f"{a}/{b}"
-
-df["Structure_display"] = df.apply(format_class_pair, axis=1)
-
-def family_name_or_single(flag_val, name_val, empty_as=None):
-    if str(flag_val).strip().upper() == "YES":
-        if pd.isna(name_val) or str(name_val).strip() == "":
-            return None
-        return str(name_val).strip()
-    return empty_as
-
-df["miRBase_family_display"] = df.apply(
-    lambda r: family_name_or_single(
-        r.get("miRBase family", "NO"),
-        r.get("family_name_mirbase", pd.NA),
-        empty_as=None
-    ),
-    axis=1
-)
-
-df["MirGeneDB_family_display"] = df.apply(
-    lambda r: family_name_or_single(
-        r.get("MirGeneDB family", "—"),
-        r.get("family_name_mirgene", pd.NA),
-        empty_as=None
-    ),
-    axis=1
-)
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -1140,3 +1095,4 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
