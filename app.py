@@ -340,21 +340,55 @@ with st.sidebar.expander("Show advanced options", expanded=False):
     st.markdown("---")
     st.subheader("Filter extra columns")
 
-    conservation_state_filter = st.selectbox(
-        "Conservation:",
-        [
-            "Show all",
-            "Conserved (stable structure)",
-            "Conserved (unstable structure)",
-            "Not conserved",
-        ]
+    # --- Conservation (species-based) NEW UI ---
+st.markdown("**Conservation (by species)**")
+
+# Two buttons (radio looks like pills in Streamlit)
+found_mode = st.radio(
+    "Mode",
+    ["Found in", "Not found in"],
+    horizontal=True,
+    key="cons_mode",
+    label_visibility="collapsed",
+)
+
+# helper list of species for the dropdowns
+species_options = list(animal_sidebar_names.values())
+
+if found_mode == "Not found in":
+    # NA filter: choose one or more species (AND)
+    species_na_sidebar = st.multiselect(
+        "Not found in:",
+        species_options,
+        default=[],
+        key="cons_species_na",
+    )
+    species_na_cols = [animal_sidebar_rev[x] for x in species_na_sidebar]
+
+    # keep these variables defined for later
+    species_found_cols = []
+    stable_unstable = []
+
+else:
+    # FOUND filter: choose one or more species (AND)
+    species_found_sidebar = st.multiselect(
+        "Found in:",
+        species_options,
+        default=[],
+        key="cons_species_found",
+    )
+    species_found_cols = [animal_sidebar_rev[x] for x in species_found_sidebar]
+
+    # Stable/Unstable selector
+    stable_unstable = st.multiselect(
+        "Structure:",
+        ["Stable", "Unstable"],
+        default=[],
+        key="cons_stability",
     )
 
-    species_filter_sidebar = st.multiselect(
-        "Conserved in (structure passed):",
-        list(animal_sidebar_names.values())
-    )
-    species_filter_cols = [animal_sidebar_rev[x] for x in species_filter_sidebar]
+    # keep these variables defined for later
+    species_na_cols = []
 
     st.markdown("Expressed in (select tissues by system):")
     tissues_filter_set = set()
@@ -410,6 +444,15 @@ if "mirgene_filter" not in locals():
     mirgene_filter = "Show all"
 if "classes_selected" not in locals():
     classes_selected = []
+if "found_mode" not in locals():
+    found_mode = "Found in"
+if "species_na_cols" not in locals():
+    species_na_cols = []
+if "species_found_cols" not in locals():
+    species_found_cols = []
+if "stable_unstable" not in locals():
+    stable_unstable = []
+    
 
 # -----------------------------------------------------------
 # SPECIES MAPPING: True/False/NA robust
@@ -574,9 +617,40 @@ if hsa_selected:
 if repeats_selected:
     filtered = filtered[filtered["Repeat_Class"].isin(repeats_selected)]
 
-# --- Conserved in species (AND): require TRUE in all selected species ---
-if species_filter_cols:
-    filtered = filtered[(filtered[species_filter_cols] == True).all(axis=1)]
+# --- Conservation species filter (NEW) ---
+# Rules:
+# - Not found in: selected species must be NA (AND)
+# - Found in: selected species must be either TRUE or FALSE (AND)
+#   plus optional stability:
+#     Stable => TRUE
+#     Unstable => FALSE
+#     if none selected => allow both TRUE/FALSE (no extra filter)
+
+if found_mode == "Not found in":
+    if species_na_cols:
+        tmp = filtered[species_na_cols]
+        na_mask = tmp.isna().all(axis=1)   # AND across selected species
+        filtered = filtered[na_mask]
+
+else:  # Found in
+    if species_found_cols:
+        tmp = filtered[species_found_cols]
+
+        # found means "not NA" i.e. either True or False
+        found_mask = tmp.isin([True, False]).all(axis=1)  # AND
+        filtered = filtered[found_mask]
+
+        # apply Stable/Unstable if selected
+        if stable_unstable:
+            allowed = []
+            if "Stable" in stable_unstable:
+                allowed.append(True)
+            if "Unstable" in stable_unstable:
+                allowed.append(False)
+
+            if allowed:
+                stability_mask = tmp.isin(allowed).all(axis=1)  # AND
+                filtered = filtered[stability_mask]
 
 # --- Expressed in tissues (AND): each selected tissue must be >= 1.5 ---
 if tissues_filter:
@@ -1156,6 +1230,7 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
