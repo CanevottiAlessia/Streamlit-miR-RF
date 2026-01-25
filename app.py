@@ -11,13 +11,17 @@ st.set_page_config(layout="wide")
 
 # -----------------------------------------------------------
 # GLOBAL THEME: BLACK BACKGROUND + SIDEBAR IMPROVEMENTS
-# + GREY PANELS/BUTTONS (download buttons, sidebar expanders, barplot container)
+# + GREY PANELS/BUTTONS + +2px text (except table)
+# + blue-grey "pill" behind expander titles text only
 # -----------------------------------------------------------
 st.markdown(
     """
     <style>
-    /* main app background */
+    /* =======================================================
+       GLOBAL FONT: +2px everywhere (table handled separately)
+    ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
+        font-size: 18px !important; /* +2px base */
         background: #000 !important;
         color: #fff !important;
     }
@@ -70,13 +74,24 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* NEW: grey background for sidebar expanders (Show extra columns / Filter extra columns) */
+    /* grey background for sidebar expanders container */
     section[data-testid="stSidebar"] [data-testid="stExpander"]{
         background: #2b2b2b !important;
         border: 1px solid rgba(255,255,255,0.18) !important;
     }
+
+    /* --- blue-grey "pill" behind expander title TEXT ONLY --- */
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
+        display: inline-flex !important;
+        align-items: center !important;
+        background: #2f3b4f !important; /* grigio-blu */
+        padding: 6px 10px !important;
+        border-radius: 10px !important;
+        width: fit-content !important;
         color: #fff !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary *{
+        background: transparent !important;
     }
 
     /* subtle separators */
@@ -107,7 +122,7 @@ st.markdown(
       font-weight: 800 !important;
     }
 
-    /* 3) Titles of expanders */
+    /* 3) Titles of expanders (font only; background handled above) */
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
       font-size: 18px !important;
       font-weight: 750 !important;
@@ -423,7 +438,9 @@ df["MirGeneDB_family_display"] = df.apply(
 # TITLE
 # -----------------------------------------------------------
 st.title("pre-miRNA Annotation Browser")
-st.markdown("Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, repeat classification and family context.")
+st.markdown(
+    "Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, repeat classification and family context."
+)
 
 # -----------------------------------------------------------
 # SIDEBAR: FILTERS (always visible)
@@ -874,23 +891,15 @@ if helper_cols_present:
 html_table = styled_df.hide(axis="index").to_html(escape=False)
 
 # -----------------------------------------------------------
-# CSS — TABLE + LEGEND + SIDEBAR NORMALIZATION
-# - Scroll height fixed (max-height: 800px as requested)
+# CSS — TABLE + LEGEND
+# - Scroll height fixed (max-height: 800px)
 # - Bigger text + taller cells
+# - IMPORTANT: prevent table/columns shrinking when sidebar expands
 # -----------------------------------------------------------
 custom_css = r"""
 <style>
-section[data-testid="stSidebar"] label{
-  font-weight: 400 !important;
-  font-size: 14px !important;
-}
-section[data-testid="stSidebar"] .stMarkdown p{
-  font-weight: 400 !important;
-  font-size: 14px !important;
-}
-
 .table-container{
-  max-height: 800px;              /* <-- as requested */
+  max-height: 800px;
   overflow-y: auto !important;
   overflow-x: auto !important;
   border: 2px solid black;
@@ -899,10 +908,11 @@ section[data-testid="stSidebar"] .stMarkdown p{
   -webkit-overflow-scrolling: touch;
 }
 
+/* KEY CHANGE: don't allow the inner/table to shrink with viewport */
 .table-inner{
   display: inline-block !important;
-  min-width: 100% !important;
   width: max-content !important;
+  min-width: max-content !important;
 }
 
 .table-inner table{
@@ -911,9 +921,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
 
   display: inline-table !important;
   width: max-content !important;
-  min-width: 100% !important;
-
-  table-layout: fixed !important;
+  table-layout: auto !important; /* <-- no forced shrinking */
 }
 
 .table-inner th,
@@ -921,7 +929,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
   border: 1px solid black !important;
   border-radius: 8px !important;
 
-  /* ✅ your requested sizing */
+  /* requested sizing */
   line-height: 1.25 !important;
   min-height: 38px !important;
   padding: 7px 4px !important;
@@ -975,6 +983,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
   background-clip: padding-box;
 }
 
+/* legend */
 .legend-wrap{
   display: flex;
   flex-wrap: wrap;
@@ -1198,4 +1207,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
