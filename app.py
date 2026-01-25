@@ -21,7 +21,7 @@ st.markdown(
        GLOBAL FONT: +2px everywhere (table handled separately)
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
-        font-size: 20px !important;   /* was 18px */
+        font-size: 18px !important;
         background: #000 !important;
         color: #fff !important;
     }
@@ -35,7 +35,7 @@ st.markdown(
     section[data-testid="stSidebar"]{
         background: #000 !important;
         color: #fff !important;
-        border-right: 2px solid rgba(255,255,255,0.22); /* stronger */
+        border-right: 1px solid rgba(255,255,255,0.12);
     }
     section[data-testid="stSidebar"] *{
         color: #fff !important;
@@ -45,8 +45,6 @@ st.markdown(
     .stTextInput input, .stNumberInput input{
         background: #111 !important;
         color: #fff !important;
-        border: 2px solid rgba(255,255,255,0.28) !important; /* stronger */
-        border-radius: 10px !important;
     }
 
     /* BaseWeb select controls (selectbox + multiselect) */
@@ -54,8 +52,6 @@ st.markdown(
         background: #111 !important;
         color: #fff !important;
         box-shadow: none !important;
-        border: 2px solid rgba(255,255,255,0.28) !important; /* stronger */
-        border-radius: 10px !important;
     }
 
     /* remove any weird halo/shadow on labels */
@@ -71,7 +67,7 @@ st.markdown(
     /* expander as cards (global) */
     [data-testid="stExpander"]{
         background: #050505 !important;
-        border: 2px solid rgba(255,255,255,0.22) !important;  /* stronger */
+        border: 1px solid rgba(255,255,255,0.16) !important;
         border-radius: 14px !important;
         padding: 6px 8px !important;
         margin: 10px 0 14px 0 !important;
@@ -85,8 +81,7 @@ st.markdown(
     */
     section[data-testid="stSidebar"] [data-testid="stExpander"]{
         background: #2b2b2b !important;
-        border: 2px solid rgba(255,255,255,0.32) !important;  /* stronger */
-        box-shadow: 0 0 0 1px rgba(255,255,255,0.10) !important; /* helps on bright surroundings */
+        border: 1px solid rgba(255,255,255,0.18) !important;
     }
     /* pill dietro SOLO al titolo dell'expander */
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
@@ -106,7 +101,7 @@ st.markdown(
     /* subtle separators */
     .subtle-hr{
         border: 0;
-        border-top: 1px solid rgba(255,255,255,0.16);
+        border-top: 1px solid rgba(255,255,255,0.10);
         margin: 10px 0;
     }
 
@@ -114,34 +109,34 @@ st.markdown(
     a { color: #7cc7ff !important; }
 
     /* ---------------------------
-       SIDEBAR TYPOGRAPHY SIZES (+2px)
+       SIDEBAR TYPOGRAPHY SIZES
     ---------------------------- */
     section[data-testid="stSidebar"] h2{
-      font-size: 24px !important;   /* was 22px */
+      font-size: 22px !important;
       font-weight: 800 !important;
       margin-top: 8px !important;
       margin-bottom: 10px !important;
     }
 
     section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-      font-size: 24px !important;   /* was 22px */
+      font-size: 22px !important;
       font-weight: 800 !important;
     }
 
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
-      font-size: 20px !important;   /* was 18px */
+      font-size: 18px !important;
       font-weight: 750 !important;
     }
 
     .sidebar-section-title{
-      font-size: 18px;              /* was 16px */
+      font-size: 16px;
       font-weight: 700;
       margin: 8px 0 6px 0;
     }
 
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown p{
-      font-size: 16px !important;   /* was 14px */
+      font-size: 14px !important;
     }
 
     /* ---------------------------
@@ -169,11 +164,10 @@ st.markdown(
 
     /* ---------------------------
        BARPLOT CONTAINER GREY BACKGROUND
-       (remove the "line" -> border)
     ---------------------------- */
     .plot-card{
         background: #2b2b2b;
-        border: 0 !important;                 /* was 1px border -> removed */
+        border: 1px solid rgba(255,255,255,0.18);
         border-radius: 16px;
         padding: 14px 14px 6px 14px;
         margin-top: 6px;
@@ -1165,7 +1159,7 @@ btn_col, _ = st.columns([2, 8])
 with btn_col:
     st.download_button(
         "Download table (TSV)",
-        data=tsv_export_df.to_csv(index=False, sep="\\t"),
+        data=tsv_export_df.to_csv(index=False, sep="\t"),
         file_name="mirna_filtered_table.tsv",
         mime="text/tab-separated-values",
         key="dl_tsv",
