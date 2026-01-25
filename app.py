@@ -1292,10 +1292,13 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
         .configure_title(color="currentColor")
     )
 
-    st.altair_chart(barplot, use_container_width=True)
+    # ✅ QUI (al posto di st.altair_chart)
+    chart_html = barplot.to_html()
+    st.components.v1.html(chart_html, height=650, scrolling=False)
+
 else:
     st.info("Repeat_Class is missing or empty: barplot not available.")
-
+    
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------
@@ -1303,4 +1306,5 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
