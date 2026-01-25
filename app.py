@@ -1,3 +1,4 @@
+```python
 from pathlib import Path
 import streamlit as st
 import pandas as pd
@@ -10,48 +11,116 @@ from PIL import Image
 st.set_page_config(layout="wide")
 
 # -----------------------------------------------------------
-# GLOBAL THEME: BLACK BACKGROUND + SIDEBAR IMPROVEMENTS
-# + GREY PANELS/BUTTONS + +2px text (except table)
+# GLOBAL THEME: AUTO LIGHT/DARK (via prefers-color-scheme)
+# + SIDEBAR IMPROVEMENTS
+# + GREY PANELS/BUTTONS
+# + +2px text OUTSIDE TABLE
 # NOTE: pill ONLY for "Show extra columns" + "Filter extra columns"
 # -----------------------------------------------------------
 st.markdown(
     """
     <style>
     /* =======================================================
-       GLOBAL FONT: +2px everywhere (table handled separately)
+       AUTO THEME VARIABLES (LIGHT/DARK)
+    ======================================================= */
+    :root{
+      --bg: #ffffff;
+      --text: #111111;
+
+      --header-bg: #ffffff;
+
+      --sidebar-bg: #f7f7f7;
+      --sidebar-border: rgba(0,0,0,0.12);
+
+      --input-bg: #ffffff;
+      --input-border: rgba(0,0,0,0.16);
+
+      --panel-bg: #e9e9e9;
+      --panel-border: rgba(0,0,0,0.16);
+
+      --btn-bg: #e6e6e6;
+      --btn-bg-hover: #d9d9d9;
+      --btn-border: rgba(0,0,0,0.22);
+
+      --plot-card-bg: #f0f0f0;
+
+      --link: #0b62d6;
+
+      --table-th-bg: #eaeaea;
+      --table-first-th-bg: #eaeaea;
+      --table-first-td-bg: #f2f2f2;
+      --table-border: #000000;
+    }
+
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg: #000000;
+        --text: #ffffff;
+
+        --header-bg: #000000;
+
+        --sidebar-bg: #000000;
+        --sidebar-border: rgba(255,255,255,0.12);
+
+        --input-bg: #111111;
+        --input-border: rgba(255,255,255,0.16);
+
+        --panel-bg: #2b2b2b;
+        --panel-border: rgba(255,255,255,0.18);
+
+        --btn-bg: #2b2b2b;
+        --btn-bg-hover: #3a3a3a;
+        --btn-border: rgba(255,255,255,0.22);
+
+        --plot-card-bg: #2b2b2b;
+
+        --link: #7cc7ff;
+
+        --table-th-bg: #222222;
+        --table-first-th-bg: #222222;
+        --table-first-td-bg: #333333;
+        --table-border: #000000;
+      }
+    }
+
+    /* =======================================================
+       GLOBAL FONT: +2px everywhere OUTSIDE TABLE
+       (table handled separately below)
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
-        font-size: 18px !important;
-        background: #000 !important;
-        color: #fff !important;
+        font-size: 20px !important;
+        background: var(--bg) !important;
+        color: var(--text) !important;
     }
 
     /* header / toolbar */
     [data-testid="stHeader"], [data-testid="stToolbar"]{
-        background: #000 !important;
+        background: var(--header-bg) !important;
     }
 
     /* sidebar */
     section[data-testid="stSidebar"]{
-        background: #000 !important;
-        color: #fff !important;
-        border-right: 1px solid rgba(255,255,255,0.12);
+        background: var(--sidebar-bg) !important;
+        color: var(--text) !important;
+        border-right: 1px solid var(--sidebar-border);
     }
     section[data-testid="stSidebar"] *{
-        color: #fff !important;
+        color: var(--text) !important;
     }
 
-    /* inputs background (readable on black) */
+    /* inputs background (readable on both themes) */
     .stTextInput input, .stNumberInput input{
-        background: #111 !important;
-        color: #fff !important;
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        border: 1px solid var(--input-border) !important;
     }
 
     /* BaseWeb select controls (selectbox + multiselect) */
     section[data-testid="stSidebar"] [data-baseweb="select"] > div{
-        background: #111 !important;
-        color: #fff !important;
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
         box-shadow: none !important;
+        border: 1px solid var(--input-border) !important;
     }
 
     /* remove any weird halo/shadow on labels */
@@ -66,77 +135,71 @@ st.markdown(
 
     /* expander as cards (global) */
     [data-testid="stExpander"]{
-        background: #050505 !important;
-        border: 1px solid rgba(255,255,255,0.16) !important;
+        background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%) !important;
+        border: 1px solid color-mix(in srgb, var(--text) 16%, transparent) !important;
         border-radius: 14px !important;
         padding: 6px 8px !important;
         margin: 10px 0 14px 0 !important;
         box-shadow: none !important;
     }
 
-    /* IMPORTANT CHANGE:
-       - NO special grey background on ALL sidebar expanders anymore
-       - NO "pill" on all expander titles anymore
-       (so system expanders stay clean)
-    */
+    /* sidebar expanders: grey panels + pill on title only */
     section[data-testid="stSidebar"] [data-testid="stExpander"]{
-        background: #2b2b2b !important;
-        border: 1px solid rgba(255,255,255,0.18) !important;
+        background: var(--panel-bg) !important;
+        border: 1px solid var(--panel-border) !important;
     }
-    /* pill dietro SOLO al titolo dell'expander */
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
         display: inline-flex !important;
         align-items: center !important;
-        background: #2b2b2b !important;  /* grigio scuro */
+        background: var(--panel-bg) !important;
         padding: 6px 10px !important;
         border-radius: 10px !important;
         width: fit-content !important;
-        color: #fff !important;
+        color: var(--text) !important;
     }
-    /* evita che i figli ereditino il background */
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary *{
         background: transparent !important;
     }
-    
+
     /* subtle separators */
     .subtle-hr{
         border: 0;
-        border-top: 1px solid rgba(255,255,255,0.10);
+        border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
         margin: 10px 0;
     }
 
     /* links */
-    a { color: #7cc7ff !important; }
+    a { color: var(--link) !important; }
 
     /* ---------------------------
        SIDEBAR TYPOGRAPHY SIZES
     ---------------------------- */
     section[data-testid="stSidebar"] h2{
-      font-size: 22px !important;
+      font-size: 24px !important;
       font-weight: 800 !important;
       margin-top: 8px !important;
       margin-bottom: 10px !important;
     }
 
     section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-      font-size: 22px !important;
+      font-size: 24px !important;
       font-weight: 800 !important;
     }
 
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
-      font-size: 18px !important;
+      font-size: 20px !important;
       font-weight: 750 !important;
     }
 
     .sidebar-section-title{
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 700;
       margin: 8px 0 6px 0;
     }
 
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown p{
-      font-size: 14px !important;
+      font-size: 16px !important;
     }
 
     /* ---------------------------
@@ -151,23 +214,23 @@ st.markdown(
        GREY BACKGROUND FOR DOWNLOAD BUTTONS
     ---------------------------- */
     [data-testid="stDownloadButton"] button{
-        background: #2b2b2b !important;
-        color: #fff !important;
-        border: 1px solid rgba(255,255,255,0.22) !important;
+        background: var(--btn-bg) !important;
+        color: var(--text) !important;
+        border: 1px solid var(--btn-border) !important;
         border-radius: 12px !important;
         font-weight: 700 !important;
     }
     [data-testid="stDownloadButton"] button:hover{
-        background: #3a3a3a !important;
-        border-color: rgba(255,255,255,0.30) !important;
+        background: var(--btn-bg-hover) !important;
+        border-color: color-mix(in srgb, var(--btn-border) 70%, var(--text) 30%) !important;
     }
 
     /* ---------------------------
        BARPLOT CONTAINER GREY BACKGROUND
     ---------------------------- */
     .plot-card{
-        background: #2b2b2b;
-        border: 1px solid rgba(255,255,255,0.18);
+        background: var(--plot-card-bg);
+        border: 1px solid var(--panel-border);
         border-radius: 16px;
         padding: 14px 14px 6px 14px;
         margin-top: 6px;
@@ -911,7 +974,7 @@ custom_css = r"""
   max-height: 902px;
   overflow-y: auto !important;
   overflow-x: auto !important;
-  border: 2px solid black;
+  border: 2px solid var(--table-border);
   margin-bottom: 16px;
 
   width: 100% !important;
@@ -939,7 +1002,7 @@ custom_css = r"""
 
 .table-inner th,
 .table-inner td{
-  border: 1px solid black !important;
+  border: 1px solid var(--table-border) !important;
   border-radius: 8px !important;
 
   line-height: 1.25 !important;
@@ -966,8 +1029,8 @@ custom_css = r"""
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #222 !important;
-  color: white !important;
+  background-color: var(--table-th-bg) !important;
+  color: color-mix(in srgb, var(--text) 95%, transparent) !important;
   font-weight: 800 !important;
 
   white-space: normal !important;
@@ -985,8 +1048,8 @@ custom_css = r"""
   min-width: 230px !important;
   max-width: 230px !important;
 
-  background-color: #222 !important;
-  color: white !important;
+  background-color: var(--table-first-th-bg) !important;
+  color: color-mix(in srgb, var(--text) 95%, transparent) !important;
   background-clip: padding-box;
 }
 
@@ -999,8 +1062,8 @@ custom_css = r"""
   min-width: 230px !important;
   max-width: 230px !important;
 
-  background-color: #333 !important;
-  color: white !important;
+  background-color: var(--table-first-td-bg) !important;
+  color: color-mix(in srgb, var(--text) 95%, transparent) !important;
   font-weight: 800 !important;
   background-clip: padding-box;
 }
@@ -1048,7 +1111,7 @@ custom_css = r"""
   border-radius: 999px;
   display: inline-block;
   vertical-align: middle;
-  border: 1px solid rgba(255,255,255,0.35);
+  border: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
   box-sizing: border-box;
 }
 </style>
@@ -1228,3 +1291,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+```
