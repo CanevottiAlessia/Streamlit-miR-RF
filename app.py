@@ -908,7 +908,7 @@ html_table = styled_df.hide(axis="index").to_html(escape=False)
 custom_css = r"""
 <style>
 .table-container{
-  max-height: 800px;
+  max-height: 907px;
   overflow-y: auto !important;
   overflow-x: auto !important;
   border: 2px solid black;
@@ -1228,6 +1228,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
