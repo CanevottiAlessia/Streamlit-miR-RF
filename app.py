@@ -1240,11 +1240,16 @@ with btn_col:
 # -----------------------------------------------------------
 # BARPLOT (Repeat distribution)
 # -----------------------------------------------------------
-# -----------------------------------------------------------
-# BARPLOT (Repeat distribution)
-# -----------------------------------------------------------
 ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
+
+# Auto-detect Streamlit theme (light/dark)
+theme_base = str(st.get_option("theme.base")).lower()
+is_dark = theme_base == "dark"
+
+AXIS_TEXT = "white" if is_dark else "black"
+GRID_COL  = "rgba(255,255,255,0.12)" if is_dark else "rgba(0,0,0,0.12)"
+TITLE_COL = AXIS_TEXT
 
 st.subheader("Repeat class distribution")
 st.markdown("<div class='plot-card'>", unsafe_allow_html=True)
@@ -1265,8 +1270,8 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                     labelAngle=45,
                     labelFontSize=14.5,
                     titleFontSize=16,
-                    labelColor="white",
-                    titleColor="white"
+                    labelColor=AXIS_TEXT,
+                    titleColor=AXIS_TEXT
                 )
             ),
             y=alt.Y(
@@ -1275,8 +1280,8 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                 axis=alt.Axis(
                     labelFontSize=14,
                     titleFontSize=16,
-                    labelColor="white",
-                    titleColor="white"
+                    labelColor=AXIS_TEXT,
+                    titleColor=AXIS_TEXT
                 )
             ),
             color=alt.Color(
@@ -1286,13 +1291,13 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
             ),
             tooltip=["Repeat_Class", "Count", "Percent"]
         )
-        # ✅ niente width fissa: evita overflow/scrollbar
+        # niente width fissa -> niente barra/scroll sopra
         .properties(height=600)
-        # ✅ sfondo trasparente: si adatta al tema/sfondo del browser
+        # background trasparente -> si adatta allo sfondo
         .configure_view(fill="transparent", strokeOpacity=0)
         .configure(background="transparent")
-        .configure_axis(gridColor="rgba(255,255,255,0.12)")
-        .configure_title(color="white")
+        .configure_axis(gridColor=GRID_COL)
+        .configure_title(color=TITLE_COL)
     )
 
     st.altair_chart(barplot, use_container_width=True)
@@ -1306,4 +1311,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
