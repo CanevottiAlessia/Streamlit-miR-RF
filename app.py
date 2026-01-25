@@ -12,7 +12,7 @@ st.set_page_config(layout="wide")
 # -----------------------------------------------------------
 # GLOBAL THEME: BLACK BACKGROUND + SIDEBAR IMPROVEMENTS
 # + GREY PANELS/BUTTONS + +2px text (except table)
-# + blue-grey "pill" behind expander titles text only
+# NOTE: pill ONLY for "Show extra columns" + "Filter extra columns"
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -21,7 +21,7 @@ st.markdown(
        GLOBAL FONT: +2px everywhere (table handled separately)
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
-        font-size: 18px !important; /* +2px base */
+        font-size: 18px !important;
         background: #000 !important;
         color: #fff !important;
     }
@@ -41,7 +41,7 @@ st.markdown(
         color: #fff !important;
     }
 
-    /* inputs background (readable on black) - DO NOT style generic divs (avoids label "halo") */
+    /* inputs background (readable on black) */
     .stTextInput input, .stNumberInput input{
         background: #111 !important;
         color: #fff !important;
@@ -74,24 +74,23 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* grey background for sidebar expanders container */
+    /* IMPORTANT CHANGE:
+       - NO special grey background on ALL sidebar expanders anymore
+       - NO "pill" on all expander titles anymore
+       (so system expanders stay clean)
+    */
     section[data-testid="stSidebar"] [data-testid="stExpander"]{
-        background: #2b2b2b !important;
+        background: #050505 !important;
         border: 1px solid rgba(255,255,255,0.18) !important;
     }
-
-    /* --- blue-grey "pill" behind expander title TEXT ONLY --- */
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
-        display: inline-flex !important;
-        align-items: center !important;
-        background: #2f3b4f !important; /* grigio-blu */
-        padding: 6px 10px !important;
-        border-radius: 10px !important;
-        width: fit-content !important;
-        color: #fff !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stExpander"] summary *{
         background: transparent !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        width: auto !important;
+        color: #fff !important;
+        display: flex !important;
+        align-items: center !important;
     }
 
     /* subtle separators */
@@ -107,8 +106,6 @@ st.markdown(
     /* ---------------------------
        SIDEBAR TYPOGRAPHY SIZES
     ---------------------------- */
-
-    /* 1) "Filters" (st.sidebar.header uses h2) */
     section[data-testid="stSidebar"] h2{
       font-size: 22px !important;
       font-weight: 800 !important;
@@ -116,26 +113,22 @@ st.markdown(
       margin-bottom: 10px !important;
     }
 
-    /* 2) "Advanced options" toggle label */
     section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
       font-size: 22px !important;
       font-weight: 800 !important;
     }
 
-    /* 3) Titles of expanders (font only; background handled above) */
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
       font-size: 18px !important;
       font-weight: 750 !important;
     }
 
-    /* 4) Section titles inside expander */
     .sidebar-section-title{
       font-size: 16px;
       font-weight: 700;
       margin: 8px 0 6px 0;
     }
 
-    /* 5) Option labels */
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown p{
       font-size: 14px !important;
@@ -175,6 +168,22 @@ st.markdown(
         margin-top: 6px;
         margin-bottom: 10px;
     }
+
+    /* ---------------------------
+       NEW: section "pill" ONLY for the two advanced headers
+    ---------------------------- */
+    .adv-pill{
+        display: inline-block;
+        background: #2b2b2b;
+        border: 1px solid rgba(255,255,255,0.18);
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-weight: 800;
+        font-size: 18px;
+        margin: 6px 0 10px 0;
+        width: fit-content;
+    }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -479,81 +488,88 @@ st.sidebar.markdown("---")
 show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
 
 if show_adv:
-    with st.sidebar.expander("Show extra columns", expanded=True):
-        animals_to_show_sidebar = st.multiselect(
-            "Show species columns:",
-            list(animal_sidebar_names.values()),
+    # --- SECTION 1: "Show extra columns" (pill only here) ---
+    st.sidebar.markdown("<div class='adv-pill'>Show extra columns</div>", unsafe_allow_html=True)
+
+    animals_to_show_sidebar = st.sidebar.multiselect(
+        "Show species columns:",
+        list(animal_sidebar_names.values()),
+        default=[],
+        key="show_species_cols",
+    )
+    animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
+
+    tissues_to_show = st.sidebar.multiselect(
+        "Show tissue columns:",
+        tissue_sidebar_names,
+        default=[],
+        key="show_tissue_cols",
+    )
+
+    show_class_cols = st.sidebar.checkbox("Show Class columns", value=False, key="show_class_cols")
+
+    st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+
+    # --- SECTION 2: "Filter extra columns" (pill only here) ---
+    st.sidebar.markdown("<div class='adv-pill'>Filter extra columns</div>", unsafe_allow_html=True)
+
+    st.sidebar.markdown("<div class='sidebar-section-title'>Conservation</div>", unsafe_allow_html=True)
+    species_options = list(animal_sidebar_names.values())
+
+    species_found_sidebar = st.sidebar.multiselect("Found in:", species_options, default=[], key="cons_species_found")
+
+    if species_found_sidebar:
+        stable_unstable = st.sidebar.multiselect(
+            "Structure:",
+            ["Stable (R/D)", "Unstable (S/I)"],
             default=[],
-            key="show_species_cols",
+            key="cons_stability",
         )
-        animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
+    else:
+        stable_unstable = []
 
-        tissues_to_show = st.multiselect(
-            "Show tissue columns:",
-            tissue_sidebar_names,
-            default=[],
-            key="show_tissue_cols",
-        )
+    species_na_sidebar = st.sidebar.multiselect("Not found in:", species_options, default=[], key="cons_species_na")
 
-        show_class_cols = st.checkbox("Show Class columns", value=False, key="show_class_cols")
+    st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
-    with st.sidebar.expander("Filter extra columns", expanded=True):
-        st.markdown("<div class='sidebar-section-title'>Conservation</div>", unsafe_allow_html=True)
-        species_options = list(animal_sidebar_names.values())
+    st.sidebar.markdown(
+        "<div class='sidebar-section-title'>Expressed in (select tissues by system):</div>",
+        unsafe_allow_html=True
+    )
+    tissues_filter_set = set()
 
-        species_found_sidebar = st.multiselect("Found in:", species_options, default=[], key="cons_species_found")
+    for system_name, sys_tissues in SYSTEM_TISSUES.items():
+        available = [t for t in sys_tissues if t in tissue_sidebar_names]
+        if not available:
+            continue
 
-        if species_found_sidebar:
-            stable_unstable = st.multiselect(
-                "Structure:",
-                ["Stable (R/D)", "Unstable (S/I)"],
-                default=[],
-                key="cons_stability",
-            )
-        else:
-            stable_unstable = []
+        icon = SYSTEM_ICONS.get(system_name)
+        col_icon, col_exp = st.sidebar.columns([1.6, 10], gap="small")
 
-        species_na_sidebar = st.multiselect("Not found in:", species_options, default=[], key="cons_species_na")
+        with col_icon:
+            if icon is not None:
+                st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                st.image(icon, width=96)
+                st.markdown("</div>", unsafe_allow_html=True)
+            else:
+                st.write("")
 
-        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+        with col_exp:
+            display_system = system_name.split(". ", 1)[-1].replace(" system", "")
+            # system expanders: NO pill background now
+            with st.expander(display_system, expanded=False):
+                picked = st.multiselect("Select tissues", available, key=f"tree_{system_name}")
+                tissues_filter_set.update(picked)
 
-        st.markdown(
-            "<div class='sidebar-section-title'>Expressed in (select tissues by system):</div>",
-            unsafe_allow_html=True
-        )
-        tissues_filter_set = set()
+    tissues_filter = sorted(tissues_filter_set)
 
-        for system_name, sys_tissues in SYSTEM_TISSUES.items():
-            available = [t for t in sys_tissues if t in tissue_sidebar_names]
-            if not available:
-                continue
+    st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
-            icon = SYSTEM_ICONS.get(system_name)
-            col_icon, col_exp = st.columns([1.6, 10], gap="small")
+    st.sidebar.markdown("<div class='sidebar-section-title'>Database / Class</div>", unsafe_allow_html=True)
+    mirgene_filter = st.sidebar.selectbox("Database:", ["Show all", "In both", "Only in miRBase"], key="db_filter")
 
-            with col_icon:
-                if icon is not None:
-                    st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                    st.image(icon, width=96)
-                    st.markdown("</div>", unsafe_allow_html=True)
-                else:
-                    st.write("")
-
-            with col_exp:
-                display_system = system_name.split(". ", 1)[-1].replace(" system", "")
-                with st.expander(display_system, expanded=False):
-                    picked = st.multiselect("Select tissues", available, key=f"tree_{system_name}")
-                    tissues_filter_set.update(picked)
-
-        tissues_filter = sorted(tissues_filter_set)
-
-        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-
-        st.markdown("<div class='sidebar-section-title'>Database / Class</div>", unsafe_allow_html=True)
-        mirgene_filter = st.selectbox("Database:", ["Show all", "In both", "Only in miRBase"], key="db_filter")
-
-        classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
-        classes_selected = st.multiselect("Class:", classes, default=[], key="class_filter")
+    classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
+    classes_selected = st.sidebar.multiselect("Class:", classes, default=[], key="class_filter")
 else:
     animals_to_show = []
     tissues_to_show = []
@@ -892,9 +908,11 @@ html_table = styled_df.hide(axis="index").to_html(escape=False)
 
 # -----------------------------------------------------------
 # CSS — TABLE + LEGEND
-# - Scroll height fixed (max-height: 800px)
-# - Bigger text + taller cells
-# - IMPORTANT: prevent table/columns shrinking when sidebar expands
+# FIX:
+# - table uses full available width, but never compresses columns
+# - columns are wider
+# - headers can wrap (no "...") and table scrolls horizontally
+# - vertical behavior unchanged
 # -----------------------------------------------------------
 custom_css = r"""
 <style>
@@ -904,24 +922,28 @@ custom_css = r"""
   overflow-x: auto !important;
   border: 2px solid black;
   margin-bottom: 16px;
-  width: 100%;
+
+  width: 100% !important;
+  max-width: 100% !important;
   -webkit-overflow-scrolling: touch;
 }
 
-/* KEY CHANGE: don't allow the inner/table to shrink with viewport */
+/* Make table take space, but keep intrinsic width for horizontal scroll */
 .table-inner{
-  display: inline-block !important;
-  width: max-content !important;
-  min-width: max-content !important;
+  display: block !important;
+  width: 100% !important;
 }
 
 .table-inner table{
   border-collapse: separate !important;
   border-spacing: 0 !important;
 
-  display: inline-table !important;
+  /* IMPORTANT: do not shrink */
+  table-layout: fixed !important;
+
+  /* Let it be as wide as it needs; container will scroll */
   width: max-content !important;
-  table-layout: auto !important; /* <-- no forced shrinking */
+  min-width: 100% !important;
 }
 
 .table-inner th,
@@ -929,19 +951,18 @@ custom_css = r"""
   border: 1px solid black !important;
   border-radius: 8px !important;
 
-  /* requested sizing */
   line-height: 1.25 !important;
-  min-height: 38px !important;
-  padding: 7px 4px !important;
+  min-height: 42px !important;
+  padding: 10px 10px !important;
   font-size: 20px !important;
 
-  width: 160px !important;
-  min-width: 160px !important;
-  max-width: 160px !important;
+  /* Wider columns (no compression) */
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
 
   white-space: nowrap !important;
   overflow: hidden !important;
-  text-overflow: ellipsis !important;
 
   text-align: center !important;
   font-weight: 700 !important;
@@ -949,6 +970,7 @@ custom_css = r"""
   vertical-align: middle !important;
 }
 
+/* Headers: allow wrapping, no ellipsis */
 .table-inner th{
   position: sticky;
   top: 0;
@@ -956,15 +978,22 @@ custom_css = r"""
   background-color: #222 !important;
   color: white !important;
   font-weight: 800 !important;
+
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
+/* First column (miRNA): wider + sticky */
 .table-inner th:first-child{
   position: sticky !important;
   left: 0;
   z-index: 30 !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
+
+  width: 260px !important;
+  min-width: 260px !important;
+  max-width: 260px !important;
+
   background-color: #222 !important;
   color: white !important;
   background-clip: padding-box;
@@ -974,9 +1003,11 @@ custom_css = r"""
   position: sticky !important;
   left: 0;
   z-index: 25 !important;
-  width: 200px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
+
+  width: 260px !important;
+  min-width: 260px !important;
+  max-width: 260px !important;
+
   background-color: #333 !important;
   color: white !important;
   font-weight: 800 !important;
@@ -1155,7 +1186,6 @@ with btn_col:
 
 # -----------------------------------------------------------
 # BARPLOT (Repeat distribution)
-# - Grey container + Altair background grey
 # -----------------------------------------------------------
 ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
