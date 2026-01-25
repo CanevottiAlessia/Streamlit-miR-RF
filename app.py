@@ -1232,7 +1232,7 @@ btn_col, _ = st.columns([2, 8])
 with btn_col:
     st.download_button(
         "Download table (TSV)",
-        data=tsv_export_df.to_csv(index=False, sep="\\t"),
+        data=tsv_export_df.to_csv(index=False, sep="\t"),
         file_name="mirna_filtered_table.tsv",
         mime="text/tab-separated-values",
         key="dl_tsv",
@@ -1325,3 +1325,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
