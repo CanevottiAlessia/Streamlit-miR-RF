@@ -1021,21 +1021,21 @@ section[data-testid="stSidebar"] .stMarkdown p{
   gap: 14px 22px;
   align-items: flex-start;
   margin-top: 10px;
-  margin-bottom: 18px; # spazio sotto la legenda
+  margin-bottom: 18px; /* spazio sotto la legenda */
 }
 
 .legend-card{
   flex: 1 1 260px;
   min-width: 260px;
-  font-size: 18px;   # prima 14
+  font-size: 18px;   /* testo righe */
   font-weight: 400;
   line-height: 1.45;
 }
 
 .legend-title{
-  font-size: 20px;
-  font-weight: 400;
-  margin-bottom: 6px;
+  font-size: 20px;   /* titolo card */
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .legend-row{
@@ -1045,19 +1045,24 @@ section[data-testid="stSidebar"] .stMarkdown p{
   align-items: center;
 }
 
+/* ogni item: swatch + testo */
 .legend-item{
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;  /* più spazio tra swatch e testo */
 }
 
+/* swatch: tondo e grande */
 .swatch{
-  width: 18px; # prima 16
-  height: 18px; # prima 16
+  width: 18px;
+  height: 18px;
+  border-radius: 999px; /* <-- tondo */
   display: inline-block;
   vertical-align: middle;
-  border: 1px solid rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.35); /* visibile sul nero */
+  box-sizing: border-box;
 }
+
 </style>
 """
 
@@ -1160,23 +1165,31 @@ st.markdown(f"<div class='legend-wrap'>{''.join(legend_cards)}</div>", unsafe_al
 # -----------------------------------------------------------
 # DOWNLOAD BUTTONS (TSV + FASTA)
 # -----------------------------------------------------------
-spacer, c1, c2 = st.columns([6, 1.3, 1.0])
-with c1:
+# -----------------------------------------------------------
+# DOWNLOAD BUTTONS (TSV + FASTA) — left + stacked
+# -----------------------------------------------------------
+st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+btn_col, _ = st.columns([2, 8])  # colonna stretta a sinistra
+with btn_col:
     st.download_button(
         "Download table (TSV)",
         data=tsv_export_df.to_csv(index=False, sep="\t"),
         file_name="mirna_filtered_table.tsv",
         mime="text/tab-separated-values",
         key="dl_tsv",
+        use_container_width=True,
     )
-with c2:
+
     st.download_button(
         "Get FASTA",
         data=generate_fasta(filtered),
         file_name="mirna_selected.fasta",
         mime="text/plain",
         key="dl_fasta",
+        use_container_width=True,
     )
+
 
 # -----------------------------------------------------------
 # BARPLOT (Repeat distribution)
@@ -1224,6 +1237,7 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
