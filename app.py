@@ -1,4 +1,3 @@
-```python
 from pathlib import Path
 import streamlit as st
 import pandas as pd
@@ -1291,4 +1290,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-```
