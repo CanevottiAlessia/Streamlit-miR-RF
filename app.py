@@ -897,8 +897,9 @@ section[data-testid="stSidebar"] .stMarkdown p{
   font-size: 14px !important;
 }
 
+/* ✅ più ALTA: per vedere ~20 righe senza schiacciarle */
 .table-container{
-  max-height: 650px;              /* ~20 rows (approx) */
+  max-height: 980px;              /* aumenta altezza visibile (prova 900-1100) */
   overflow-y: auto !important;
   overflow-x: auto !important;
   border: 2px solid black;
@@ -943,10 +944,12 @@ section[data-testid="stSidebar"] .stMarkdown p{
   font-weight: 700 !important;
   color: black !important;
 
-  line-height: 1.1 !important;    /* aiuta a stabilizzare altezza riga */
-  height: 30px !important;        /* riga ~30px => 20 righe ~600px */
+  /* ✅ niente compressione righe */
+  line-height: normal !important;     /* o 1.25 se vuoi più aria */
+  height: auto !important;            /* <-- rimuove lo schiacciamento */
 }
 
+/* header */
 .table-inner th{
   position: sticky;
   top: 0;
@@ -957,6 +960,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
   font-weight: 800 !important;
 }
 
+/* sticky first column header */
 .table-inner th:first-child{
   position: sticky !important;
   left: 0;
@@ -969,6 +973,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
   background-clip: padding-box;
 }
 
+/* sticky first column cells */
 .table-inner td:first-child{
   position: sticky !important;
   left: 0;
@@ -983,6 +988,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
   background-clip: padding-box;
 }
 
+/* legend */
 .legend-wrap{
   display: flex;
   flex-wrap: wrap;
@@ -991,7 +997,6 @@ section[data-testid="stSidebar"] .stMarkdown p{
   margin-top: 10px;
   margin-bottom: 18px;
 }
-
 .legend-card{
   flex: 1 1 260px;
   min-width: 260px;
@@ -999,26 +1004,22 @@ section[data-testid="stSidebar"] .stMarkdown p{
   font-weight: 400;
   line-height: 1.45;
 }
-
 .legend-title{
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 8px;
 }
-
 .legend-row{
   display: flex;
   flex-wrap: wrap;
   gap: 10px 14px;
   align-items: center;
 }
-
 .legend-item{
   display: inline-flex;
   align-items: center;
   gap: 10px;
 }
-
 .swatch{
   width: 18px;
   height: 18px;
@@ -1207,3 +1208,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
