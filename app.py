@@ -1,3 +1,4 @@
+import streamlit.components.v1 as components
 from pathlib import Path
 import streamlit as st
 import pandas as pd
@@ -1116,6 +1117,26 @@ custom_css = r"""
 </style>
 """
 
+@st.cache_data
+def browser_prefers_dark() -> bool:
+    # Returns True if the browser/OS prefers dark mode
+    js = """
+    <script>
+      const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Streamlit component API
+      const send = () => {
+        if (window.Streamlit && window.Streamlit.setComponentValue) {
+          window.Streamlit.setComponentValue(isDark);
+        }
+      };
+      send();
+    </script>
+    """
+    val = components.html(js, height=0)
+    # components.html can return None briefly on first run; fallback to False
+    return bool(val)
+
+
 # -----------------------------------------------------------
 # SHOW TABLE
 # -----------------------------------------------------------
@@ -1243,9 +1264,7 @@ with btn_col:
 ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
 
-# Auto-detect Streamlit theme (light/dark)
-theme_base = str(st.get_option("theme.base")).lower()
-is_dark = theme_base == "dark"
+is_dark = browser_prefers_dark()
 
 AXIS_TEXT = "white" if is_dark else "black"
 GRID_COL  = "rgba(255,255,255,0.12)" if is_dark else "rgba(0,0,0,0.12)"
@@ -1291,9 +1310,9 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
             ),
             tooltip=["Repeat_Class", "Count", "Percent"]
         )
-        # niente width fissa -> niente barra/scroll sopra
+        # niente width fissa -> niente barra sopra
         .properties(height=600)
-        # background trasparente -> si adatta allo sfondo
+        # sfondo trasparente -> si adatta allo sfondo del browser/OS
         .configure_view(fill="transparent", strokeOpacity=0)
         .configure(background="transparent")
         .configure_axis(gridColor=GRID_COL)
@@ -1311,3 +1330,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
