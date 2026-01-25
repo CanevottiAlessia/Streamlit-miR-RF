@@ -10,6 +10,10 @@ from PIL import Image
 # -----------------------------------------------------------
 st.set_page_config(layout="wide")
 
+# Toolbar Streamlit: riduci o elimina la barra (icona tabella/expand) sopra i charts
+# "minimal" la riduce; con il CSS sotto la nascondiamo comunque del tutto
+st.set_option("client.toolbarMode", "minimal")
+
 # -----------------------------------------------------------
 # GLOBAL THEME: AUTO LIGHT/DARK (via prefers-color-scheme)
 # + SIDEBAR IMPROVEMENTS
@@ -50,6 +54,9 @@ st.markdown(
       --table-first-th-bg: #eaeaea;
       --table-first-td-bg: #f2f2f2;
       --table-border: #000000;
+
+      /* Per griglia Altair (soft) in light */
+      --grid-opacity: 0.14;
     }
 
     @media (prefers-color-scheme: dark){
@@ -80,6 +87,9 @@ st.markdown(
         --table-first-th-bg: #222222;
         --table-first-td-bg: #333333;
         --table-border: #000000;
+
+        /* Per griglia Altair (soft) in dark */
+        --grid-opacity: 0.10;
       }
     }
 
@@ -227,6 +237,7 @@ st.markdown(
 
     /* ---------------------------
        BARPLOT CONTAINER GREY BACKGROUND
+       + IMPORTANT: set color so Altair "currentColor" works
     ---------------------------- */
     .plot-card{
         background: var(--plot-card-bg);
@@ -235,6 +246,19 @@ st.markdown(
         padding: 14px 14px 6px 14px;
         margin-top: 6px;
         margin-bottom: 10px;
+
+        /* This is key: Altair labels using currentColor will follow this */
+        color: var(--text) !important;
+    }
+
+    /* ---------------------------
+       REMOVE THE BAR ABOVE CHARTS (Streamlit element toolbar)
+       This is the "barra" with icons (table/expand/...) shown in your screenshot
+    ---------------------------- */
+    div[data-testid="stElementToolbar"]{
+        display: none !important;
+        height: 0 !important;
+        visibility: hidden !important;
     }
 
     </style>
@@ -962,11 +986,6 @@ html_table = styled_df.hide(axis="index").to_html(escape=False)
 
 # -----------------------------------------------------------
 # CSS — TABLE + LEGEND
-# FIX:
-# - table uses full available width, but never compresses columns
-# - columns are wider
-# - headers can wrap (no "...") and table scrolls horizontally
-# - vertical behavior unchanged
 # -----------------------------------------------------------
 custom_css = r"""
 <style>
@@ -982,7 +1001,6 @@ custom_css = r"""
   -webkit-overflow-scrolling: touch;
 }
 
-/* Make table take space, but keep intrinsic width for horizontal scroll */
 .table-inner{
   display: block !important;
   width: 100% !important;
@@ -991,11 +1009,7 @@ custom_css = r"""
 .table-inner table{
   border-collapse: separate !important;
   border-spacing: 0 !important;
-
-  /* IMPORTANT: do not shrink */
   table-layout: fixed !important;
-
-  /* Let it be as wide as it needs; container will scroll */
   width: max-content !important;
   min-width: 100% !important;
 }
@@ -1010,7 +1024,6 @@ custom_css = r"""
   padding: 10px 10px !important;
   font-size: 20px !important;
 
-  /* Wider columns (no compression) */
   width: 206px !important;
   min-width: 206px !important;
   max-width: 206px !important;
@@ -1024,7 +1037,6 @@ custom_css = r"""
   vertical-align: middle !important;
 }
 
-/* Headers: allow wrapping, no ellipsis */
 .table-inner th{
   position: sticky;
   top: 0;
@@ -1038,7 +1050,6 @@ custom_css = r"""
   text-overflow: clip !important;
 }
 
-/* First column (miRNA): wider + sticky */
 .table-inner th:first-child{
   position: sticky !important;
   left: 0;
@@ -1068,7 +1079,6 @@ custom_css = r"""
   background-clip: padding-box;
 }
 
-/* legend */
 .legend-wrap{
   display: flex;
   flex-wrap: wrap;
@@ -1116,26 +1126,6 @@ custom_css = r"""
 }
 </style>
 """
-
-@st.cache_data
-def browser_prefers_dark() -> bool:
-    # Returns True if the browser/OS prefers dark mode
-    js = """
-    <script>
-      const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      // Streamlit component API
-      const send = () => {
-        if (window.Streamlit && window.Streamlit.setComponentValue) {
-          window.Streamlit.setComponentValue(isDark);
-        }
-      };
-      send();
-    </script>
-    """
-    val = components.html(js, height=0)
-    # components.html can return None briefly on first run; fallback to False
-    return bool(val)
-
 
 # -----------------------------------------------------------
 # SHOW TABLE
@@ -1242,7 +1232,7 @@ btn_col, _ = st.columns([2, 8])
 with btn_col:
     st.download_button(
         "Download table (TSV)",
-        data=tsv_export_df.to_csv(index=False, sep="\t"),
+        data=tsv_export_df.to_csv(index=False, sep="\\t"),
         file_name="mirna_filtered_table.tsv",
         mime="text/tab-separated-values",
         key="dl_tsv",
@@ -1259,16 +1249,10 @@ with btn_col:
     )
 
 # -----------------------------------------------------------
-# BARPLOT (Repeat distribution)
+# BARPLOT (Repeat distribution) — THEME-AWARE
 # -----------------------------------------------------------
 ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
-
-is_dark = browser_prefers_dark()
-
-AXIS_TEXT = "white" if is_dark else "black"
-GRID_COL  = "rgba(255,255,255,0.12)" if is_dark else "rgba(0,0,0,0.12)"
-TITLE_COL = AXIS_TEXT
 
 st.subheader("Repeat class distribution")
 st.markdown("<div class='plot-card'>", unsafe_allow_html=True)
@@ -1279,7 +1263,12 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
 
     barplot = (
         alt.Chart(repeat_counts)
-        .mark_bar(stroke="white", strokeWidth=1.5)
+        .mark_bar(
+            # stroke e testi "auto" col tema grazie a currentColor (eredita da .plot-card { color: var(--text) })
+            stroke="currentColor",
+            strokeOpacity=0.55,
+            strokeWidth=1.2
+        )
         .encode(
             x=alt.X(
                 "Repeat_Class:N",
@@ -1288,9 +1277,7 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                 axis=alt.Axis(
                     labelAngle=45,
                     labelFontSize=14.5,
-                    titleFontSize=16,
-                    labelColor=AXIS_TEXT,
-                    titleColor=AXIS_TEXT
+                    titleFontSize=16
                 )
             ),
             y=alt.Y(
@@ -1298,9 +1285,7 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                 title="Count",
                 axis=alt.Axis(
                     labelFontSize=14,
-                    titleFontSize=16,
-                    labelColor=AXIS_TEXT,
-                    titleColor=AXIS_TEXT
+                    titleFontSize=16
                 )
             ),
             color=alt.Color(
@@ -1310,13 +1295,23 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
             ),
             tooltip=["Repeat_Class", "Count", "Percent"]
         )
-        # niente width fissa -> niente barra sopra
         .properties(height=600)
-        # sfondo trasparente -> si adatta allo sfondo del browser/OS
-        .configure_view(fill="transparent", strokeOpacity=0)
+        # sfondo trasparente, si integra col tuo CSS
         .configure(background="transparent")
-        .configure_axis(gridColor=GRID_COL)
-        .configure_title(color=TITLE_COL)
+        .configure_view(fill="transparent", strokeOpacity=0)
+        # assi/titoli in currentColor + griglia "soft" via opacità
+        .configure_axis(
+            labelColor="currentColor",
+            titleColor="currentColor",
+            grid=True,
+            gridColor="currentColor",
+            gridOpacity=0.12,  # base; in dark ti risulta comunque soft perché currentColor è chiaro
+            domainColor="currentColor",
+            domainOpacity=0.55,
+            tickColor="currentColor",
+            tickOpacity=0.55
+        )
+        .configure_title(color="currentColor")
     )
 
     st.altair_chart(barplot, use_container_width=True)
@@ -1330,4 +1325,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
