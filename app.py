@@ -449,7 +449,7 @@ if show_adv:
     with st.sidebar.expander("Filter extra columns", expanded=True):
 
         # ===== Conservation (by species)
-        st.markdown("**Conservation (by species)**")
+        st.markdown("**Conservation**")
         species_options = list(animal_sidebar_names.values())
 
         species_found_sidebar = st.multiselect(
@@ -461,7 +461,7 @@ if show_adv:
 
         if species_found_sidebar:
             stable_unstable = st.multiselect(
-                "Stable / Unstable:",
+                "Stable / Unstable structure:",
                 ["Stable", "Unstable"],
                 default=[],
                 key="cons_stability",
@@ -1177,3 +1177,4 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
