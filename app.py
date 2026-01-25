@@ -80,19 +80,24 @@ st.markdown(
        (so system expanders stay clean)
     */
     section[data-testid="stSidebar"] [data-testid="stExpander"]{
-        background: #050505 !important;
+        background: #2b2b2b !important;
         border: 1px solid rgba(255,255,255,0.18) !important;
     }
+    /* pill dietro SOLO al titolo dell'expander */
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
-        background: transparent !important;
-        padding: 0 !important;
-        border-radius: 0 !important;
-        width: auto !important;
-        color: #fff !important;
-        display: flex !important;
+        display: inline-flex !important;
         align-items: center !important;
+        background: #2b2b2b !important;  /* grigio scuro */
+        padding: 6px 10px !important;
+        border-radius: 10px !important;
+        width: fit-content !important;
+        color: #fff !important;
     }
-
+    /* evita che i figli ereditino il background */
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary *{
+        background: transparent !important;
+    }
+    
     /* subtle separators */
     .subtle-hr{
         border: 0;
@@ -1237,3 +1242,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
