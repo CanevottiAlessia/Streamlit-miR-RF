@@ -948,9 +948,9 @@ custom_css = r"""
   font-size: 20px !important;
 
   /* Wider columns (no compression) */
-  width: 220px !important;
-  min-width: 220px !important;
-  max-width: 220px !important;
+  width: 210px !important;
+  min-width: 210px !important;
+  max-width: 210px !important;
 
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -1228,6 +1228,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
