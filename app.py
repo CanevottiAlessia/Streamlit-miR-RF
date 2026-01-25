@@ -309,19 +309,15 @@ SYSTEM_TISSUES = {
         "keratinocyte", "melanocyte", "foreskin",
     ],
     "6. Urogenital & Reproductive system": [
-        "kidney", "bladder", "urine",
-        "uterus", "cervix", "ovary", "testis", "prostate",
-        "vaginal_tissue",
-        "placenta", "chorionic_villi", "umbilical_cord",
-        "embryo",
-        "oocyte", "sperm", "semen",
-        "follicular_fluid", "amniotic_fluid", "theca",
+        "kidney", "bladder", "urine", "testis", "prostate",
+        "uterus", "cervix", "ovary", "vaginal_tissue", "oocyte",        
+        "embryo", "placenta", "chorionic_villi", "umbilical_cord",
+        "follicular_fluid", "amniotic_fluid", "theca", "glandular_breast_tissue", "sperm", "semen",
     ],
     "Other system": [
         "adipose", "epithelium", "podocyte", "milk",
         "mesenchymal_stromal_cells", "mesenchymal_stem_cells",
-        "nucleus_pulposus", "glandular_breast_tissue",
-        "lavage", "aqueous_humor",
+        "nucleus_pulposus","lavage", "aqueous_humor",
     ],
 }
 
@@ -1227,3 +1223,4 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
