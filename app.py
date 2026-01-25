@@ -1240,6 +1240,9 @@ with btn_col:
 # -----------------------------------------------------------
 # BARPLOT (Repeat distribution)
 # -----------------------------------------------------------
+# -----------------------------------------------------------
+# BARPLOT (Repeat distribution)
+# -----------------------------------------------------------
 ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
 
@@ -1258,12 +1261,23 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                 "Repeat_Class:N",
                 sort=repeat_order,
                 title="Repeat class",
-                axis=alt.Axis(labelAngle=45, labelFontSize=14.5, titleFontSize=16, labelColor="white", titleColor="white")
+                axis=alt.Axis(
+                    labelAngle=45,
+                    labelFontSize=14.5,
+                    titleFontSize=16,
+                    labelColor="white",
+                    titleColor="white"
+                )
             ),
             y=alt.Y(
                 "Count:Q",
                 title="Count",
-                axis=alt.Axis(labelFontSize=14, titleFontSize=16, labelColor="white", titleColor="white")
+                axis=alt.Axis(
+                    labelFontSize=14,
+                    titleFontSize=16,
+                    labelColor="white",
+                    titleColor="white"
+                )
             ),
             color=alt.Color(
                 "Repeat_Class:N",
@@ -1272,9 +1286,11 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
             ),
             tooltip=["Repeat_Class", "Count", "Percent"]
         )
-        .properties(height=600, width=700)
-        .configure_view(fill="#2b2b2b", strokeOpacity=0)
-        .configure(background="#2b2b2b")
+        # ✅ niente width fissa: evita overflow/scrollbar
+        .properties(height=600)
+        # ✅ sfondo trasparente: si adatta al tema/sfondo del browser
+        .configure_view(fill="transparent", strokeOpacity=0)
+        .configure(background="transparent")
         .configure_axis(gridColor="rgba(255,255,255,0.12)")
         .configure_title(color="white")
     )
@@ -1290,3 +1306,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
