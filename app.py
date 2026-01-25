@@ -461,8 +461,8 @@ if show_adv:
 
         if species_found_sidebar:
             stable_unstable = st.multiselect(
-                "Stable / Unstable structure:",
-                ["Stable", "Unstable"],
+                "Structure:",
+                ["Stable (R/D)", "Unstable (S/I)"],
                 default=[],
                 key="cons_stability",
             )
@@ -1177,4 +1177,5 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
