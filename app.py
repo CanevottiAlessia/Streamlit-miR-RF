@@ -391,7 +391,7 @@ df["MirGeneDB_family_display"] = df.apply(
 # TITLE
 # -----------------------------------------------------------
 st.title("pre-miRNA Annotation Browser")
-st.markdown("Explore pre-miRNA annotations, conservation, repeat classification, family membership and optional tissue/animal columns.")
+st.markdown("Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, repeat classification and family context.")
 
 # -----------------------------------------------------------
 # SIDEBAR: FILTERS (always visible)
@@ -1021,18 +1021,19 @@ section[data-testid="stSidebar"] .stMarkdown p{
   gap: 14px 22px;
   align-items: flex-start;
   margin-top: 10px;
+  margin-bottom: 18px; # spazio sotto la legenda
 }
 
 .legend-card{
   flex: 1 1 260px;
   min-width: 260px;
-  font-size: 14px;
+  font-size: 18px;   # prima 14
   font-weight: 400;
   line-height: 1.45;
 }
 
 .legend-title{
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 400;
   margin-bottom: 6px;
 }
@@ -1051,8 +1052,8 @@ section[data-testid="stSidebar"] .stMarkdown p{
 }
 
 .swatch{
-  width: 16px;
-  height: 16px;
+  width: 18px; # prima 16
+  height: 18px; # prima 16
   display: inline-block;
   vertical-align: middle;
   border: 1px solid rgba(0,0,0,0.25);
@@ -1223,5 +1224,6 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
