@@ -929,7 +929,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
 .table-inner td{
   border: 1px solid black !important;
   border-radius: 8px !important;
-  padding: 4px !important;
+  padding: 7px 4px !important;
 
   width: 160px !important;
   min-width: 160px !important;
@@ -940,12 +940,13 @@ section[data-testid="stSidebar"] .stMarkdown p{
   text-overflow: ellipsis !important;
 
   text-align: center !important;
-  font-size: 16px !important;
+  font-size: 18px !important;
   font-weight: 700 !important;
   color: black !important;
 
   /* ✅ niente compressione righe */
-  line-height: normal !important;     /* o 1.25 se vuoi più aria */
+  line-height: 1.25 !important;
+  min-height: 38px !important;
   height: auto !important;            /* <-- rimuove lo schiacciamento */
 }
 
@@ -956,7 +957,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
   z-index: 10;
   background-color: #222 !important;
   color: white !important;
-  font-size: 18px !important;
+  font-size: 20px !important;  /* prima 18  /*
   font-weight: 800 !important;
 }
 
@@ -1208,6 +1209,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
