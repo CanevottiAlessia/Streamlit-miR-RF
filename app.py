@@ -11,8 +11,7 @@ st.set_page_config(layout="wide")
 
 # -----------------------------------------------------------
 # GLOBAL THEME: BLACK BACKGROUND + SIDEBAR IMPROVEMENTS
-# + GREY PANELS/BUTTONS (download buttons, selected expanders, barplot container)
-# + TABLE SCROLL HEIGHT tuned for ~20 rows
+# + GREY PANELS/BUTTONS (download buttons, sidebar expanders, barplot container)
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -61,7 +60,7 @@ st.markdown(
         text-shadow: none !important;
     }
 
-    /* expander as cards (global, but especially sidebar) */
+    /* expander as cards (global) */
     [data-testid="stExpander"]{
         background: #050505 !important;
         border: 1px solid rgba(255,255,255,0.16) !important;
@@ -136,7 +135,7 @@ st.markdown(
     }
 
     /* ---------------------------
-       NEW: GREY BACKGROUND FOR DOWNLOAD BUTTONS
+       GREY BACKGROUND FOR DOWNLOAD BUTTONS
     ---------------------------- */
     [data-testid="stDownloadButton"] button{
         background: #2b2b2b !important;
@@ -151,7 +150,7 @@ st.markdown(
     }
 
     /* ---------------------------
-       NEW: BARPLOT CONTAINER GREY BACKGROUND
+       BARPLOT CONTAINER GREY BACKGROUND
     ---------------------------- */
     .plot-card{
         background: #2b2b2b;
@@ -434,7 +433,6 @@ st.sidebar.header("Filters")
 search_term = st.sidebar.text_input("Search any column:", key="search_any")
 
 pass_options = ["PASSED", "NOT PASSED"]
-
 conservation_selected = st.sidebar.multiselect("Conservation:", pass_options, default=[], key="ms_conservation")
 expression_selected   = st.sidebar.multiselect("Expression:",   pass_options, default=[], key="ms_expression")
 structure_selected    = st.sidebar.multiselect("Structure:",    pass_options, default=[], key="ms_structure")
@@ -535,7 +533,6 @@ if show_adv:
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
         st.markdown("<div class='sidebar-section-title'>Database / Class</div>", unsafe_allow_html=True)
-
         mirgene_filter = st.selectbox("Database:", ["Show all", "In both", "Only in miRBase"], key="db_filter")
 
         classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
@@ -636,9 +633,7 @@ if tissues_filter:
     filtered = filtered[expressed_mask]
 
 if search_term:
-    mask = filtered.astype(str).apply(
-        lambda col: col.str.contains(search_term, case=False, na=False)
-    ).any(axis=1)
+    mask = filtered.astype(str).apply(lambda col: col.str.contains(search_term, case=False, na=False)).any(axis=1)
     filtered = filtered[mask]
 
 # -----------------------------------------------------------
@@ -880,12 +875,9 @@ html_table = styled_df.hide(axis="index").to_html(escape=False)
 
 # -----------------------------------------------------------
 # CSS — TABLE + LEGEND + SIDEBAR NORMALIZATION
-# NEW: table-container height set for ~20 rows
+# - Scroll height fixed (max-height: 800px as requested)
+# - Bigger text + taller cells
 # -----------------------------------------------------------
-# Approx sizing:
-# - header sticky height ~ (th padding+font) ~ 38-44px
-# - row height ~ 28-32px (depends)
-# 20 rows => ~ 20*30 = 600px + header ~ 50px => ~650px
 custom_css = r"""
 <style>
 section[data-testid="stSidebar"] label{
@@ -898,7 +890,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
 }
 
 .table-container{
-  max-height: 650px;              /* ~20 rows (approx) */
+  max-height: 800px;              /* <-- as requested */
   overflow-y: auto !important;
   overflow-x: auto !important;
   border: 2px solid black;
@@ -928,7 +920,12 @@ section[data-testid="stSidebar"] .stMarkdown p{
 .table-inner td{
   border: 1px solid black !important;
   border-radius: 8px !important;
-  padding: 4px !important;
+
+  /* ✅ your requested sizing */
+  line-height: 1.25 !important;
+  min-height: 38px !important;
+  padding: 7px 4px !important;
+  font-size: 20px !important;
 
   width: 160px !important;
   min-width: 160px !important;
@@ -939,12 +936,9 @@ section[data-testid="stSidebar"] .stMarkdown p{
   text-overflow: ellipsis !important;
 
   text-align: center !important;
-  font-size: 16px !important;
   font-weight: 700 !important;
   color: black !important;
-
-  line-height: 1.1 !important;    /* aiuta a stabilizzare altezza riga */
-  height: 30px !important;        /* riga ~30px => 20 righe ~600px */
+  vertical-align: middle !important;
 }
 
 .table-inner th{
@@ -953,7 +947,6 @@ section[data-testid="stSidebar"] .stMarkdown p{
   z-index: 10;
   background-color: #222 !important;
   color: white !important;
-  font-size: 18px !important;
   font-weight: 800 !important;
 }
 
@@ -978,7 +971,6 @@ section[data-testid="stSidebar"] .stMarkdown p{
   max-width: 200px !important;
   background-color: #333 !important;
   color: white !important;
-  font-size: 15px !important;
   font-weight: 800 !important;
   background-clip: padding-box;
 }
@@ -1129,7 +1121,6 @@ st.markdown(f"<div class='legend-wrap'>{''.join(legend_cards)}</div>", unsafe_al
 
 # -----------------------------------------------------------
 # DOWNLOAD BUTTONS (TSV + FASTA) — left + stacked
-# (buttons styled grey by CSS above)
 # -----------------------------------------------------------
 st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
@@ -1137,7 +1128,7 @@ btn_col, _ = st.columns([2, 8])
 with btn_col:
     st.download_button(
         "Download table (TSV)",
-        data=tsv_export_df.to_csv(index=False, sep="\t"),
+        data=tsv_export_df.to_csv(index=False, sep="\\t"),
         file_name="mirna_filtered_table.tsv",
         mime="text/tab-separated-values",
         key="dl_tsv",
