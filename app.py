@@ -174,21 +174,6 @@ st.markdown(
         margin-bottom: 10px;
     }
 
-    /* ---------------------------
-       NEW: section "pill" ONLY for the two advanced headers
-    ---------------------------- */
-    .adv-pill{
-        display: inline-block;
-        background: #2b2b2b;
-        border: 1px solid rgba(255,255,255,0.18);
-        padding: 8px 12px;
-        border-radius: 12px;
-        font-weight: 800;
-        font-size: 18px;
-        margin: 6px 0 10px 0;
-        width: fit-content;
-    }
-
     </style>
     """,
     unsafe_allow_html=True
@@ -494,6 +479,7 @@ show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
 
 if show_adv:
     # --- SECTION 1: "Show extra columns" (pill only here) ---
+    with st.sidebar.expander("Show extra columns", expanded=True):
     st.sidebar.markdown("<div class='adv-pill'>Show extra columns</div>", unsafe_allow_html=True)
 
     animals_to_show_sidebar = st.sidebar.multiselect(
@@ -516,6 +502,7 @@ if show_adv:
     st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
     # --- SECTION 2: "Filter extra columns" (pill only here) ---
+    with st.sidebar.expander("Filter extra columns", expanded=True):
     st.sidebar.markdown("<div class='adv-pill'>Filter extra columns</div>", unsafe_allow_html=True)
 
     st.sidebar.markdown("<div class='sidebar-section-title'>Conservation</div>", unsafe_allow_html=True)
@@ -1242,4 +1229,5 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
