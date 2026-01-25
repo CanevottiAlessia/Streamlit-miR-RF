@@ -478,90 +478,88 @@ st.sidebar.markdown("---")
 show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
 
 if show_adv:
-    # --- SECTION 1: "Show extra columns" (pill only here) ---
+    # --- SECTION 1: Show extra columns ---
     with st.sidebar.expander("Show extra columns", expanded=True):
-    st.sidebar.markdown("<div class='adv-pill'>Show extra columns</div>", unsafe_allow_html=True)
 
-    animals_to_show_sidebar = st.sidebar.multiselect(
-        "Show species columns:",
-        list(animal_sidebar_names.values()),
-        default=[],
-        key="show_species_cols",
-    )
-    animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
-
-    tissues_to_show = st.sidebar.multiselect(
-        "Show tissue columns:",
-        tissue_sidebar_names,
-        default=[],
-        key="show_tissue_cols",
-    )
-
-    show_class_cols = st.sidebar.checkbox("Show Class columns", value=False, key="show_class_cols")
-
-    st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-
-    # --- SECTION 2: "Filter extra columns" (pill only here) ---
-    with st.sidebar.expander("Filter extra columns", expanded=True):
-    st.sidebar.markdown("<div class='adv-pill'>Filter extra columns</div>", unsafe_allow_html=True)
-
-    st.sidebar.markdown("<div class='sidebar-section-title'>Conservation</div>", unsafe_allow_html=True)
-    species_options = list(animal_sidebar_names.values())
-
-    species_found_sidebar = st.sidebar.multiselect("Found in:", species_options, default=[], key="cons_species_found")
-
-    if species_found_sidebar:
-        stable_unstable = st.sidebar.multiselect(
-            "Structure:",
-            ["Stable (R/D)", "Unstable (S/I)"],
+        animals_to_show_sidebar = st.multiselect(
+            "Show species columns:",
+            list(animal_sidebar_names.values()),
             default=[],
-            key="cons_stability",
+            key="show_species_cols",
         )
-    else:
-        stable_unstable = []
+        animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
 
-    species_na_sidebar = st.sidebar.multiselect("Not found in:", species_options, default=[], key="cons_species_na")
+        tissues_to_show = st.multiselect(
+            "Show tissue columns:",
+            tissue_sidebar_names,
+            default=[],
+            key="show_tissue_cols",
+        )
 
-    st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-
-    st.sidebar.markdown(
-        "<div class='sidebar-section-title'>Expressed in (select tissues by system):</div>",
-        unsafe_allow_html=True
-    )
-    tissues_filter_set = set()
-
-    for system_name, sys_tissues in SYSTEM_TISSUES.items():
-        available = [t for t in sys_tissues if t in tissue_sidebar_names]
-        if not available:
-            continue
-
-        icon = SYSTEM_ICONS.get(system_name)
-        col_icon, col_exp = st.sidebar.columns([1.6, 10], gap="small")
-
-        with col_icon:
-            if icon is not None:
-                st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                st.image(icon, width=96)
-                st.markdown("</div>", unsafe_allow_html=True)
-            else:
-                st.write("")
-
-        with col_exp:
-            display_system = system_name.split(". ", 1)[-1].replace(" system", "")
-            # system expanders: NO pill background now
-            with st.expander(display_system, expanded=False):
-                picked = st.multiselect("Select tissues", available, key=f"tree_{system_name}")
-                tissues_filter_set.update(picked)
-
-    tissues_filter = sorted(tissues_filter_set)
+        show_class_cols = st.checkbox("Show Class columns", value=False, key="show_class_cols")
 
     st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
-    st.sidebar.markdown("<div class='sidebar-section-title'>Database / Class</div>", unsafe_allow_html=True)
-    mirgene_filter = st.sidebar.selectbox("Database:", ["Show all", "In both", "Only in miRBase"], key="db_filter")
+    # --- SECTION 2: Filter extra columns ---
+    with st.sidebar.expander("Filter extra columns", expanded=True):
 
-    classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
-    classes_selected = st.sidebar.multiselect("Class:", classes, default=[], key="class_filter")
+        st.markdown("<div class='sidebar-section-title'>Conservation</div>", unsafe_allow_html=True)
+        species_options = list(animal_sidebar_names.values())
+
+        species_found_sidebar = st.multiselect("Found in:", species_options, default=[], key="cons_species_found")
+
+        if species_found_sidebar:
+            stable_unstable = st.multiselect(
+                "Structure:",
+                ["Stable (R/D)", "Unstable (S/I)"],
+                default=[],
+                key="cons_stability",
+            )
+        else:
+            stable_unstable = []
+
+        species_na_sidebar = st.multiselect("Not found in:", species_options, default=[], key="cons_species_na")
+
+        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+
+        st.markdown(
+            "<div class='sidebar-section-title'>Expressed in (select tissues by system):</div>",
+            unsafe_allow_html=True
+        )
+        tissues_filter_set = set()
+
+        for system_name, sys_tissues in SYSTEM_TISSUES.items():
+            available = [t for t in sys_tissues if t in tissue_sidebar_names]
+            if not available:
+                continue
+
+            icon = SYSTEM_ICONS.get(system_name)
+            col_icon, col_exp = st.columns([1.6, 10], gap="small")
+
+            with col_icon:
+                if icon is not None:
+                    st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                    st.image(icon, width=96)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                else:
+                    st.write("")
+
+            with col_exp:
+                display_system = system_name.split(". ", 1)[-1].replace(" system", "")
+                with st.expander(display_system, expanded=False):
+                    picked = st.multiselect("Select tissues", available, key=f"tree_{system_name}")
+                    tissues_filter_set.update(picked)
+
+        tissues_filter = sorted(tissues_filter_set)
+
+        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+
+        st.markdown("<div class='sidebar-section-title'>Database / Class</div>", unsafe_allow_html=True)
+        mirgene_filter = st.selectbox("Database:", ["Show all", "In both", "Only in miRBase"], key="db_filter")
+
+        classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
+        classes_selected = st.multiselect("Class:", classes, default=[], key="class_filter")
+
 else:
     animals_to_show = []
     tissues_to_show = []
@@ -572,6 +570,7 @@ else:
     species_na_sidebar = []
     species_found_sidebar = []
     stable_unstable = []
+
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -1229,5 +1228,6 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
