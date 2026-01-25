@@ -13,6 +13,8 @@ st.set_page_config(layout="wide")
 # GLOBAL THEME: BLACK BACKGROUND + SIDEBAR IMPROVEMENTS
 # - Fix "halo" under labels by removing generic div styling
 # - Make expanders look like real cards
+# - Sidebar typography hierarchy (Filters/Advanced bigger, etc.)
+# - Bigger system icons
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -71,12 +73,6 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* expander header text */
-    section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
-        font-size: 16px !important;
-        font-weight: 650 !important;
-    }
-
     /* subtle separators */
     .subtle-hr{
         border: 0;
@@ -86,6 +82,51 @@ st.markdown(
 
     /* links */
     a { color: #7cc7ff !important; }
+
+    /* ---------------------------
+       SIDEBAR TYPOGRAPHY SIZES
+    ---------------------------- */
+
+    /* 1) "Filters" (st.sidebar.header uses h2) */
+    section[data-testid="stSidebar"] h2{
+      font-size: 22px !important;
+      font-weight: 800 !important;
+      margin-top: 8px !important;
+      margin-bottom: 10px !important;
+    }
+
+    /* 2) "Advanced options" toggle label */
+    section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
+      font-size: 22px !important;
+      font-weight: 800 !important;
+    }
+
+    /* 3) Titles of expanders: "Show extra columns" / "Filter extra columns" */
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
+      font-size: 18px !important;
+      font-weight: 750 !important;
+    }
+
+    /* 4) Section titles inside expander */
+    .sidebar-section-title{
+      font-size: 16px;
+      font-weight: 700;
+      margin: 8px 0 6px 0;
+    }
+
+    /* 5) Option labels (Found in:, etc.) */
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] .stMarkdown p{
+      font-size: 14px !important;
+    }
+
+    /* ---------------------------
+       ICON SIZE
+    ---------------------------- */
+    .sidebar-icon img{
+      width: 96px !important;
+      height: auto !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -449,7 +490,7 @@ if show_adv:
     with st.sidebar.expander("Filter extra columns", expanded=True):
 
         # ===== Conservation (by species)
-        st.markdown("**Conservation**")
+        st.markdown("<div class='sidebar-section-title'>Conservation</div>", unsafe_allow_html=True)
         species_options = list(animal_sidebar_names.values())
 
         species_found_sidebar = st.multiselect(
@@ -479,7 +520,10 @@ if show_adv:
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
         # ===== Tissues
-        st.markdown("**Expressed in (select tissues by system)**")
+        st.markdown(
+            "<div class='sidebar-section-title'>Expressed in (select tissues by system)</div>",
+            unsafe_allow_html=True
+        )
         tissues_filter_set = set()
 
         for system_name, sys_tissues in SYSTEM_TISSUES.items():
@@ -488,16 +532,21 @@ if show_adv:
                 continue
 
             icon = SYSTEM_ICONS.get(system_name)
-            col_icon, col_exp = st.columns([1, 10], gap="small")
+
+            # Slightly larger icon column for bigger images
+            col_icon, col_exp = st.columns([1.6, 10], gap="small")
             with col_icon:
                 if icon is not None:
-                    st.image(icon, width=80)
+                    st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                    st.image(icon, width=96)
+                    st.markdown("</div>", unsafe_allow_html=True)
                 else:
                     st.write("")
+
             with col_exp:
-                # label per UI: rimuove prefisso "1. " e la parola "system"
-                display_system = system_name.split(". ", 1)[-1]          # toglie "1. "
-                display_system = display_system.replace(" system", "")   # toglie " system"
+                # label per UI: remove "1. " prefix and the word "system"
+                display_system = system_name.split(". ", 1)[-1]
+                display_system = display_system.replace(" system", "")
                 with st.expander(display_system, expanded=False):
                     picked = st.multiselect(
                         "Select tissues",
@@ -511,7 +560,7 @@ if show_adv:
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
         # ===== Database / Class
-        st.markdown("**Database / Class**")
+        st.markdown("<div class='sidebar-section-title'>Database / Class</div>", unsafe_allow_html=True)
 
         mirgene_filter = st.selectbox(
             "Database:",
@@ -651,7 +700,6 @@ def generate_fasta(df_):
 # -----------------------------------------------------------
 df_display = filtered.copy()
 
-# Use helper columns that exist on df (they are carried into filtered via copy)
 df_display["Conservation"] = df_display["Conservation_display"]
 df_display["Expression"] = df_display["Expression_display"]
 df_display["Structure"] = df_display["Structure_display"]
@@ -1073,7 +1121,6 @@ legend_cards.append(f"""
 </div>
 """)
 
-# Show species legend if species columns are visible OR if user is filtering by species
 species_filter_active = bool(species_found_cols or species_na_cols)
 if visible_species_cols or species_filter_active:
     legend_cards.append(f"""
@@ -1180,6 +1227,3 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
-
