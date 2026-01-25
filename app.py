@@ -517,7 +517,7 @@ if show_adv:
 
         # ===== Tissues
         st.markdown(
-            "<div class='sidebar-section-title'>Expressed in (select tissues by system)</div>",
+            "<div class='sidebar-section-title'>Expressed in (select tissues by system):</div>",
             unsafe_allow_html=True
         )
         tissues_filter_set = set()
@@ -1223,4 +1223,5 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
