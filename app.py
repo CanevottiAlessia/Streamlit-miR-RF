@@ -899,7 +899,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
 
 /* ✅ più ALTA: per vedere ~20 righe senza schiacciarle */
 .table-container{
-  max-height: 980px;              /* aumenta altezza visibile (prova 900-1100) */
+  max-height: 800px;              /* aumenta altezza visibile (prova 900-1100) */
   overflow-y: auto !important;
   overflow-x: auto !important;
   border: 2px solid black;
@@ -1208,4 +1208,5 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
