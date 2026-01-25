@@ -897,9 +897,8 @@ section[data-testid="stSidebar"] .stMarkdown p{
   font-size: 14px !important;
 }
 
-/* ✅ più ALTA: per vedere ~20 righe senza schiacciarle */
 .table-container{
-  max-height: 807px;              /* aumenta altezza visibile (prova 900-1100) */
+  max-height: 650px;              /* ~20 rows (approx) */
   overflow-y: auto !important;
   overflow-x: auto !important;
   border: 2px solid black;
@@ -929,7 +928,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
 .table-inner td{
   border: 1px solid black !important;
   border-radius: 8px !important;
-  padding: 7px 4px !important;
+  padding: 4px !important;
 
   width: 160px !important;
   min-width: 160px !important;
@@ -940,28 +939,24 @@ section[data-testid="stSidebar"] .stMarkdown p{
   text-overflow: ellipsis !important;
 
   text-align: center !important;
-  font-size: 18px !important;
+  font-size: 16px !important;
   font-weight: 700 !important;
   color: black !important;
 
-  /* ✅ niente compressione righe */
-  line-height: 1.25 !important;
-  min-height: 38px !important;
-  height: auto !important;            /* <-- rimuove lo schiacciamento */
+  line-height: 1.1 !important;    /* aiuta a stabilizzare altezza riga */
+  height: 30px !important;        /* riga ~30px => 20 righe ~600px */
 }
 
-/* header */
 .table-inner th{
   position: sticky;
   top: 0;
   z-index: 10;
   background-color: #222 !important;
   color: white !important;
-  font-size: 20px !important;  /* prima 18  /*
+  font-size: 18px !important;
   font-weight: 800 !important;
 }
 
-/* sticky first column header */
 .table-inner th:first-child{
   position: sticky !important;
   left: 0;
@@ -974,7 +969,6 @@ section[data-testid="stSidebar"] .stMarkdown p{
   background-clip: padding-box;
 }
 
-/* sticky first column cells */
 .table-inner td:first-child{
   position: sticky !important;
   left: 0;
@@ -989,7 +983,6 @@ section[data-testid="stSidebar"] .stMarkdown p{
   background-clip: padding-box;
 }
 
-/* legend */
 .legend-wrap{
   display: flex;
   flex-wrap: wrap;
@@ -998,6 +991,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
   margin-top: 10px;
   margin-bottom: 18px;
 }
+
 .legend-card{
   flex: 1 1 260px;
   min-width: 260px;
@@ -1005,22 +999,26 @@ section[data-testid="stSidebar"] .stMarkdown p{
   font-weight: 400;
   line-height: 1.45;
 }
+
 .legend-title{
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 8px;
 }
+
 .legend-row{
   display: flex;
   flex-wrap: wrap;
   gap: 10px 14px;
   align-items: center;
 }
+
 .legend-item{
   display: inline-flex;
   align-items: center;
   gap: 10px;
 }
+
 .swatch{
   width: 18px;
   height: 18px;
@@ -1209,8 +1207,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
-
-
-
