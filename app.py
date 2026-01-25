@@ -10,27 +10,48 @@ from PIL import Image
 st.set_page_config(layout="wide")
 
 # -----------------------------------------------------------
-# GLOBAL THEME: BLACK BACKGROUND + SIDEBAR IMPROVEMENTS
-# - Fix "halo" under labels by removing generic div styling
-# - Make expanders look like real cards
-# - Sidebar typography hierarchy (Filters/Advanced bigger, etc.)
-# - Bigger system icons
+# GLOBAL THEME: FORCE DARK (Option A) + UI IMPROVEMENTS
+# - Forces a consistent dark look even if user device/Streamlit switches to light
+# - Sidebar cards + typography hierarchy + bigger system icons
+# - Removes "halo" under labels
 # -----------------------------------------------------------
 st.markdown(
     """
     <style>
-    /* main app background */
+    /* =========================================================
+       OPTION A — FORCE DARK THEME ALWAYS (device/light mode safe)
+       ========================================================= */
     html, body, [data-testid="stAppViewContainer"]{
         background: #000 !important;
         color: #fff !important;
+        color-scheme: dark !important; /* hint browser widgets */
     }
 
     /* header / toolbar */
     [data-testid="stHeader"], [data-testid="stToolbar"]{
         background: #000 !important;
+        color: #fff !important;
     }
 
-    /* sidebar */
+    /* main content containers */
+    [data-testid="stMainBlockContainer"], 
+    [data-testid="stVerticalBlock"],
+    [data-testid="stHorizontalBlock"]{
+        background: transparent !important;
+        color: #fff !important;
+    }
+
+    /* FORCE text across app (prevents light-theme text turning dark-on-dark / light-on-light) */
+    [data-testid="stAppViewContainer"] *{
+        color: #fff !important;
+    }
+
+    /* Links */
+    a { color: #7cc7ff !important; }
+
+    /* =========================================================
+       SIDEBAR
+       ========================================================= */
     section[data-testid="stSidebar"]{
         background: #000 !important;
         color: #fff !important;
@@ -40,30 +61,44 @@ st.markdown(
         color: #fff !important;
     }
 
-    /* inputs background (readable on black) - DO NOT style generic divs (avoids label "halo") */
+    /* Inputs background (readable on black) */
     .stTextInput input, .stNumberInput input{
         background: #111 !important;
         color: #fff !important;
-    }
-
-    /* BaseWeb select controls (selectbox + multiselect) */
-    section[data-testid="stSidebar"] [data-baseweb="select"] > div{
-        background: #111 !important;
-        color: #fff !important;
+        border: 1px solid rgba(255,255,255,0.18) !important;
         box-shadow: none !important;
     }
 
-    /* remove any weird halo/shadow on labels */
-    section[data-testid="stSidebar"] label,
-    section[data-testid="stSidebar"] p,
-    section[data-testid="stSidebar"] .stMarkdown{
+    /* BaseWeb select controls (selectbox + multiselect) */
+    [data-baseweb="select"] > div{
+        background: #111 !important;
+        color: #fff !important;
+        border: 1px solid rgba(255,255,255,0.18) !important;
+        box-shadow: none !important;
+    }
+
+    /* BaseWeb popover / menu */
+    [data-baseweb="popover"] * ,
+    [data-baseweb="menu"] *{
+        color: #fff !important;
+    }
+    [data-baseweb="menu"]{
+        background: #111 !important;
+        border: 1px solid rgba(255,255,255,0.14) !important;
+    }
+    [data-baseweb="menu"] [role="option"]:hover{
+        background: rgba(255,255,255,0.08) !important;
+    }
+
+    /* Remove any weird halo/shadow on labels */
+    label, p, .stMarkdown{
         background: transparent !important;
         box-shadow: none !important;
         filter: none !important;
         text-shadow: none !important;
     }
 
-    /* expander as cards (global, but especially sidebar) */
+    /* Expander as cards */
     [data-testid="stExpander"]{
         background: #050505 !important;
         border: 1px solid rgba(255,255,255,0.16) !important;
@@ -73,21 +108,17 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* subtle separators */
+    /* Subtle separators */
     .subtle-hr{
         border: 0;
         border-top: 1px solid rgba(255,255,255,0.10);
         margin: 10px 0;
     }
 
-    /* links */
-    a { color: #7cc7ff !important; }
-
-    /* ---------------------------
-       SIDEBAR TYPOGRAPHY SIZES
-    ---------------------------- */
-
-    /* 1) "Filters" (st.sidebar.header uses h2) */
+    /* =========================================================
+       SIDEBAR TYPOGRAPHY HIERARCHY
+       ========================================================= */
+    /* 1) "Filters" header (st.sidebar.header uses h2) */
     section[data-testid="stSidebar"] h2{
       font-size: 22px !important;
       font-weight: 800 !important;
@@ -114,18 +145,96 @@ st.markdown(
       margin: 8px 0 6px 0;
     }
 
-    /* 5) Option labels (Found in:, etc.) */
+    /* 5) Option labels */
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown p{
       font-size: 14px !important;
     }
 
-    /* ---------------------------
+    /* =========================================================
+       BUTTONS — FIX LIGHT THEME WHITE/INVISIBLE BUTTONS
+       (download button + regular button + expander buttons etc.)
+       ========================================================= */
+    /* Streamlit buttons are <button> inside [data-testid="stButton"] and [data-testid="stDownloadButton"] */
+    [data-testid="stButton"] button,
+    [data-testid="stDownloadButton"] button{
+        background: #111 !important;
+        color: #fff !important;
+        border: 1px solid rgba(255,255,255,0.22) !important;
+        box-shadow: none !important;
+        border-radius: 10px !important;
+    }
+    [data-testid="stButton"] button:hover,
+    [data-testid="stDownloadButton"] button:hover{
+        background: #1a1a1a !important;
+        border-color: rgba(255,255,255,0.30) !important;
+    }
+    [data-testid="stButton"] button:active,
+    [data-testid="stDownloadButton"] button:active{
+        background: #0b0b0b !important;
+    }
+    [data-testid="stButton"] button:disabled,
+    [data-testid="stDownloadButton"] button:disabled{
+        opacity: 0.55 !important;
+    }
+
+    /* Some themes wrap buttons with BaseWeb */
+    button[kind], button[data-baseweb="button"]{
+        background: #111 !important;
+        color: #fff !important;
+        border: 1px solid rgba(255,255,255,0.22) !important;
+        box-shadow: none !important;
+    }
+
+    /* =========================================================
        ICON SIZE
-    ---------------------------- */
+       ========================================================= */
     .sidebar-icon img{
       width: 96px !important;
       height: auto !important;
+    }
+
+    /* =========================================================
+       LEGEND — larger, circular swatches
+       ========================================================= */
+    .legend-wrap{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px 22px;
+      align-items: flex-start;
+      margin-top: 10px;
+      margin-bottom: 18px; /* spacing under legend */
+    }
+    .legend-card{
+      flex: 1 1 260px;
+      min-width: 260px;
+      font-size: 18px;
+      font-weight: 400;
+      line-height: 1.45;
+    }
+    .legend-title{
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 6px;
+    }
+    .legend-row{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      align-items: center;
+    }
+    .legend-item{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .swatch{
+      width: 18px;
+      height: 18px;
+      border-radius: 999px; /* circle */
+      display: inline-block;
+      vertical-align: middle;
+      border: 1px solid rgba(255,255,255,0.25);
     }
     </style>
     """,
@@ -203,17 +312,14 @@ for c in expected_cols:
     if c not in df.columns:
         df[c] = pd.NA
 
-# Fix Class_MirGeneDB placeholder
 df["Class_MirGeneDB"] = df["Class_MirGeneDB"].fillna("—")
 df["Class_MirGeneDB"] = df["Class_MirGeneDB"].replace(
     ["nan", "NaN", "NA", None, pd.NA, ""], "—"
 )
 
-# Fix family flags
 df["miRBase family"] = df["miRBase family"].fillna("NO")
 df["MirGeneDB family"] = df["MirGeneDB family"].fillna("—")
 
-# Repeat class cleanup
 def shorten_repeat(val):
     if not isinstance(val, str):
         return val
@@ -224,7 +330,6 @@ def shorten_repeat(val):
 df["Repeat_Class"] = df["Repeat_Class"].apply(shorten_repeat)
 df["Repeat_Class"] = df["Repeat_Class"].astype("string").str.replace("_", " ", regex=False)
 
-# Keep TRUE/FALSE text for these columns
 for c in ["Structure", "Conservation", "Expression"]:
     if c in df.columns:
         df[c] = df[c].map(lambda x: "TRUE" if x is True else ("FALSE" if x is False else x))
@@ -310,9 +415,10 @@ SYSTEM_TISSUES = {
     ],
     "6. Urogenital & Reproductive system": [
         "kidney", "bladder", "urine", "testis", "prostate",
-        "uterus", "cervix", "ovary", "vaginal_tissue", "oocyte",        
+        "uterus", "cervix", "ovary", "vaginal_tissue", "oocyte",
         "embryo", "placenta", "chorionic_villi", "umbilical_cord",
-        "follicular_fluid", "amniotic_fluid", "theca", "glandular_breast_tissue", "sperm", "semen",
+        "follicular_fluid", "amniotic_fluid", "theca",
+        "glandular_breast_tissue", "sperm", "semen",
     ],
     "Other system": [
         "adipose", "epithelium", "podocyte", "milk",
@@ -322,7 +428,7 @@ SYSTEM_TISSUES = {
 }
 
 # -----------------------------------------------------------
-# SPECIES MAPPING: True/False/NA robust  (must be BEFORE any species filtering)
+# SPECIES MAPPING: True/False/NA robust
 # -----------------------------------------------------------
 binary_map = {
     "TRUE": True, True: True, 1: True,
@@ -342,7 +448,6 @@ df["_Conservation_tf"] = df["Conservation"].astype("string").str.strip().str.upp
 df["_miRBase_family_flag"] = df["miRBase family"].astype(str).str.upper()
 df["_MirGeneDB_family_flag"] = df["MirGeneDB family"].astype(str).str.upper()
 
-# Display counters
 df["Conservation_display"] = (
     df[animal_cols].apply(lambda r: r.isin([True, False]).sum(), axis=1) if animal_cols else pd.NA
 )
@@ -391,7 +496,10 @@ df["MirGeneDB_family_display"] = df.apply(
 # TITLE
 # -----------------------------------------------------------
 st.title("pre-miRNA Annotation Browser")
-st.markdown("Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, repeat classification and family context.")
+st.markdown(
+    "Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, "
+    "repeat classification and family context."
+)
 
 # -----------------------------------------------------------
 # SIDEBAR: FILTERS (always visible)
@@ -402,26 +510,9 @@ search_term = st.sidebar.text_input("Search any column:", key="search_any")
 
 pass_options = ["PASSED", "NOT PASSED"]
 
-conservation_selected = st.sidebar.multiselect(
-    "Conservation:",
-    pass_options,
-    default=[],
-    key="ms_conservation",
-)
-
-expression_selected = st.sidebar.multiselect(
-    "Expression:",
-    pass_options,
-    default=[],
-    key="ms_expression",
-)
-
-structure_selected = st.sidebar.multiselect(
-    "Structure:",
-    pass_options,
-    default=[],
-    key="ms_structure",
-)
+conservation_selected = st.sidebar.multiselect("Conservation:", pass_options, default=[], key="ms_conservation")
+expression_selected   = st.sidebar.multiselect("Expression:",   pass_options, default=[], key="ms_expression")
+structure_selected    = st.sidebar.multiselect("Structure:",    pass_options, default=[], key="ms_structure")
 
 family_options = [
     "Single miRNAs – miRBase",
@@ -429,20 +520,10 @@ family_options = [
     "miRNAs in family – miRBase",
     "miRNAs in family – MirGeneDB",
 ]
-family_selected = st.sidebar.multiselect(
-    "Family:",
-    family_options,
-    default=[],
-    key="ms_family",
-)
+family_selected = st.sidebar.multiselect("Family:", family_options, default=[], key="ms_family")
 
 hsa_options = ["Only hsa-specific", "Not hsa-specific"]
-hsa_selected = st.sidebar.multiselect(
-    "hsa specificity:",
-    hsa_options,
-    default=[],
-    key="ms_hsa",
-)
+hsa_selected = st.sidebar.multiselect("hsa specificity:", hsa_options, default=[], key="ms_hsa")
 
 repeats_selected = st.sidebar.multiselect(
     "Repeat class:",
@@ -452,16 +533,12 @@ repeats_selected = st.sidebar.multiselect(
 )
 
 # -----------------------------------------------------------
-# SIDEBAR: ADVANCED OPTIONS (switch-like toggle + true wrappers)
+# SIDEBAR: ADVANCED OPTIONS (toggle + wrappers)
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
-
 show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
 
 if show_adv:
-    # ---------------------------
-    # Show extra columns (true wrapper)
-    # ---------------------------
     with st.sidebar.expander("Show extra columns", expanded=True):
         animals_to_show_sidebar = st.multiselect(
             "Show species columns:",
@@ -480,21 +557,11 @@ if show_adv:
 
         show_class_cols = st.checkbox("Show Class columns", value=False, key="show_class_cols")
 
-    # ---------------------------
-    # Filter extra columns (true wrapper)
-    # ---------------------------
     with st.sidebar.expander("Filter extra columns", expanded=True):
-
-        # ===== Conservation (by species)
         st.markdown("<div class='sidebar-section-title'>Conservation</div>", unsafe_allow_html=True)
         species_options = list(animal_sidebar_names.values())
 
-        species_found_sidebar = st.multiselect(
-            "Found in:",
-            species_options,
-            default=[],
-            key="cons_species_found",
-        )
+        species_found_sidebar = st.multiselect("Found in:", species_options, default=[], key="cons_species_found")
 
         if species_found_sidebar:
             stable_unstable = st.multiselect(
@@ -506,16 +573,10 @@ if show_adv:
         else:
             stable_unstable = []
 
-        species_na_sidebar = st.multiselect(
-            "Not found in:",
-            species_options,
-            default=[],
-            key="cons_species_na",
-        )
+        species_na_sidebar = st.multiselect("Not found in:", species_options, default=[], key="cons_species_na")
 
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
-        # ===== Tissues
         st.markdown(
             "<div class='sidebar-section-title'>Expressed in (select tissues by system):</div>",
             unsafe_allow_html=True
@@ -528,9 +589,8 @@ if show_adv:
                 continue
 
             icon = SYSTEM_ICONS.get(system_name)
-
-            # Slightly larger icon column for bigger images
             col_icon, col_exp = st.columns([1.6, 10], gap="small")
+
             with col_icon:
                 if icon is not None:
                     st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
@@ -540,22 +600,15 @@ if show_adv:
                     st.write("")
 
             with col_exp:
-                # label per UI: remove "1. " prefix and the word "system"
-                display_system = system_name.split(". ", 1)[-1]
-                display_system = display_system.replace(" system", "")
+                display_system = system_name.split(". ", 1)[-1].replace(" system", "")
                 with st.expander(display_system, expanded=False):
-                    picked = st.multiselect(
-                        "Select tissues",
-                        available,
-                        key=f"tree_{system_name}",
-                    )
+                    picked = st.multiselect("Select tissues", available, key=f"tree_{system_name}")
                     tissues_filter_set.update(picked)
 
         tissues_filter = sorted(tissues_filter_set)
 
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
-        # ===== Database / Class
         st.markdown("<div class='sidebar-section-title'>Database / Class</div>", unsafe_allow_html=True)
 
         mirgene_filter = st.selectbox(
@@ -568,7 +621,6 @@ if show_adv:
         classes_selected = st.multiselect("Class:", classes, default=[], key="class_filter")
 
 else:
-    # Defaults when advanced options are hidden (avoid crashes)
     animals_to_show = []
     tissues_to_show = []
     show_class_cols = False
@@ -601,17 +653,14 @@ filtered = apply_pass_filter(filtered, conservation_selected, "_Conservation_tf"
 filtered = apply_pass_filter(filtered, expression_selected,   "_Expression_tf")
 filtered = apply_pass_filter(filtered, structure_selected,    "_Structure_tf")
 
-# --- Database filter ---
 if mirgene_filter == "In both":
     filtered = filtered[filtered["Class_miRBase"] == filtered["Class_MirGeneDB"]]
 elif mirgene_filter == "Only in miRBase":
     filtered = filtered[(filtered["Class_miRBase"].notna()) & (filtered["Class_MirGeneDB"] == "—")]
 
-# --- Class filter ---
 if classes_selected and "Class_miRBase" in filtered.columns:
     filtered = filtered[filtered["Class_miRBase"].isin(classes_selected)]
 
-# --- Family (multi) OR across selected categories ---
 if family_selected:
     fam_mask = pd.Series(False, index=filtered.index)
     mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
@@ -621,7 +670,6 @@ if family_selected:
         fam_mask |= (mirbase_flag == "NO")
     if "miRNAs in family – miRBase" in family_selected:
         fam_mask |= (mirbase_flag == "YES")
-
     if "Single miRNAs – MirGeneDB" in family_selected:
         fam_mask |= (mirgenedb_flag == "NO")
     if "miRNAs in family – MirGeneDB" in family_selected:
@@ -629,7 +677,6 @@ if family_selected:
 
     filtered = filtered[fam_mask]
 
-# --- hsa specificity (multi) ---
 if hsa_selected:
     hsa_flag = filtered["hsa-specificity"].astype(str).str.strip().str.upper()
     hsa_mask = pd.Series(False, index=filtered.index)
@@ -639,25 +686,20 @@ if hsa_selected:
         hsa_mask |= (hsa_flag == "NO")
     filtered = filtered[hsa_mask]
 
-# --- Repeat filter ---
 if repeats_selected:
     filtered = filtered[filtered["Repeat_Class"].isin(repeats_selected)]
 
-# --- Conservation species filter (two lists, AND logic) ---
 species_na_cols = [animal_sidebar_rev[x] for x in species_na_sidebar] if species_na_sidebar else []
 species_found_cols = [animal_sidebar_rev[x] for x in species_found_sidebar] if species_found_sidebar else []
 
-# Not found in (NA) -> AND across selected species
 if species_na_cols:
     tmp_na = filtered[species_na_cols]
     filtered = filtered[tmp_na.isna().all(axis=1)]
 
-# Found in (non-NA) -> AND across selected species
 if species_found_cols:
     tmp_found = filtered[species_found_cols]
     filtered = filtered[tmp_found.isin([True, False]).all(axis=1)]
 
-    # Stable/Unstable optional
     if stable_unstable:
         allowed = []
         if "Stable" in stable_unstable:
@@ -667,13 +709,11 @@ if species_found_cols:
         if allowed:
             filtered = filtered[tmp_found.isin(allowed).all(axis=1)]
 
-# --- Expressed in tissues (AND): each selected tissue must be >= 1.5 ---
 if tissues_filter:
     tissue_num = filtered[tissues_filter].apply(pd.to_numeric, errors="coerce")
     expressed_mask = (tissue_num >= 1.5).all(axis=1)
     filtered = filtered[expressed_mask]
 
-# --- Search (keep last) ---
 if search_term:
     mask = filtered.astype(str).apply(
         lambda col: col.str.contains(search_term, case=False, na=False)
@@ -880,7 +920,8 @@ if "hsa-specificity" in df_display.columns:
     styled_df = (
         styled_df
         .applymap(color_hsa, subset=["hsa-specificity"])
-        .applymap(lambda _v: "color: transparent !important; text-shadow: 0 0 0 transparent !important;", subset=["hsa-specificity"])
+        .applymap(lambda _v: "color: transparent !important; text-shadow: 0 0 0 transparent !important;",
+                  subset=["hsa-specificity"])
     )
 
 if "Repeat Class" in df_display.columns:
@@ -919,19 +960,10 @@ if helper_cols_present:
 html_table = styled_df.hide(axis="index").to_html(escape=False)
 
 # -----------------------------------------------------------
-# CSS — TABLE + LEGEND + SIDEBAR NORMALIZATION
+# TABLE CSS (kept separate; app-level CSS already injected)
 # -----------------------------------------------------------
-custom_css = r"""
+table_css = r"""
 <style>
-section[data-testid="stSidebar"] label{
-  font-weight: 400 !important;
-  font-size: 14px !important;
-}
-section[data-testid="stSidebar"] .stMarkdown p{
-  font-weight: 400 !important;
-  font-size: 14px !important;
-}
-
 .table-container{
   max-height: 560px;
   overflow-y: auto !important;
@@ -941,44 +973,35 @@ section[data-testid="stSidebar"] .stMarkdown p{
   width: 100%;
   -webkit-overflow-scrolling: touch;
 }
-
 .table-inner{
   display: inline-block !important;
   min-width: 100% !important;
   width: max-content !important;
 }
-
 .table-inner table{
   border-collapse: separate !important;
   border-spacing: 0 !important;
-
   display: inline-table !important;
   width: max-content !important;
   min-width: 100% !important;
-
   table-layout: fixed !important;
 }
-
 .table-inner th,
 .table-inner td{
   border: 1px solid black !important;
   border-radius: 8px !important;
   padding: 4px !important;
-
   width: 160px !important;
   min-width: 160px !important;
   max-width: 160px !important;
-
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-
   text-align: center !important;
   font-size: 16px !important;
   font-weight: 700 !important;
   color: black !important;
 }
-
 .table-inner th{
   position: sticky;
   top: 0;
@@ -988,7 +1011,6 @@ section[data-testid="stSidebar"] .stMarkdown p{
   font-size: 18px !important;
   font-weight: 800 !important;
 }
-
 .table-inner th:first-child{
   position: sticky !important;
   left: 0;
@@ -1000,7 +1022,6 @@ section[data-testid="stSidebar"] .stMarkdown p{
   color: white !important;
   background-clip: padding-box;
 }
-
 .table-inner td:first-child{
   position: sticky !important;
   left: 0;
@@ -1014,55 +1035,6 @@ section[data-testid="stSidebar"] .stMarkdown p{
   font-weight: 800 !important;
   background-clip: padding-box;
 }
-
-.legend-wrap{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px 22px;
-  align-items: flex-start;
-  margin-top: 10px;
-  margin-bottom: 18px; /* spazio sotto la legenda */
-}
-
-.legend-card{
-  flex: 1 1 260px;
-  min-width: 260px;
-  font-size: 18px;   /* testo righe */
-  font-weight: 400;
-  line-height: 1.45;
-}
-
-.legend-title{
-  font-size: 20px;   /* titolo card */
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.legend-row{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 14px;
-  align-items: center;
-}
-
-/* ogni item: swatch + testo */
-.legend-item{
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;  /* più spazio tra swatch e testo */
-}
-
-/* swatch: tondo e grande */
-.swatch{
-  width: 18px;
-  height: 18px;
-  border-radius: 999px; /* <-- tondo */
-  display: inline-block;
-  vertical-align: middle;
-  border: 1px solid rgba(255,255,255,0.35); /* visibile sul nero */
-  box-sizing: border-box;
-}
-
 </style>
 """
 
@@ -1071,7 +1043,7 @@ section[data-testid="stSidebar"] .stMarkdown p{
 # -----------------------------------------------------------
 st.write(f"Rows shown: **{len(filtered)}**")
 st.markdown(
-    custom_css
+    table_css
     + "<div class='table-container'><div class='table-inner'>"
     + html_table
     + "</div></div>",
@@ -1164,32 +1136,25 @@ st.markdown(f"<div class='legend-wrap'>{''.join(legend_cards)}</div>", unsafe_al
 
 # -----------------------------------------------------------
 # DOWNLOAD BUTTONS (TSV + FASTA)
+# - (kept as you had: right-side). If you want them stacked on the left, tell me and I’ll swap layout.
 # -----------------------------------------------------------
-# -----------------------------------------------------------
-# DOWNLOAD BUTTONS (TSV + FASTA) — left + stacked
-# -----------------------------------------------------------
-st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-
-btn_col, _ = st.columns([2, 8])  # colonna stretta a sinistra
-with btn_col:
+spacer, c1, c2 = st.columns([6, 1.3, 1.0])
+with c1:
     st.download_button(
         "Download table (TSV)",
         data=tsv_export_df.to_csv(index=False, sep="\t"),
         file_name="mirna_filtered_table.tsv",
         mime="text/tab-separated-values",
         key="dl_tsv",
-        use_container_width=True,
     )
-
+with c2:
     st.download_button(
         "Get FASTA",
         data=generate_fasta(filtered),
         file_name="mirna_selected.fasta",
         mime="text/plain",
         key="dl_fasta",
-        use_container_width=True,
     )
-
 
 # -----------------------------------------------------------
 # BARPLOT (Repeat distribution)
@@ -1237,7 +1202,3 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
-
-
