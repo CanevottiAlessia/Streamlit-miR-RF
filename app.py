@@ -4,6 +4,8 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from PIL import Image
+import altair as alt
+alt.renderers.set_embed_options(actions=False)
 
 # -----------------------------------------------------------
 # STREAMLIT CONFIG (must be before any other st.* output)
@@ -1325,4 +1327,5 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
