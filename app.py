@@ -491,11 +491,14 @@ if show_adv:
             col_icon, col_exp = st.columns([1, 10], gap="small")
             with col_icon:
                 if icon is not None:
-                    st.image(icon, width=56)
+                    st.image(icon, width=80)
                 else:
                     st.write("")
             with col_exp:
-                with st.expander(system_name, expanded=False):
+                # label per UI: rimuove prefisso "1. " e la parola "system"
+                display_system = system_name.split(". ", 1)[-1]          # toglie "1. "
+                display_system = display_system.replace(" system", "")   # toglie " system"
+                with st.expander(display_system, expanded=False):
                     picked = st.multiselect(
                         "Select tissues",
                         available,
@@ -1177,5 +1180,6 @@ else:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
