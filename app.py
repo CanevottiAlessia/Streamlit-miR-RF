@@ -1265,49 +1265,26 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
 
     barplot = (
         alt.Chart(repeat_counts)
-        .mark_bar(
-            # stroke e testi "auto" col tema grazie a currentColor (eredita da .plot-card { color: var(--text) })
-            stroke="currentColor",
-            strokeOpacity=0.55,
-            strokeWidth=1.2
-        )
+        .mark_bar(stroke="currentColor", strokeOpacity=0.55, strokeWidth=1.2)
         .encode(
-            x=alt.X(
-                "Repeat_Class:N",
-                sort=repeat_order,
-                title="Repeat class",
-                axis=alt.Axis(
-                    labelAngle=45,
-                    labelFontSize=14.5,
-                    titleFontSize=16
-                )
-            ),
-            y=alt.Y(
-                "Count:Q",
-                title="Count",
-                axis=alt.Axis(
-                    labelFontSize=14,
-                    titleFontSize=16
-                )
-            ),
-            color=alt.Color(
-                "Repeat_Class:N",
-                scale=alt.Scale(domain=repeat_order, range=ucscgb_palette),
-                legend=None
-            ),
+            x=alt.X("Repeat_Class:N", sort=repeat_order, title="Repeat class",
+                    axis=alt.Axis(labelAngle=45, labelFontSize=14.5, titleFontSize=16)),
+            y=alt.Y("Count:Q", title="Count",
+                    axis=alt.Axis(labelFontSize=14, titleFontSize=16)),
+            color=alt.Color("Repeat_Class:N",
+                            scale=alt.Scale(domain=repeat_order, range=ucscgb_palette),
+                            legend=None),
             tooltip=["Repeat_Class", "Count", "Percent"]
         )
         .properties(height=600)
-        # sfondo trasparente, si integra col tuo CSS
         .configure(background="transparent")
         .configure_view(fill="transparent", strokeOpacity=0)
-        # assi/titoli in currentColor + griglia "soft" via opacità
         .configure_axis(
             labelColor="currentColor",
             titleColor="currentColor",
             grid=True,
             gridColor="currentColor",
-            gridOpacity=0.12,  # base; in dark ti risulta comunque soft perché currentColor è chiaro
+            gridOpacity=0.12,
             domainColor="currentColor",
             domainOpacity=0.55,
             tickColor="currentColor",
@@ -1327,5 +1304,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
