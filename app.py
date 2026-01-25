@@ -1,18 +1,19 @@
-import streamlit.components.v1 as components
 from pathlib import Path
 import streamlit as st
 import pandas as pd
-from PIL import Image
 import altair as alt
+from PIL import Image
+
+# ===========================================================
+# ALTAR/VEGA EMBED OPTIONS
+# (toglie i 3 puntini / actions menu)
+# ===========================================================
 alt.renderers.set_embed_options(actions=False)
 
 # -----------------------------------------------------------
 # STREAMLIT CONFIG (must be before any other st.* output)
 # -----------------------------------------------------------
 st.set_page_config(layout="wide")
-
-# Toolbar Streamlit: riduci o elimina la barra (icona tabella/expand) sopra i charts
-# "minimal" la riduce; con il CSS sotto la nascondiamo comunque del tutto
 st.set_option("client.toolbarMode", "minimal")
 
 # -----------------------------------------------------------
@@ -20,7 +21,6 @@ st.set_option("client.toolbarMode", "minimal")
 # + SIDEBAR IMPROVEMENTS
 # + GREY PANELS/BUTTONS
 # + +2px text OUTSIDE TABLE
-# NOTE: pill ONLY for "Show extra columns" + "Filter extra columns"
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -56,7 +56,6 @@ st.markdown(
       --table-first-td-bg: #f2f2f2;
       --table-border: #000000;
 
-      /* Per griglia Altair (soft) in light */
       --grid-opacity: 0.14;
     }
 
@@ -89,14 +88,12 @@ st.markdown(
         --table-first-td-bg: #333333;
         --table-border: #000000;
 
-        /* Per griglia Altair (soft) in dark */
         --grid-opacity: 0.10;
       }
     }
 
     /* =======================================================
        GLOBAL FONT: +2px everywhere OUTSIDE TABLE
-       (table handled separately below)
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
         font-size: 20px !important;
@@ -248,18 +245,46 @@ st.markdown(
         margin-top: 6px;
         margin-bottom: 10px;
 
-        /* This is key: Altair labels using currentColor will follow this */
+        /* Altair labels using currentColor follow this */
         color: var(--text) !important;
     }
 
     /* ---------------------------
-       REMOVE THE BAR ABOVE CHARTS (Streamlit element toolbar)
-       This is the "barra" with icons (table/expand/...) shown in your screenshot
+       REMOVE STREAMLIT ELEMENT TOOLBAR (icons row)
     ---------------------------- */
     div[data-testid="stElementToolbar"]{
         display: none !important;
         height: 0 !important;
         visibility: hidden !important;
+    }
+
+    /* =========================================================
+       REMOVE THE GREY "PILL" ABOVE ALTAIR/VEGA CHARTS
+       (Streamlit sometimes inserts an empty row/overlay)
+    ========================================================= */
+
+    /* 1) vega-embed actions/menus (safety net) */
+    .vega-embed .vega-actions,
+    .vega-embed details,
+    .vega-embed summary{
+      display: none !important;
+      height: 0 !important;
+      visibility: hidden !important;
+    }
+
+    /* 2) remove the ghost row just above VegaLite charts */
+    div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stVegaLiteChart"]) > div:first-child{
+      display: none !important;
+      height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      visibility: hidden !important;
+    }
+
+    /* 3) reset spacing on the chart container */
+    div[data-testid="stVegaLiteChart"]{
+      margin-top: 0 !important;
+      padding-top: 0 !important;
     }
 
     </style>
@@ -338,17 +363,14 @@ for c in expected_cols:
     if c not in df.columns:
         df[c] = pd.NA
 
-# Fix Class_MirGeneDB placeholder
 df["Class_MirGeneDB"] = df["Class_MirGeneDB"].fillna("—")
 df["Class_MirGeneDB"] = df["Class_MirGeneDB"].replace(
     ["nan", "NaN", "NA", None, pd.NA, ""], "—"
 )
 
-# Fix family flags
 df["miRBase family"] = df["miRBase family"].fillna("NO")
 df["MirGeneDB family"] = df["MirGeneDB family"].fillna("—")
 
-# Repeat class cleanup
 def shorten_repeat(val):
     if not isinstance(val, str):
         return val
@@ -359,7 +381,6 @@ def shorten_repeat(val):
 df["Repeat_Class"] = df["Repeat_Class"].apply(shorten_repeat)
 df["Repeat_Class"] = df["Repeat_Class"].astype("string").str.replace("_", " ", regex=False)
 
-# Keep TRUE/FALSE text for these columns
 for c in ["Structure", "Conservation", "Expression"]:
     if c in df.columns:
         df[c] = df[c].map(lambda x: "TRUE" if x is True else ("FALSE" if x is False else x))
@@ -447,7 +468,8 @@ SYSTEM_TISSUES = {
         "kidney", "bladder", "urine", "testis", "prostate",
         "uterus", "cervix", "ovary", "vaginal_tissue", "oocyte",
         "embryo", "placenta", "chorionic_villi", "umbilical_cord",
-        "follicular_fluid", "amniotic_fluid", "theca", "glandular_breast_tissue", "sperm", "semen",
+        "follicular_fluid", "amniotic_fluid", "theca",
+        "glandular_breast_tissue", "sperm", "semen",
     ],
     "Other system": [
         "adipose", "epithelium", "podocyte", "milk",
@@ -462,7 +484,7 @@ SYSTEM_TISSUES = {
 binary_map = {
     "TRUE": True, True: True, 1: True,
     "FALSE": False, False: False, 0: False,
-    "NA": pd.NA, None: pd.NA, pd.NA: pd.NA, "": pd.NA
+    "NA": pd.NA, None: pd.NA, "": pd.NA, pd.NA: pd.NA
 }
 if animal_cols:
     df[animal_cols] = df[animal_cols].applymap(lambda x: binary_map.get(x, pd.NA))
@@ -566,9 +588,7 @@ st.sidebar.markdown("---")
 show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
 
 if show_adv:
-    # --- SECTION 1: Show extra columns ---
     with st.sidebar.expander("Show extra columns", expanded=True):
-
         animals_to_show_sidebar = st.multiselect(
             "Show species columns:",
             list(animal_sidebar_names.values()),
@@ -588,9 +608,7 @@ if show_adv:
 
     st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
-    # --- SECTION 2: Filter extra columns ---
     with st.sidebar.expander("Filter extra columns", expanded=True):
-
         st.markdown("<div class='sidebar-section-title'>Conservation</div>", unsafe_allow_html=True)
         species_options = list(animal_sidebar_names.values())
 
@@ -658,7 +676,6 @@ else:
     species_na_sidebar = []
     species_found_sidebar = []
     stable_unstable = []
-
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -1231,9 +1248,11 @@ st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
 btn_col, _ = st.columns([2, 8])
 with btn_col:
+    # TSV robust bytes
+    tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
     st.download_button(
         "Download table (TSV)",
-        data=tsv_export_df.to_csv(index=False, sep="\t"),
+        data=tsv_bytes,
         file_name="mirna_filtered_table.tsv",
         mime="text/tab-separated-values",
         key="dl_tsv",
@@ -1250,7 +1269,7 @@ with btn_col:
     )
 
 # -----------------------------------------------------------
-# BARPLOT (Repeat distribution) — THEME-AWARE
+# BARPLOT (Repeat distribution) — THEME-AWARE + RESPONSIVE
 # -----------------------------------------------------------
 ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
@@ -1266,13 +1285,22 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
         alt.Chart(repeat_counts)
         .mark_bar(stroke="currentColor", strokeOpacity=0.55, strokeWidth=1.2)
         .encode(
-            x=alt.X("Repeat_Class:N", sort=repeat_order, title="Repeat class",
-                    axis=alt.Axis(labelAngle=45, labelFontSize=14.5, titleFontSize=16)),
-            y=alt.Y("Count:Q", title="Count",
-                    axis=alt.Axis(labelFontSize=14, titleFontSize=16)),
-            color=alt.Color("Repeat_Class:N",
-                            scale=alt.Scale(domain=repeat_order, range=ucscgb_palette),
-                            legend=None),
+            x=alt.X(
+                "Repeat_Class:N",
+                sort=repeat_order,
+                title="Repeat class",
+                axis=alt.Axis(labelAngle=45, labelFontSize=14.5, titleFontSize=16)
+            ),
+            y=alt.Y(
+                "Count:Q",
+                title="Count",
+                axis=alt.Axis(labelFontSize=14, titleFontSize=16)
+            ),
+            color=alt.Color(
+                "Repeat_Class:N",
+                scale=alt.Scale(domain=repeat_order, range=ucscgb_palette),
+                legend=None
+            ),
             tooltip=["Repeat_Class", "Count", "Percent"]
         )
         .properties(height=600)
@@ -1292,13 +1320,11 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
         .configure_title(color="currentColor")
     )
 
-    # ✅ QUI (al posto di st.altair_chart)
-    chart_html = barplot.to_html()
-    st.components.v1.html(chart_html, height=650, scrolling=False)
-
+    # ✅ responsive come prima
+    st.altair_chart(barplot, use_container_width=True)
 else:
     st.info("Repeat_Class is missing or empty: barplot not available.")
-    
+
 st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------
@@ -1306,5 +1332,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
