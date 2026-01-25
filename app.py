@@ -981,9 +981,9 @@ custom_css = r"""
   left: 0;
   z-index: 30 !important;
 
-  width: 260px !important;
-  min-width: 260px !important;
-  max-width: 260px !important;
+  width: 230px !important;
+  min-width: 230px !important;
+  max-width: 230px !important;
 
   background-color: #222 !important;
   color: white !important;
@@ -995,9 +995,9 @@ custom_css = r"""
   left: 0;
   z-index: 25 !important;
 
-  width: 260px !important;
-  min-width: 260px !important;
-  max-width: 260px !important;
+  width: 230px !important;
+  min-width: 230px !important;
+  max-width: 230px !important;
 
   background-color: #333 !important;
   color: white !important;
@@ -1228,6 +1228,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
