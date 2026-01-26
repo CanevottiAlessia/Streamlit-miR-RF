@@ -162,6 +162,10 @@ st.markdown(
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary *{
         background: transparent !important;
     }
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary{
+     padding: 4px 8px !important;
+    }
+
 
     /* subtle separators */
     .subtle-hr{
@@ -1477,6 +1481,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
