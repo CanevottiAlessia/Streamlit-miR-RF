@@ -31,18 +31,14 @@ Filters are available through a sidebar and can be combined arbitrarily:
 
 * **Global search** across all columns
 * **Pass/fail filters** for:
-
   * Structural stability
   * Evolutionary conservation
   * Expression (RPMM ≥ 1.5)
 * **Family context**
-
   * Single miRNAs vs miRNAs in a family (miRBase and/or MirGeneDB)
 * **Human specificity**
-
   * hsa-specific vs non–hsa-specific
 * **Repeat class**
-
   * LINE, SINE, LTR, DNA, Simple repeats, No repeat, etc.
 
 ---
