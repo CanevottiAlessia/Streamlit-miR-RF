@@ -28,154 +28,154 @@ st.markdown(
     :root{
       --bg: #ffffff;
       --text: #111111;
-
+    
       --header-bg: #ffffff;
-
+    
       --sidebar-bg: #f7f7f7;
       --sidebar-border: rgba(0,0,0,0.12);
-
+    
       --input-bg: #ffffff;
       --input-border: rgba(0,0,0,0.16);
-
+    
       --panel-bg: #e9e9e9;
       --panel-border: rgba(0,0,0,0.16);
-
+    
       --btn-bg: #e6e6e6;
       --btn-bg-hover: #d9d9d9;
       --btn-border: rgba(0,0,0,0.22);
-
+    
       --plot-card-bg: #f0f0f0;
-
+    
       --link: #0b62d6;
-
+    
       --table-th-bg: #eaeaea;
       --table-first-th-bg: #eaeaea;
       --table-first-td-bg: #f2f2f2;
       --table-border: #000000;
-
+    
       --grid-opacity: 0.14;
     }
-
+    
     @media (prefers-color-scheme: dark){
       :root{
         --bg: #000000;
         --text: #ffffff;
-
+    
         --header-bg: #000000;
-
+    
         --sidebar-bg: #000000;
         --sidebar-border: rgba(255,255,255,0.12);
-
+    
         --input-bg: #111111;
         --input-border: rgba(255,255,255,0.16);
-
+    
         --panel-bg: #2b2b2b;
         --panel-border: rgba(255,255,255,0.18);
-
+    
         --btn-bg: #2b2b2b;
         --btn-bg-hover: #3a3a3a;
         --btn-border: rgba(255,255,255,0.22);
-
+    
         --plot-card-bg: #2b2b2b;
-
+    
         --link: #7cc7ff;
-
+    
         --table-th-bg: #222222;
         --table-first-th-bg: #222222;
         --table-first-td-bg: #333333;
         --table-border: #000000;
-
+    
         --grid-opacity: 0.10;
       }
     }
-
+    
     /* =======================================================
        GLOBAL FONT: +2px everywhere OUTSIDE TABLE
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
-        font-size: 20px !important;
-        background: var(--bg) !important;
-        color: var(--text) !important;
+      font-size: 20px !important;
+      background: var(--bg) !important;
+      color: var(--text) !important;
     }
-
+    
     /* header / toolbar */
     [data-testid="stHeader"], [data-testid="stToolbar"]{
-        background: var(--header-bg) !important;
+      background: var(--header-bg) !important;
     }
-
+    
     /* sidebar */
     section[data-testid="stSidebar"]{
-        background: var(--sidebar-bg) !important;
-        color: var(--text) !important;
-        border-right: 1px solid var(--sidebar-border);
+      background: var(--sidebar-bg) !important;
+      color: var(--text) !important;
+      border-right: 1px solid var(--sidebar-border);
     }
     section[data-testid="stSidebar"] *{
-        color: var(--text) !important;
+      color: var(--text) !important;
     }
-
+    
     /* inputs background (readable on both themes) */
     .stTextInput input, .stNumberInput input{
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        border: 1px solid var(--input-border) !important;
+      background: var(--input-bg) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--input-border) !important;
     }
-
+    
     /* BaseWeb select controls (selectbox + multiselect) */
     section[data-testid="stSidebar"] [data-baseweb="select"] > div{
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        box-shadow: none !important;
-        border: 1px solid var(--input-border) !important;
+      background: var(--input-bg) !important;
+      color: var(--text) !important;
+      box-shadow: none !important;
+      border: 1px solid var(--input-border) !important;
     }
-
+    
     /* remove any weird halo/shadow on labels */
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] p,
     section[data-testid="stSidebar"] .stMarkdown{
-        background: transparent !important;
-        box-shadow: none !important;
-        filter: none !important;
-        text-shadow: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      filter: none !important;
+      text-shadow: none !important;
     }
-
+    
     /* expander as cards (global) */
     [data-testid="stExpander"]{
-        background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%) !important;
-        border: 1px solid color-mix(in srgb, var(--text) 16%, transparent) !important;
-        border-radius: 14px !important;
-        padding: 6px 8px !important;
-        margin: 10px 0 14px 0 !important;
-        box-shadow: none !important;
+      background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%) !important;
+      border: 1px solid color-mix(in srgb, var(--text) 16%, transparent) !important;
+      border-radius: 14px !important;
+      padding: 6px 8px !important;
+      margin: 10px 0 14px 0 !important;
+      box-shadow: none !important;
     }
-
+    
     /* sidebar expanders: grey panels + pill on title only */
     section[data-testid="stSidebar"] [data-testid="stExpander"]{
-        background: var(--panel-bg) !important;
-        border: 1px solid var(--panel-border) !important;
+      background: var(--panel-bg) !important;
+      border: 1px solid var(--panel-border) !important;
     }
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
-        display: inline-flex !important;
-        align-items: center !important;
-        background: var(--panel-bg) !important;
-        padding: 6px 10px !important;
-        border-radius: 10px !important;
-        width: fit-content !important;
-        color: var(--text) !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      background: var(--panel-bg) !important;
+      padding: 6px 10px !important;
+      border-radius: 10px !important;
+      width: fit-content !important;
+      color: var(--text) !important;
     }
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary *{
-        background: transparent !important;
+      background: transparent !important;
     }
-
+    
     /* subtle separators */
     .subtle-hr{
-        border: 0;
-        border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
-        margin: 10px 0;
+      border: 0;
+      border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+      margin: 10px 0;
     }
-
+    
     /* links */
-    a { color: var(--link) !important; }
-
+    a{ color: var(--link) !important; }
+    
     /* ---------------------------
        SIDEBAR TYPOGRAPHY SIZES
     ---------------------------- */
@@ -185,28 +185,28 @@ st.markdown(
       margin-top: 8px !important;
       margin-bottom: 10px !important;
     }
-
+    
     section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
       font-size: 24px !important;
       font-weight: 800 !important;
     }
-
+    
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
       font-size: 20px !important;
       font-weight: 750 !important;
     }
-
+    
     .sidebar-section-title{
       font-size: 18px;
       font-weight: 700;
       margin: 8px 0 6px 0;
     }
-
+    
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown p{
       font-size: 16px !important;
     }
-
+    
     /* ---------------------------
        ICON SIZE
     ---------------------------- */
@@ -214,91 +214,66 @@ st.markdown(
       width: 96px !important;
       height: auto !important;
     }
-
+    
     /* ---------------------------
        GREY BACKGROUND FOR DOWNLOAD BUTTONS
     ---------------------------- */
     [data-testid="stDownloadButton"] button{
-        background: var(--btn-bg) !important;
-        color: var(--text) !important;
-        border: 1px solid var(--btn-border) !important;
-        border-radius: 12px !important;
-        font-weight: 700 !important;
+      background: var(--btn-bg) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--btn-border) !important;
+      border-radius: 12px !important;
+      font-weight: 700 !important;
     }
     [data-testid="stDownloadButton"] button:hover{
-        background: var(--btn-bg-hover) !important;
-        border-color: color-mix(in srgb, var(--btn-border) 70%, var(--text) 30%) !important;
+      background: var(--btn-bg-hover) !important;
+      border-color: color-mix(in srgb, var(--btn-border) 70%, var(--text) 30%) !important;
     }
-
-    /* ---------------------------
-       BARPLOT CARD (outer + inner padding)
-    ---------------------------- */
-    .plot-card{
-        background: var(--plot-card-bg) !important;
-        border: 1px solid var(--panel-border) !important;
-        border-radius: 16px !important;
-        padding: 0 !important;
-        margin-top: 6px !important;
-        margin-bottom: 10px !important;
-        color: var(--text) !important; /* currentColor for Altair */
-    }
-    .plot-card-inner{
-        padding: 14px 14px 10px 14px !important;
-    }
-
+    
     /* ---------------------------
        REMOVE STREAMLIT ELEMENT TOOLBAR (icons row)
     ---------------------------- */
     div[data-testid="stElementToolbar"]{
-        display: none !important;
-        height: 0 !important;
-        visibility: hidden !important;
+      display: none !important;
+      height: 0 !important;
+      visibility: hidden !important;
     }
-
-    /* ---------------------------
-       Safety net: remove vega embed actions (if any)
-    ---------------------------- */
+    
+    /* =========================================================
+       PLOT CARD (per Altair via components.html)
+       -> evita il wrapper di Streamlit che crea la "barra grigia"
+    ========================================================= */
+    .plot-card{
+      background: var(--plot-card-bg) !important;
+      border: 1px solid var(--panel-border) !important;
+      border-radius: 16px !important;
+      padding: 14px 14px 10px 14px !important;
+      margin-top: 6px !important;
+      margin-bottom: 10px !important;
+      color: var(--text) !important; /* currentColor per Altair */
+    }
+    
+    /* evita margini/padding fantasma dentro la card */
+    .plot-card *{
+      margin-top: 0 !important;
+    }
+    
+    /* iframe del componente HTML: full width e senza bordi/spazi */
+    .plot-card iframe{
+      display: block !important;
+      width: 100% !important;
+      border: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    /* safety net: se qualche vega-embed menu resta */
     .vega-embed .vega-actions,
     .vega-embed details,
     .vega-embed summary{
       display: none !important;
       height: 0 !important;
       visibility: hidden !important;
-    }
-
-    /* =========================================================
-       FIX: remove the GREY "BAR/PILL" above Altair charts
-       (Streamlit wrapper row with padding)
-    ========================================================= */
-    .plot-card-inner div[data-testid="stVegaLiteChart"]{
-      margin-top: 0 !important;
-      padding-top: 0 !important;
-    }
-
-    /* sometimes the bar is first child inside stVegaLiteChart */
-    .plot-card-inner div[data-testid="stVegaLiteChart"] > div:first-child{
-      margin: 0 !important;
-      padding: 0 !important;
-      height: 0 !important;
-      display: none !important;
-      visibility: hidden !important;
-      background: transparent !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      border-radius: 0 !important;
-    }
-
-    /* sometimes the bar is first child of the chart container wrapper */
-    .plot-card-inner > div:has(> div[data-testid="stVegaLiteChart"]) > div:first-child{
-      margin: 0 !important;
-      padding: 0 !important;
-      height: 0 !important;
-      display: none !important;
-      visibility: hidden !important;
-      background: transparent !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      border-radius: 0 !important;
     }
     </style>
     """,
@@ -1288,14 +1263,15 @@ with btn_col:
         use_container_width=True,
     )
 
+import streamlit.components.v1 as components
+
 # -----------------------------------------------------------
-# BARPLOT (Repeat distribution) — THEME-AWARE + RESPONSIVE
+# BARPLOT (Repeat distribution) — THEME-AWARE + NO GREY BAR
 # -----------------------------------------------------------
 ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
 
 st.subheader("Repeat class distribution")
-st.markdown("<div class='plot-card'><div class='plot-card-inner'>", unsafe_allow_html=True)
 
 if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any():
     repeat_counts = filtered.groupby("Repeat_Class").size().reset_index(name="Count")
@@ -1309,19 +1285,19 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                 "Repeat_Class:N",
                 sort=repeat_order,
                 title="Repeat class",
-                axis=alt.Axis(labelAngle=45, labelFontSize=14.5, titleFontSize=16)
+                axis=alt.Axis(labelAngle=45, labelFontSize=14.5, titleFontSize=16),
             ),
             y=alt.Y(
                 "Count:Q",
                 title="Count",
-                axis=alt.Axis(labelFontSize=14, titleFontSize=16)
+                axis=alt.Axis(labelFontSize=14, titleFontSize=16),
             ),
             color=alt.Color(
                 "Repeat_Class:N",
                 scale=alt.Scale(domain=repeat_order, range=ucscgb_palette),
-                legend=None
+                legend=None,
             ),
-            tooltip=["Repeat_Class", "Count", "Percent"]
+            tooltip=["Repeat_Class", "Count", "Percent"],
         )
         .properties(height=600)
         .configure(background="transparent")
@@ -1335,15 +1311,20 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
             domainColor="currentColor",
             domainOpacity=0.55,
             tickColor="currentColor",
-            tickOpacity=0.55
+            tickOpacity=0.55,
         )
         .configure_title(color="currentColor")
     )
 
-    st.altair_chart(barplot, use_container_width=True)
+    # ✅ Render HTML in un tuo contenitore: niente wrapper di Streamlit => niente barra grigia
+    chart_html = barplot.to_html()
+
+    st.markdown("<div class='plot-card'>", unsafe_allow_html=True)
+    components.html(chart_html, height=650, scrolling=False)
+    st.markdown("</div>", unsafe_allow_html=True)
+
 else:
     st.info("Repeat_Class is missing or empty: barplot not available.")
 
 # ✅ chiudi entrambi i div
 st.markdown("</div></div>", unsafe_allow_html=True)
-
