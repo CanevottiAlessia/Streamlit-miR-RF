@@ -70,6 +70,19 @@ Advanced filters can be enabled to refine queries further:
   * annotated only in miRBase
 * Filter by structural stability class (R, D, I, S)
 
+### Filter reset and state management
+
+To facilitate exploratory analyses, the application includes a **Reset all filters** button located at the bottom of the sidebar.
+
+* The button becomes visible **only when at least one filter is active**
+* A single click clears all applied filters
+* The interface returns to the default state, with:
+  * all filters cleared
+  * advanced options collapsed
+  * the full annotation table restored
+
+This feature enables rapid iteration between different filtering strategies without manual deselection of individual options.
+
 ---
 
 ## Table visualization
