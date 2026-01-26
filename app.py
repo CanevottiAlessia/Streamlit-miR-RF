@@ -167,7 +167,7 @@ st.markdown(
     .subtle-hr{
         border: 0;
         border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
-        margin: 10px 0;
+        margin: 5px 0;
     }
 
     /* links */
@@ -1477,3 +1477,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
