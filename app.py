@@ -197,7 +197,7 @@ st.markdown(
     }
 
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
-      font-size: 16px !important;
+      font-size: 12px !important;
       font-weight: 750 !important;
     }
 
@@ -1327,6 +1327,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
