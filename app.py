@@ -162,11 +162,7 @@ st.markdown(
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary *{
         background: transparent !important;
     }
-    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary{
-     padding: 4px 8px !important;
-    }
-
-
+    
     /* subtle separators */
     .subtle-hr{
         border: 0;
@@ -195,6 +191,20 @@ st.markdown(
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
       font-size: 12px !important;
       font-weight: 750 !important;
+    }
+
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary{
+      font-size: 10px !important;
+      line-height: 1.05 !important;
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
+    }
+    
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary p,
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary span{
+      font-size: 10px !important;
+      line-height: 1.05 !important;
+      margin: 0 !important;
     }
 
     .sidebar-section-title{
@@ -1481,6 +1491,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
