@@ -162,7 +162,7 @@ st.markdown(
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary *{
         background: transparent !important;
     }
-    
+
     /* subtle separators */
     .subtle-hr{
         border: 0;
@@ -193,13 +193,13 @@ st.markdown(
       font-weight: 750 !important;
     }
 
+    /* Nested system expanders (Cardiorespiratory, etc.) */
     section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary{
       font-size: 18px !important;
       line-height: 1.05 !important;
       padding-top: 4px !important;
       padding-bottom: 4px !important;
     }
-    
     section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary p,
     section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary span{
       font-size: 18px !important;
@@ -237,6 +237,19 @@ st.markdown(
         font-weight: 700 !important;
     }
     [data-testid="stDownloadButton"] button:hover{
+        background: var(--btn-bg-hover) !important;
+        border-color: color-mix(in srgb, var(--btn-border) 70%, var(--text) 30%) !important;
+    }
+
+    /* Sidebar normal buttons (e.g., Reset) styled like download buttons */
+    section[data-testid="stSidebar"] .stButton > button{
+        background: var(--btn-bg) !important;
+        color: var(--text) !important;
+        border: 1px solid var(--btn-border) !important;
+        border-radius: 12px !important;
+        font-weight: 800 !important;
+    }
+    section[data-testid="stSidebar"] .stButton > button:hover{
         background: var(--btn-bg-hover) !important;
         border-color: color-mix(in srgb, var(--btn-border) 70%, var(--text) 30%) !important;
     }
@@ -488,6 +501,91 @@ SYSTEM_TISSUES = {
 }
 
 # -----------------------------------------------------------
+# RESET FILTERS (UX: show button only if something is active)
+# -----------------------------------------------------------
+FILTER_KEYS = [
+    # basic filters
+    "search_any",
+    "ms_conservation", "ms_expression", "ms_structure",
+    "ms_family", "ms_hsa", "ms_repeat",
+
+    # advanced toggle
+    "show_adv",
+
+    # conservation (advanced)
+    "show_species_cols",
+    "cons_species_found", "cons_species_na", "cons_stability",
+
+    # expression (advanced)
+    "show_tissue_cols",
+
+    # database / class (advanced)
+    "show_class_cols",
+    "db_filter",
+    "class_filter",
+]
+
+# Add dynamic keys for tissue system trees
+for sys_name in SYSTEM_TISSUES.keys():
+    FILTER_KEYS.append(f"tree_pos_{sys_name}")
+    FILTER_KEYS.append(f"tree_neg_{sys_name}")
+
+def any_filter_active() -> bool:
+    # Basic filters
+    if (st.session_state.get("search_any", "") or "").strip():
+        return True
+    if st.session_state.get("ms_conservation", []):
+        return True
+    if st.session_state.get("ms_expression", []):
+        return True
+    if st.session_state.get("ms_structure", []):
+        return True
+    if st.session_state.get("ms_family", []):
+        return True
+    if st.session_state.get("ms_hsa", []):
+        return True
+    if st.session_state.get("ms_repeat", []):
+        return True
+
+    # Advanced options
+    if st.session_state.get("show_adv", False):
+        # even just opening advanced isn't a "filter", but it's a UI state;
+        # comment this out if you do NOT want reset button to appear only because advanced is on.
+        return True
+
+    if st.session_state.get("show_species_cols", []):
+        return True
+    if st.session_state.get("cons_species_found", []):
+        return True
+    if st.session_state.get("cons_species_na", []):
+        return True
+    if st.session_state.get("cons_stability", []):
+        return True
+
+    if st.session_state.get("show_tissue_cols", []):
+        return True
+    for sys_name in SYSTEM_TISSUES.keys():
+        if st.session_state.get(f"tree_pos_{sys_name}", []):
+            return True
+        if st.session_state.get(f"tree_neg_{sys_name}", []):
+            return True
+
+    if st.session_state.get("show_class_cols", False):
+        return True
+    if st.session_state.get("db_filter", "Show all") != "Show all":
+        return True
+    if st.session_state.get("class_filter", []):
+        return True
+
+    return False
+
+def reset_all_filters():
+    for k in FILTER_KEYS:
+        if k in st.session_state:
+            del st.session_state[k]
+    st.experimental_rerun()
+
+# -----------------------------------------------------------
 # SPECIES MAPPING: True/False/NA robust
 # -----------------------------------------------------------
 binary_map = {
@@ -660,7 +758,6 @@ if show_adv:
     # =========================================================
     with st.sidebar.expander("Tissue expression", expanded=True):
 
-        # --- Show extra columns (come prima) ---
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
         tissues_to_show = st.multiselect(
@@ -673,7 +770,6 @@ if show_adv:
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
         st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
-        # --- Expressed in (>= 1.5) ---
         st.markdown(
             "<div style='font-size:20px; font-weight:400; margin: 6px 0 6px 0;'>"
             "Expressed in (select tissues by system):"
@@ -711,7 +807,6 @@ if show_adv:
 
         st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
-        # --- Not expressed in (< 1.5) ---
         st.markdown(
             "<div style='font-size:20px; font-weight:400; margin: 6px 0 6px 0;'>"
             "Not expressed in (select tissues by system):"
@@ -776,6 +871,17 @@ if show_adv:
             default=[],
             key="class_filter",
         )
+
+# -----------------------------------------------------------
+# SIDEBAR: RESET BUTTON (only if at least one filter is active)
+# -----------------------------------------------------------
+st.sidebar.markdown("---")
+if any_filter_active():
+    st.sidebar.button(
+        "Reset all filters",
+        use_container_width=True,
+        on_click=reset_all_filters
+    )
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -1337,7 +1443,7 @@ legend_cards.append(f"""
 </div>
 """)
 
-species_filter_active = bool(species_found_cols or species_na_cols)
+species_filter_active = bool(species_found_cols or species_na_sidebar)
 if visible_species_cols or species_filter_active:
     legend_cards.append(f"""
 <div class="legend-card">
@@ -1491,10 +1597,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
-
-
-
-
-
