@@ -238,7 +238,7 @@ st.markdown(
         padding: 0px;
         margin-top: 6px;
         margin-bottom: 10px;
-        color: var(--text) !important;  /* key for currentColor */
+        color: var(--text) !important;
     }
 
     /* ---------------------------
@@ -269,6 +269,15 @@ st.markdown(
       }
     }
 
+    /* =======================================================
+       (Extra) Riduci leggermente lo spazio verticale tra i blocchi
+       (colonne + expander tessuti)
+    ======================================================= */
+    section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]{
+      margin-top: 2px !important;
+      margin-bottom: 2px !important;
+      gap: 0.35rem !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -547,7 +556,7 @@ search_term = st.sidebar.text_input("Search any column:", key="search_any")
 
 pass_options = ["PASSED", "NOT PASSED"]
 conservation_selected = st.sidebar.multiselect("Conservation:", pass_options, default=[], key="ms_conservation")
-expression_selected   = st.sidebar.multiselect("Expression:",   pass_options, default=[], key="ms_expression") 
+expression_selected   = st.sidebar.multiselect("Expression:",   pass_options, default=[], key="ms_expression")
 structure_selected    = st.sidebar.multiselect("Structure:",    pass_options, default=[], key="ms_structure")
 
 family_options = [
@@ -569,16 +578,29 @@ repeats_selected = st.sidebar.multiselect(
 )
 
 # -----------------------------------------------------------
-# SIDEBAR: ADVANCED OPTIONS (reorganized into 3 boxes)
+# SIDEBAR: ADVANCED OPTIONS
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
+
+# ✅ IMPORTANT: inizializza SEMPRE queste variabili (evita NameError quando toggli)
+animals_to_show = []
+tissues_to_show = []
+tissues_filter = []
+tissues_not_filter = []
+show_class_cols = False
+species_na_sidebar = []
+species_found_sidebar = []
+stable_unstable = []
+mirgene_filter = "Show all"
+classes_selected = []
+
 show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
 
 if show_adv:
     # =========================================================
     # BOX 1 — CONSERVATION
     # =========================================================
-    with st.sidebar.expander("Evolutionary conservation", expanded=True): # prima era Conservation
+    with st.sidebar.expander("Evolutionary conservation", expanded=True):
 
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
@@ -622,7 +644,20 @@ if show_adv:
     # =========================================================
     # BOX 2 — EXPRESSION
     # =========================================================
-    with st.sidebar.expander("Tissue expression", expanded=True): # prima era Expression
+    with st.sidebar.expander("Tissue expression", expanded=True):
+
+        # --- Show extra columns (come prima) ---
+        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
+
+        tissues_to_show = st.multiselect(
+            "Show tissue columns:",
+            tissue_sidebar_names,
+            default=[],
+            key="show_tissue_cols",
+        )
+
+        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
         # --- Expressed in (>= 1.5) ---
         st.markdown(
@@ -631,39 +666,37 @@ if show_adv:
             "</div>",
             unsafe_allow_html=True
         )
-        
+
         tissues_filter_set = set()
-        
+
         for system_name, sys_tissues in SYSTEM_TISSUES.items():
             available = [t for t in sys_tissues if t in tissue_sidebar_names]
             if not available:
                 continue
-        
+
             icon = SYSTEM_ICONS.get(system_name)
             col_icon, col_exp = st.columns([1.6, 10], gap="small")
-        
+
             with col_icon:
                 if icon is not None:
                     st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
                     st.image(icon, width=120)
                     st.markdown("</div>", unsafe_allow_html=True)
-                else:
-                    st.write("")
-        
+
             with col_exp:
                 display_system = system_name.split(". ", 1)[-1].replace(" system", "")
                 with st.expander(display_system, expanded=False):
                     picked = st.multiselect(
                         "Select tissues",
                         available,
-                        key=f"tree_pos_{system_name}",   # <-- chiave diversa
+                        key=f"tree_pos_{system_name}",
                     )
                     tissues_filter_set.update(picked)
-        
+
         tissues_filter = sorted(tissues_filter_set)
-        
+
         st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-        
+
         # --- Not expressed in (< 1.5) ---
         st.markdown(
             "<div style='font-size:20px; font-weight:400; margin: 6px 0 6px 0;'>"
@@ -671,37 +704,34 @@ if show_adv:
             "</div>",
             unsafe_allow_html=True
         )
-        
+
         tissues_not_filter_set = set()
-        
+
         for system_name, sys_tissues in SYSTEM_TISSUES.items():
             available = [t for t in sys_tissues if t in tissue_sidebar_names]
             if not available:
                 continue
-        
+
             icon = SYSTEM_ICONS.get(system_name)
             col_icon, col_exp = st.columns([1.6, 10], gap="small")
-        
+
             with col_icon:
                 if icon is not None:
                     st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
                     st.image(icon, width=120)
                     st.markdown("</div>", unsafe_allow_html=True)
-                else:
-                    st.write("")
-        
+
             with col_exp:
                 display_system = system_name.split(". ", 1)[-1].replace(" system", "")
                 with st.expander(display_system, expanded=False):
                     picked = st.multiselect(
                         "Select tissues",
                         available,
-                        key=f"tree_neg_{system_name}",   # <-- chiave diversa
+                        key=f"tree_neg_{system_name}",
                     )
                     tissues_not_filter_set.update(picked)
-        
-        tissues_not_filter = sorted(tissues_not_filter_set)
 
+        tissues_not_filter = sorted(tissues_not_filter_set)
 
     # =========================================================
     # BOX 3 — DATABASE / CLASS
@@ -732,21 +762,6 @@ if show_adv:
             default=[],
             key="class_filter",
         )
-
-else:
-    animals_to_show = []
-    tissues_to_show = []
-    show_class_cols = False
-    tissues_filter = []
-    tissues_not_filter = []   # <-- FIX
-    mirgene_filter = "Show all"
-    classes_selected = []
-    species_na_sidebar = []
-    species_found_sidebar = []
-    stable_unstable = []
-
-    
-
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -827,11 +842,13 @@ if species_found_cols:
         if allowed:
             filtered = filtered[tmp_found.isin(allowed).all(axis=1)]
 
+# Expressed in: >= 1.5
 if tissues_filter:
     tissue_num = filtered[tissues_filter].apply(pd.to_numeric, errors="coerce")
     expressed_mask = (tissue_num >= 1.5).all(axis=1)
     filtered = filtered[expressed_mask]
-    
+
+# Not expressed in: < 1.5
 if tissues_not_filter:
     tissue_num_not = filtered[tissues_not_filter].apply(pd.to_numeric, errors="coerce")
     not_expressed_mask = (tissue_num_not < 1.5).all(axis=1)
@@ -1184,7 +1201,7 @@ custom_css = r"""
   gap: 14px 22px;
   align-items: flex-start;
   margin-top: 10px;
-  margin-bottom: 12px;  /* un po' meno per stare “attaccata” alla tabella */
+  margin-bottom: 12px;
 }
 
 .legend-card{
@@ -1345,11 +1362,10 @@ if visible_class_cols:
 
 st.markdown(f"<div class='legend-wrap'>{''.join(legend_cards)}</div>", unsafe_allow_html=True)
 
-# (opzionale) micro-spazio tra legenda e tabella
 st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------
-# SHOW TABLE (AFTER LEGEND)
+# SHOW TABLE
 # -----------------------------------------------------------
 st.markdown(
     custom_css
@@ -1360,7 +1376,7 @@ st.markdown(
 )
 
 # -----------------------------------------------------------
-# DOWNLOAD BUTTONS (TSV + FASTA) — left + stacked
+# DOWNLOAD BUTTONS (TSV + FASTA)
 # -----------------------------------------------------------
 st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
@@ -1461,20 +1477,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
