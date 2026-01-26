@@ -51,7 +51,6 @@ Advanced filters can be enabled to refine queries further:
 
 * Show species-specific columns
 * Filter by:
-
   * “Found in” selected species
   * “Not found in” selected species
 * Optional stratification by structural stability (stable R/D vs unstable I/S)
@@ -60,16 +59,13 @@ Advanced filters can be enabled to refine queries further:
 
 * Show tissue-specific expression columns
 * Filter by:
-
   * Expressed in selected tissues (RPMM ≥ 1.5)
   * Not expressed in selected tissues
 * Tissues are organized by **anatomical systems**, with visual icons for navigation
 
 #### Database and class
-
 * Show miRBase / MirGeneDB class annotations
 * Filter miRNAs:
-
   * present in both databases
   * annotated only in miRBase
 * Filter by structural stability class (R, D, I, S)
@@ -79,10 +75,8 @@ Advanced filters can be enabled to refine queries further:
 ## Table visualization
 
 Results are displayed in a responsive, scrollable table with:
-
 * Sticky header and first column
 * Color-coded cells with an integrated legend for:
-
   * pass/fail status (structure, conservation, expression)
   * family membership
   * human specificity
@@ -96,13 +90,12 @@ Results are displayed in a responsive, scrollable table with:
 ## Data export
 
 The currently filtered dataset can be exported as:
-
 * **TSV table**
   (all visible columns, clean formatting)
 * **FASTA file**
   containing the pre-miRNA sequences of the selected entries
 
-These exports allow seamless integration with downstream analyses and custom pipelines.
+These exports allow downstream analyses and custom pipelines.
 
 ---
 
@@ -126,7 +119,7 @@ The app dynamically generates a **repeat class distribution bar plot** (Altair) 
 If you use this resource, please cite the accompanying manuscript:
 
 > *Author list*. **Title**. *Journal*, year.
-> (link to be added upon publication)
+> (aggiungere link mi)
 
 ---
 
