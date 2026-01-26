@@ -881,11 +881,10 @@ if show_adv:
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
 if any_filter_active():
-    st.sidebar.button(
-        "Reset all filters",
-        use_container_width=True,
-        on_click=reset_all_filters
-    )
+    if st.sidebar.button("Reset all filters", use_container_width=True):
+        for k in FILTER_KEYS:
+            st.session_state.pop(k, None)
+        st.rerun()
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -1601,4 +1600,5 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
