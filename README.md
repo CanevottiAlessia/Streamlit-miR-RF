@@ -118,8 +118,7 @@ The app dynamically generates a **repeat class distribution bar plot** (Altair) 
 
 If you use this resource, please cite the accompanying manuscript:
 
-> *Author list*. **Title**. *Journal*, year.
-> (aggiungere link mi)
+> *...*, year.
 
 ---
 
