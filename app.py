@@ -9,17 +9,10 @@ from PIL import Image
 # STREAMLIT CONFIG (must be before any other st.* output)
 # -----------------------------------------------------------
 st.set_page_config(layout="wide")
-
-# Toolbar Streamlit: riduci o elimina la barra (icona tabella/expand) sopra i charts
-# "minimal" la riduce; con il CSS sotto la nascondiamo comunque del tutto
 st.set_option("client.toolbarMode", "minimal")
 
 # -----------------------------------------------------------
-# GLOBAL THEME: AUTO LIGHT/DARK (via prefers-color-scheme)
-# + SIDEBAR IMPROVEMENTS
-# + GREY PANELS/BUTTONS
-# + +2px text OUTSIDE TABLE
-# NOTE: pill ONLY for "Show extra columns" + "Filter extra columns"
+# GLOBAL THEME + RESPONSIVE CSS (LIGHT/DARK + BREAKPOINTS)
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -55,7 +48,7 @@ st.markdown(
       --table-first-td-bg: #f2f2f2;
       --table-border: #000000;
 
-      /* Per griglia Altair (soft) in light */
+      /* Altair grid opacity (light) */
       --grid-opacity: 0.14;
     }
 
@@ -88,17 +81,17 @@ st.markdown(
         --table-first-td-bg: #333333;
         --table-border: #000000;
 
-        /* Per griglia Altair (soft) in dark */
+        /* Altair grid opacity (dark) */
         --grid-opacity: 0.10;
       }
     }
 
     /* =======================================================
-       GLOBAL FONT: +2px everywhere OUTSIDE TABLE
-       (table handled separately below)
+       GLOBAL FONT: RESPONSIVE (outside table)
+       instead of fixed 22px
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
-        font-size: 22px !important;
+        font-size: clamp(16px, 1.2vw + 10px, 22px) !important;
         background: var(--bg) !important;
         color: var(--text) !important;
     }
@@ -118,7 +111,7 @@ st.markdown(
         color: var(--text) !important;
     }
 
-    /* inputs background (readable on both themes) */
+    /* inputs */
     .stTextInput input, .stNumberInput input{
         background: var(--input-bg) !important;
         color: var(--text) !important;
@@ -236,8 +229,8 @@ st.markdown(
     }
 
     /* ---------------------------
-       BARPLOT CONTAINER GREY BACKGROUND
-       + IMPORTANT: set color so Altair "currentColor" works
+       BARPLOT CONTAINER
+       + set color so Altair "currentColor" works
     ---------------------------- */
     .plot-card{
         background: var(--plot-card-bg);
@@ -246,19 +239,36 @@ st.markdown(
         padding: 0px;
         margin-top: 6px;
         margin-bottom: 10px;
-
-        /* This is key: Altair labels using currentColor will follow this */
-        color: var(--text) !important;
+        color: var(--text) !important;  /* key for currentColor */
     }
 
     /* ---------------------------
        REMOVE THE BAR ABOVE CHARTS (Streamlit element toolbar)
-       This is the "barra" with icons (table/expand/...) shown in your screenshot
     ---------------------------- */
     div[data-testid="stElementToolbar"]{
         display: none !important;
         height: 0 !important;
         visibility: hidden !important;
+    }
+
+    /* =======================================================
+       RESPONSIVE BREAKPOINTS (mobile / small screens)
+    ======================================================= */
+    @media (max-width: 900px){
+      /* sidebar: lighter on mobile */
+      section[data-testid="stSidebar"] h2{
+        font-size: 18px !important;
+      }
+      section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
+        font-size: 18px !important;
+      }
+      section[data-testid="stSidebar"] label,
+      section[data-testid="stSidebar"] .stMarkdown p{
+        font-size: 14px !important;
+      }
+      .sidebar-icon img{
+        width: 84px !important;
+      }
     }
 
     </style>
@@ -658,7 +668,6 @@ else:
     species_found_sidebar = []
     stable_unstable = []
 
-
 # -----------------------------------------------------------
 # APPLY FILTERS
 # -----------------------------------------------------------
@@ -985,7 +994,7 @@ if helper_cols_present:
 html_table = styled_df.hide(axis="index").to_html(escape=False)
 
 # -----------------------------------------------------------
-# CSS — TABLE + LEGEND
+# CSS — TABLE + LEGEND (RESPONSIVE)
 # -----------------------------------------------------------
 custom_css = r"""
 <style>
@@ -1014,6 +1023,10 @@ custom_css = r"""
   min-width: 100% !important;
 }
 
+/* -------------------------------------------------------
+   RESPONSIVE CELLS: no fixed 195px/230px
+   Use clamp() so it adapts across screens
+------------------------------------------------------- */
 .table-inner th,
 .table-inner td{
   border: 1px solid var(--table-border) !important;
@@ -1022,11 +1035,12 @@ custom_css = r"""
   line-height: 1.25 !important;
   min-height: 42px !important;
   padding: 10px 10px !important;
-  font-size: 20px !important;
 
-  width: 195px !important;
-  min-width: 195px !important;
-  max-width: 195px !important;
+  font-size: clamp(14px, 1.0vw + 8px, 20px) !important;
+
+  width: clamp(120px, 12vw, 195px) !important;
+  min-width: clamp(120px, 12vw, 195px) !important;
+  max-width: clamp(220px, 18vw, 260px) !important;
 
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -1050,14 +1064,15 @@ custom_css = r"""
   text-overflow: clip !important;
 }
 
+/* first column wider but still responsive */
 .table-inner th:first-child{
   position: sticky !important;
   left: 0;
   z-index: 30 !important;
 
-  width: 230px !important;
-  min-width: 230px !important;
-  max-width: 230px !important;
+  width: clamp(160px, 16vw, 230px) !important;
+  min-width: clamp(160px, 16vw, 230px) !important;
+  max-width: clamp(240px, 24vw, 320px) !important;
 
   background-color: var(--table-first-th-bg) !important;
   color: color-mix(in srgb, var(--text) 95%, transparent) !important;
@@ -1069,9 +1084,9 @@ custom_css = r"""
   left: 0;
   z-index: 25 !important;
 
-  width: 230px !important;
-  min-width: 230px !important;
-  max-width: 230px !important;
+  width: clamp(160px, 16vw, 230px) !important;
+  min-width: clamp(160px, 16vw, 230px) !important;
+  max-width: clamp(240px, 24vw, 320px) !important;
 
   background-color: var(--table-first-td-bg) !important;
   color: color-mix(in srgb, var(--text) 95%, transparent) !important;
@@ -1123,6 +1138,36 @@ custom_css = r"""
   vertical-align: middle;
   border: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
   box-sizing: border-box;
+}
+
+/* -------------------------------------------------------
+   MOBILE BREAKPOINT: allow wrap + less padding + better fit
+------------------------------------------------------- */
+@media (max-width: 900px){
+  .table-container{
+    max-height: 70vh;
+  }
+
+  .table-inner table{
+    table-layout: auto !important;
+  }
+
+  .table-inner th,
+  .table-inner td{
+    padding: 8px 8px !important;
+    border-radius: 6px !important;
+
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+
+  .legend-card{
+    min-width: 220px;
+    font-size: 16px;
+  }
+  .legend-title{
+    font-size: 18px;
+  }
 }
 </style>
 """
@@ -1264,7 +1309,6 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
     barplot = (
         alt.Chart(repeat_counts)
         .mark_bar(
-            # stroke e testi "auto" col tema grazie a currentColor (eredita da .plot-card { color: var(--text) })
             stroke="currentColor",
             strokeOpacity=0.55,
             strokeWidth=1.2
@@ -1297,10 +1341,8 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
             tooltip=["Repeat_Class", "Count", "Percent"]
         )
         .properties(height=600)
-        # sfondo trasparente, si integra col tuo CSS
         .configure(background="transparent")
         .configure_view(fill="transparent", strokeOpacity=0)
-        # assi/titoli in currentColor + griglia "soft" via opacità
         .configure_axis(
             labelColor="currentColor",
             titleColor="currentColor",
@@ -1308,7 +1350,7 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
             titleFontSize=18,
             grid=True,
             gridColor="currentColor",
-            gridOpacity=0.12,
+            gridOpacity=alt.value(None),  # overridden below (see next)
             domainColor="currentColor",
             domainOpacity=0.55,
             tickColor="currentColor",
@@ -1316,6 +1358,9 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
         )
         .configure_title(color="currentColor")
     )
+
+    # Use the CSS var --grid-opacity (we pass a constant fallback; CSS controls visuals via currentColor & opacity already)
+    barplot = barplot.configure_axis(gridOpacity=0.12)
 
     st.altair_chart(barplot, use_container_width=True)
 else:
