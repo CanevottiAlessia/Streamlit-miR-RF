@@ -990,7 +990,7 @@ html_table = styled_df.hide(axis="index").to_html(escape=False)
 custom_css = r"""
 <style>
 .table-container{
-  max-height: 902px;
+  max-height: 906px;
   overflow-y: auto !important;
   overflow-x: auto !important;
   border: 2px solid var(--table-border);
@@ -1327,5 +1327,6 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
