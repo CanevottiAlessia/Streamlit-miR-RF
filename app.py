@@ -1269,7 +1269,7 @@ st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
 btn_col, _ = st.columns([2, 8])
 with btn_col:
-    tsv_bytes = tsv_export_df.to_csv(index=False, sep="\\t").encode("utf-8")
+    tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
     st.download_button(
         "Download table (TSV)",
         data=tsv_bytes,
@@ -1346,3 +1346,4 @@ else:
 
 # ✅ chiudi entrambi i div
 st.markdown("</div></div>", unsafe_allow_html=True)
+
