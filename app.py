@@ -624,36 +624,24 @@ if show_adv:
     # =========================================================
     with st.sidebar.expander("Tissue expression", expanded=True): # prima era Expression
 
-        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
-
-        tissues_to_show = st.multiselect(
-            "Show tissue columns:",
-            tissue_sidebar_names,
-            default=[],
-            key="show_tissue_cols",
-        )
-
-        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
-
+        # --- Expressed in (>= 1.5) ---
         st.markdown(
             "<div style='font-size:20px; font-weight:400; margin: 6px 0 6px 0;'>"
             "Expressed in (select tissues by system):"
             "</div>",
             unsafe_allow_html=True
         )
-
-
+        
         tissues_filter_set = set()
-
+        
         for system_name, sys_tissues in SYSTEM_TISSUES.items():
             available = [t for t in sys_tissues if t in tissue_sidebar_names]
             if not available:
                 continue
-
+        
             icon = SYSTEM_ICONS.get(system_name)
-            col_icon, col_exp = st.columns([1.6, 10], gap="small")
-
+            col_icon, col_exp = st.columns([1.6, 10], gap="none")
+        
             with col_icon:
                 if icon is not None:
                     st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
@@ -661,18 +649,59 @@ if show_adv:
                     st.markdown("</div>", unsafe_allow_html=True)
                 else:
                     st.write("")
-
+        
             with col_exp:
                 display_system = system_name.split(". ", 1)[-1].replace(" system", "")
                 with st.expander(display_system, expanded=False):
                     picked = st.multiselect(
                         "Select tissues",
                         available,
-                        key=f"tree_{system_name}",
+                        key=f"tree_pos_{system_name}",   # <-- chiave diversa
                     )
                     tissues_filter_set.update(picked)
-
+        
         tissues_filter = sorted(tissues_filter_set)
+        
+        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+        
+        # --- Not expressed in (< 1.5) ---
+        st.markdown(
+            "<div style='font-size:20px; font-weight:400; margin: 6px 0 6px 0;'>"
+            "Not expressed in (select tissues by system):"
+            "</div>",
+            unsafe_allow_html=True
+        )
+        
+        tissues_not_filter_set = set()
+        
+        for system_name, sys_tissues in SYSTEM_TISSUES.items():
+            available = [t for t in sys_tissues if t in tissue_sidebar_names]
+            if not available:
+                continue
+        
+            icon = SYSTEM_ICONS.get(system_name)
+            col_icon, col_exp = st.columns([1.6, 10], gap="small")
+        
+            with col_icon:
+                if icon is not None:
+                    st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                    st.image(icon, width=120)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                else:
+                    st.write("")
+        
+            with col_exp:
+                display_system = system_name.split(". ", 1)[-1].replace(" system", "")
+                with st.expander(display_system, expanded=False):
+                    picked = st.multiselect(
+                        "Select tissues",
+                        available,
+                        key=f"tree_neg_{system_name}",   # <-- chiave diversa
+                    )
+                    tissues_not_filter_set.update(picked)
+        
+        tissues_not_filter = sorted(tissues_not_filter_set)
+
 
     # =========================================================
     # BOX 3 — DATABASE / CLASS
@@ -800,6 +829,11 @@ if tissues_filter:
     tissue_num = filtered[tissues_filter].apply(pd.to_numeric, errors="coerce")
     expressed_mask = (tissue_num >= 1.5).all(axis=1)
     filtered = filtered[expressed_mask]
+    
+if tissues_not_filter:
+    tissue_num_not = filtered[tissues_not_filter].apply(pd.to_numeric, errors="coerce")
+    not_expressed_mask = (tissue_num_not < 1.5).all(axis=1)
+    filtered = filtered[not_expressed_mask]
 
 if search_term:
     mask = filtered.astype(str).apply(lambda col: col.str.contains(search_term, case=False, na=False)).any(axis=1)
@@ -1425,6 +1459,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
