@@ -546,9 +546,9 @@ st.sidebar.header("Filters")
 search_term = st.sidebar.text_input("Search any column:", key="search_any")
 
 pass_options = ["PASSED", "NOT PASSED"]
-conservation_selected = st.sidebar.multiselect("Conservation:", pass_options, default=[], key="ms_conservation")
-expression_selected   = st.sidebar.multiselect("Expression:",   pass_options, default=[], key="ms_expression")
-structure_selected    = st.sidebar.multiselect("Structure:",    pass_options, default=[], key="ms_structure")
+conservation_selected = st.sidebar.multiselect("Evolutionary conservation:", pass_options, default=[], key="ms_conservation") # prima era Conservation
+expression_selected   = st.sidebar.multiselect("Tissue expression:",   pass_options, default=[], key="ms_expression") # prima era Expression 
+structure_selected    = st.sidebar.multiselect("Structural stability:",    pass_options, default=[], key="ms_structure") # prima era Structure
 
 family_options = [
     "Single miRNAs – miRBase",
@@ -1425,6 +1425,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
