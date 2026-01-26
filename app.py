@@ -1326,7 +1326,7 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                 title="Repeat class",
                 axis=alt.Axis(
                     labelAngle=0,
-                    labelFontSize=15,
+                    labelFontSize=14.5,
                     titleFontSize=18,
                     titlePadding=40,
                 )
@@ -1376,6 +1376,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
