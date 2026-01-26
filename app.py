@@ -1038,9 +1038,9 @@ custom_css = r"""
 
   font-size: clamp(14px, 1.0vw + 8px, 20px) !important;
 
-  width: clamp(120px, 12vw, 195px) !important;
-  min-width: clamp(120px, 12vw, 195px) !important;
-  max-width: clamp(220px, 18vw, 260px) !important;
+  width: clamp(150px, 10vw, 190px) !important;
+  min-width: clamp(150px, 10vw, 190px) !important;
+  max-width: clamp(190px, 12vw, 230px) !important;
 
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -1070,9 +1070,9 @@ custom_css = r"""
   left: 0;
   z-index: 30 !important;
 
-  width: clamp(160px, 16vw, 230px) !important;
-  min-width: clamp(160px, 16vw, 230px) !important;
-  max-width: clamp(240px, 24vw, 320px) !important;
+  width: clamp(190px, 14vw, 240px) !important;
+  min-width: clamp(190px, 14vw, 240px) !important;
+  max-width: clamp(240px, 18vw, 300px) !important;
 
   background-color: var(--table-first-th-bg) !important;
   color: color-mix(in srgb, var(--text) 95%, transparent) !important;
@@ -1370,4 +1370,5 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
