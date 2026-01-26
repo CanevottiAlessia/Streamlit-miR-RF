@@ -241,12 +241,15 @@ st.markdown(
         background: var(--plot-card-bg);
         border: 1px solid var(--panel-border);
         border-radius: 16px;
-        padding: 14px 14px 6px 14px;
+        padding: 0 !important;
         margin-top: 6px;
         margin-bottom: 10px;
 
         /* Altair labels using currentColor follow this */
         color: var(--text) !important;
+        /* ✅ padding SOLO dentro, attorno al chart */
+        .plot-card-inner{
+         padding: 14px 14px 10px 14px;
     }
 
     /* ---------------------------
@@ -1275,7 +1278,7 @@ ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
 
 st.subheader("Repeat class distribution")
-st.markdown("<div class='plot-card'>", unsafe_allow_html=True)
+st.markdown("<div class='plot-card'><div class='plot-card-inner'>", unsafe_allow_html=True)
 
 if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any():
     repeat_counts = filtered.groupby("Repeat_Class").size().reset_index(name="Count")
@@ -1332,3 +1335,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
