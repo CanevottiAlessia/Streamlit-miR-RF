@@ -194,7 +194,7 @@ st.markdown(
     }
 
     .sidebar-section-title{
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
       margin: 8px 0 6px 0;
     }
@@ -1425,6 +1425,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
