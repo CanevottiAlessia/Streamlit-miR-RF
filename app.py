@@ -636,7 +636,13 @@ if show_adv:
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
         st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
-        st.markdown("Expressed in (select tissues by system):")
+        st.markdown(
+            "<div style='font-size:16px; font-weight:400; margin: 6px 0 6px 0;'>"
+            "Expressed in (select tissues by system):"
+            "</div>",
+            unsafe_allow_html=True
+        )
+
 
         tissues_filter_set = set()
 
@@ -1419,6 +1425,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
