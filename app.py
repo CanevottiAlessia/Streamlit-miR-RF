@@ -1227,8 +1227,8 @@ if visible_species_cols or species_filter_active:
 <div class="legend-card">
   <div class="legend-title">Species conservation</div>
   <div class="legend-row">
-    <span class="legend-item"><span class="swatch" style="background:#fdb863;"></span>Stable</span>
-    <span class="legend-item"><span class="swatch" style="background:#b2abd2;"></span>Unstable</span>
+    <span class="legend-item"><span class="swatch" style="background:#fdb863;"></span>Stable structure</span>
+    <span class="legend-item"><span class="swatch" style="background:#b2abd2;"></span>Unstable structure</span>
     <span class="legend-item"><span class="swatch" style="background:{NA_SPECIES_COLOR};"></span>Not found</span>
   </div>
 </div>
@@ -1376,4 +1376,5 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
