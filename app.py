@@ -569,14 +569,18 @@ repeats_selected = st.sidebar.multiselect(
 )
 
 # -----------------------------------------------------------
-# SIDEBAR: ADVANCED OPTIONS
+# SIDEBAR: ADVANCED OPTIONS (reorganized into 3 boxes)
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
 show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
 
 if show_adv:
-    # --- SECTION 1: Show extra columns ---
-    with st.sidebar.expander("Show extra columns", expanded=True):
+    # =========================================================
+    # BOX 1 — CONSERVATION
+    # =========================================================
+    with st.sidebar.expander("Conservation", expanded=True):
+
+        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
         animals_to_show_sidebar = st.multiselect(
             "Show species columns:",
@@ -586,24 +590,17 @@ if show_adv:
         )
         animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
 
-        tissues_to_show = st.multiselect(
-            "Show tissue columns:",
-            tissue_sidebar_names,
-            default=[],
-            key="show_tissue_cols",
-        )
+        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
-        show_class_cols = st.checkbox("Show Class columns", value=False, key="show_class_cols")
-
-    st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-
-    # --- SECTION 2: Filter extra columns ---
-    with st.sidebar.expander("Filter extra columns", expanded=True):
-
-        st.markdown("<div class='sidebar-section-title'>Conservation</div>", unsafe_allow_html=True)
         species_options = list(animal_sidebar_names.values())
 
-        species_found_sidebar = st.multiselect("Found in:", species_options, default=[], key="cons_species_found")
+        species_found_sidebar = st.multiselect(
+            "Found in:",
+            species_options,
+            default=[],
+            key="cons_species_found",
+        )
 
         if species_found_sidebar:
             stable_unstable = st.multiselect(
@@ -615,14 +612,35 @@ if show_adv:
         else:
             stable_unstable = []
 
-        species_na_sidebar = st.multiselect("Not found in:", species_options, default=[], key="cons_species_na")
+        species_na_sidebar = st.multiselect(
+            "Not found in:",
+            species_options,
+            default=[],
+            key="cons_species_na",
+        )
+
+    # =========================================================
+    # BOX 2 — EXPRESSION
+    # =========================================================
+    with st.sidebar.expander("Expression", expanded=True):
+
+        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
+
+        tissues_to_show = st.multiselect(
+            "Show tissue columns:",
+            tissue_sidebar_names,
+            default=[],
+            key="show_tissue_cols",
+        )
 
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
         st.markdown(
             "<div class='sidebar-section-title'>Expressed in (select tissues by system):</div>",
             unsafe_allow_html=True
         )
+
         tissues_filter_set = set()
 
         for system_name, sys_tissues in SYSTEM_TISSUES.items():
@@ -644,20 +662,47 @@ if show_adv:
             with col_exp:
                 display_system = system_name.split(". ", 1)[-1].replace(" system", "")
                 with st.expander(display_system, expanded=False):
-                    picked = st.multiselect("Select tissues", available, key=f"tree_{system_name}")
+                    picked = st.multiselect(
+                        "Select tissues",
+                        available,
+                        key=f"tree_{system_name}",
+                    )
                     tissues_filter_set.update(picked)
 
         tissues_filter = sorted(tissues_filter_set)
 
-        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+    # =========================================================
+    # BOX 3 — DATABASE / CLASS
+    # =========================================================
+    with st.sidebar.expander("Database / Class", expanded=True):
 
-        st.markdown("<div class='sidebar-section-title'>Database / Class</div>", unsafe_allow_html=True)
-        mirgene_filter = st.selectbox("Database:", ["Show all", "In both", "Only in miRBase"], key="db_filter")
+        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
+
+        show_class_cols = st.checkbox(
+            "Show Class columns",
+            value=False,
+            key="show_class_cols",
+        )
+
+        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
+
+        mirgene_filter = st.selectbox(
+            "Database:",
+            ["Show all", "In both", "Only in miRBase"],
+            key="db_filter",
+        )
 
         classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
-        classes_selected = st.multiselect("Class:", classes, default=[], key="class_filter")
+        classes_selected = st.multiselect(
+            "Class:",
+            classes,
+            default=[],
+            key="class_filter",
+        )
 
 else:
+    # defaults when advanced options are hidden
     animals_to_show = []
     tissues_to_show = []
     show_class_cols = False
@@ -667,6 +712,7 @@ else:
     species_na_sidebar = []
     species_found_sidebar = []
     stable_unstable = []
+
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -1376,6 +1422,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
