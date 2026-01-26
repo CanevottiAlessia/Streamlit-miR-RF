@@ -135,7 +135,7 @@ If you use this resource, please cite the accompanying manuscript:
 
 ## Notes
 
-* The application is designed as a **companion resource** to the manuscript and reflects the same thresholds and classification criteria.
+* The application is designed as a **supporting resource** to the manuscript and reflects the same thresholds and classification criteria.
 * Users are encouraged to apply their own filtering strategies depending on their specific biological or clinical research question.
 
 ---
