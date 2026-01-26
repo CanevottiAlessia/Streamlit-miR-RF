@@ -11,7 +11,7 @@ The app enables intuitive filtering, inspection, and export of **pre-miRNA annot
 
 ### Interactive filtering (sidebar)
 - **Global search** across all columns (“Search any column”)
-- **QC-like pass/fail filters** for:
+- **Pass/fail filters** for:
   - **Conservation** (PASSED / NOT PASSED)
   - **Expression** (PASSED / NOT PASSED)
   - **Structure** (PASSED / NOT PASSED)
