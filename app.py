@@ -640,7 +640,7 @@ if show_adv:
                 continue
         
             icon = SYSTEM_ICONS.get(system_name)
-            col_icon, col_exp = st.columns([1.6, 10], gap="none")
+            col_icon, col_exp = st.columns([1.6, 10], gap="small")
         
             with col_icon:
                 if icon is not None:
@@ -1459,6 +1459,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
