@@ -546,9 +546,9 @@ st.sidebar.header("Filters")
 search_term = st.sidebar.text_input("Search any column:", key="search_any")
 
 pass_options = ["PASSED", "NOT PASSED"]
-conservation_selected = st.sidebar.multiselect("Evolutionary conservation:", pass_options, default=[], key="ms_conservation") # prima era Conservation
-expression_selected   = st.sidebar.multiselect("Tissue expression:",   pass_options, default=[], key="ms_expression") # prima era Expression 
-structure_selected    = st.sidebar.multiselect("Structural stability:",    pass_options, default=[], key="ms_structure") # prima era Structure
+conservation_selected = st.sidebar.multiselect("Conservation:", pass_options, default=[], key="ms_conservation")
+expression_selected   = st.sidebar.multiselect("Expression:",   pass_options, default=[], key="ms_expression") 
+structure_selected    = st.sidebar.multiselect("Structure:",    pass_options, default=[], key="ms_structure")
 
 family_options = [
     "Single miRNAs – miRBase",
@@ -578,7 +578,7 @@ if show_adv:
     # =========================================================
     # BOX 1 — CONSERVATION
     # =========================================================
-    with st.sidebar.expander("Conservation", expanded=True):
+    with st.sidebar.expander("Evolutionary conservation", expanded=True): # prima era Conservation
 
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
@@ -622,7 +622,7 @@ if show_adv:
     # =========================================================
     # BOX 2 — EXPRESSION
     # =========================================================
-    with st.sidebar.expander("Expression", expanded=True):
+    with st.sidebar.expander("Tissue expression", expanded=True): # prima era Expression
 
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
@@ -1425,6 +1425,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
