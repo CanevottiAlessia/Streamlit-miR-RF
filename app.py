@@ -734,16 +734,18 @@ if show_adv:
         )
 
 else:
-    # defaults when advanced options are hidden
     animals_to_show = []
     tissues_to_show = []
     show_class_cols = False
     tissues_filter = []
+    tissues_not_filter = []   # <-- FIX
     mirgene_filter = "Show all"
     classes_selected = []
     species_na_sidebar = []
     species_found_sidebar = []
     stable_unstable = []
+
+    
 
 
 # -----------------------------------------------------------
@@ -1459,6 +1461,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
