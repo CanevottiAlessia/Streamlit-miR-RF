@@ -304,7 +304,7 @@ def load_icons():
         "4. Immune / Hematolymphoid system": safe_open("immune.png"),
         "5. Musculoskeletal & Integumentary system": safe_open("muscle.png"),
         "6. Urogenital & Reproductive system": safe_open("reproductive.png"),
-        "Other system": safe_open("other.png"),
+        "Others system": safe_open("other.png"),
     }
 
 SYSTEM_ICONS = load_icons()
@@ -457,7 +457,7 @@ SYSTEM_TISSUES = {
         "follicular_fluid", "amniotic_fluid", "theca",
         "glandular_breast_tissue", "sperm", "semen",
     ],
-    "Other system": [
+    "Others system": [
         "adipose", "epithelium", "podocyte", "milk",
         "mesenchymal_stromal_cells", "mesenchymal_stem_cells",
         "nucleus_pulposus", "lavage", "aqueous_humor",
@@ -1425,6 +1425,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
