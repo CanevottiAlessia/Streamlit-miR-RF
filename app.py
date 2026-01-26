@@ -88,7 +88,6 @@ st.markdown(
 
     /* =======================================================
        GLOBAL FONT: RESPONSIVE (outside table)
-       instead of fixed 22px
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
         font-size: clamp(16px, 1.2vw + 10px, 22px) !important;
@@ -255,7 +254,6 @@ st.markdown(
        RESPONSIVE BREAKPOINTS (mobile / small screens)
     ======================================================= */
     @media (max-width: 900px){
-      /* sidebar: lighter on mobile */
       section[data-testid="stSidebar"] h2{
         font-size: 18px !important;
       }
@@ -456,12 +454,13 @@ SYSTEM_TISSUES = {
         "kidney", "bladder", "urine", "testis", "prostate",
         "uterus", "cervix", "ovary", "vaginal_tissue", "oocyte",
         "embryo", "placenta", "chorionic_villi", "umbilical_cord",
-        "follicular_fluid", "amniotic_fluid", "theca", "glandular_breast_tissue", "sperm", "semen",
+        "follicular_fluid", "amniotic_fluid", "theca",
+        "glandular_breast_tissue", "sperm", "semen",
     ],
     "Other system": [
         "adipose", "epithelium", "podocyte", "milk",
         "mesenchymal_stromal_cells", "mesenchymal_stem_cells",
-        "nucleus_pulposus","lavage", "aqueous_humor",
+        "nucleus_pulposus", "lavage", "aqueous_humor",
     ],
 }
 
@@ -535,7 +534,8 @@ df["MirGeneDB_family_display"] = df.apply(
 # -----------------------------------------------------------
 st.title("pre-miRNA Annotation Browser")
 st.markdown(
-    "Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, repeat classification and family context."
+    "Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, "
+    "repeat classification and family context."
 )
 
 # -----------------------------------------------------------
@@ -1024,8 +1024,7 @@ custom_css = r"""
 }
 
 /* -------------------------------------------------------
-   RESPONSIVE CELLS: no fixed 195px/230px
-   Use clamp() so it adapts across screens
+   RESPONSIVE CELLS
 ------------------------------------------------------- */
 .table-inner th,
 .table-inner td{
@@ -1084,9 +1083,9 @@ custom_css = r"""
   left: 0;
   z-index: 25 !important;
 
-  width: clamp(160px, 16vw, 230px) !important;
-  min-width: clamp(160px, 16vw, 230px) !important;
-  max-width: clamp(240px, 24vw, 320px) !important;
+  width: clamp(190px, 14vw, 240px) !important;
+  min-width: clamp(190px, 14vw, 240px) !important;
+  max-width: clamp(240px, 18vw, 300px) !important;
 
   background-color: var(--table-first-td-bg) !important;
   color: color-mix(in srgb, var(--text) 95%, transparent) !important;
@@ -1100,7 +1099,7 @@ custom_css = r"""
   gap: 14px 22px;
   align-items: flex-start;
   margin-top: 10px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;  /* un po' meno per stare “attaccata” alla tabella */
 }
 
 .legend-card{
@@ -1141,7 +1140,7 @@ custom_css = r"""
 }
 
 /* -------------------------------------------------------
-   MOBILE BREAKPOINT: allow wrap + less padding + better fit
+   MOBILE BREAKPOINT
 ------------------------------------------------------- */
 @media (max-width: 900px){
   .table-container{
@@ -1173,19 +1172,12 @@ custom_css = r"""
 """
 
 # -----------------------------------------------------------
-# SHOW TABLE
+# ROW COUNT
 # -----------------------------------------------------------
 st.write(f"Rows shown: **{len(filtered)}**")
-st.markdown(
-    custom_css
-    + "<div class='table-container'><div class='table-inner'>"
-    + html_table
-    + "</div></div>",
-    unsafe_allow_html=True
-)
 
 # -----------------------------------------------------------
-# LEGEND (below table)
+# LEGEND (ABOVE TABLE)
 # -----------------------------------------------------------
 legend_cards = []
 
@@ -1267,6 +1259,20 @@ if visible_class_cols:
 """)
 
 st.markdown(f"<div class='legend-wrap'>{''.join(legend_cards)}</div>", unsafe_allow_html=True)
+
+# (opzionale) micro-spazio tra legenda e tabella
+st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+
+# -----------------------------------------------------------
+# SHOW TABLE (AFTER LEGEND)
+# -----------------------------------------------------------
+st.markdown(
+    custom_css
+    + "<div class='table-container'><div class='table-inner'>"
+    + html_table
+    + "</div></div>",
+    unsafe_allow_html=True
+)
 
 # -----------------------------------------------------------
 # DOWNLOAD BUTTONS (TSV + FASTA) — left + stacked
@@ -1350,7 +1356,7 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
             titleFontSize=18,
             grid=True,
             gridColor="currentColor",
-            gridOpacity=0.12,      # <-- SOLO numero
+            gridOpacity=0.12,
             domainColor="currentColor",
             domainOpacity=0.55,
             tickColor="currentColor",
@@ -1370,5 +1376,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
