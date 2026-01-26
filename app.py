@@ -583,7 +583,11 @@ def reset_all_filters():
     for k in FILTER_KEYS:
         if k in st.session_state:
             del st.session_state[k]
-    st.experimental_rerun()
+    try:
+        st.rerun()
+    except Exception:
+        st.experimental_rerun()
+
 
 # -----------------------------------------------------------
 # SPECIES MAPPING: True/False/NA robust
@@ -1597,3 +1601,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
