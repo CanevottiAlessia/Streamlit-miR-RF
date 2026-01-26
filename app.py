@@ -5,7 +5,7 @@ import altair as alt
 from PIL import Image
 
 # ===========================================================
-# ALTAR/VEGA EMBED OPTIONS
+# ALTAIR/VEGA EMBED OPTIONS
 # (toglie i 3 puntini / actions menu)
 # ===========================================================
 alt.renderers.set_embed_options(actions=False)
@@ -17,10 +17,7 @@ st.set_page_config(layout="wide")
 st.set_option("client.toolbarMode", "minimal")
 
 # -----------------------------------------------------------
-# GLOBAL THEME: AUTO LIGHT/DARK (via prefers-color-scheme)
-# + SIDEBAR IMPROVEMENTS
-# + GREY PANELS/BUTTONS
-# + +2px text OUTSIDE TABLE
+# GLOBAL THEME + CSS FIXES (incl. "grey bar" above Altair)
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -234,22 +231,19 @@ st.markdown(
     }
 
     /* ---------------------------
-       BARPLOT CONTAINER GREY BACKGROUND
-       + IMPORTANT: set color so Altair "currentColor" works
+       BARPLOT CARD (outer + inner padding)
     ---------------------------- */
     .plot-card{
-        background: var(--plot-card-bg);
-        border: 1px solid var(--panel-border);
-        border-radius: 16px;
+        background: var(--plot-card-bg) !important;
+        border: 1px solid var(--panel-border) !important;
+        border-radius: 16px !important;
         padding: 0 !important;
-        margin-top: 6px;
-        margin-bottom: 10px;
-
-        /* Altair labels using currentColor follow this */
-        color: var(--text) !important;
-        /* ✅ padding SOLO dentro, attorno al chart */
-        .plot-card-inner{
-         padding: 14px 14px 10px 14px;
+        margin-top: 6px !important;
+        margin-bottom: 10px !important;
+        color: var(--text) !important; /* currentColor for Altair */
+    }
+    .plot-card-inner{
+        padding: 14px 14px 10px 14px !important;
     }
 
     /* ---------------------------
@@ -261,12 +255,9 @@ st.markdown(
         visibility: hidden !important;
     }
 
-    /* =========================================================
-       REMOVE THE GREY "PILL" ABOVE ALTAIR/VEGA CHARTS
-       (Streamlit sometimes inserts an empty row/overlay)
-    ========================================================= */
-
-    /* 1) vega-embed actions/menus (safety net) */
+    /* ---------------------------
+       Safety net: remove vega embed actions (if any)
+    ---------------------------- */
     .vega-embed .vega-actions,
     .vega-embed details,
     .vega-embed summary{
@@ -275,21 +266,40 @@ st.markdown(
       visibility: hidden !important;
     }
 
-    /* 2) remove the ghost row just above VegaLite charts */
-    div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stVegaLiteChart"]) > div:first-child{
-      display: none !important;
-      height: 0 !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      visibility: hidden !important;
-    }
-
-    /* 3) reset spacing on the chart container */
-    div[data-testid="stVegaLiteChart"]{
+    /* =========================================================
+       FIX: remove the GREY "BAR/PILL" above Altair charts
+       (Streamlit wrapper row with padding)
+    ========================================================= */
+    .plot-card-inner div[data-testid="stVegaLiteChart"]{
       margin-top: 0 !important;
       padding-top: 0 !important;
     }
 
+    /* sometimes the bar is first child inside stVegaLiteChart */
+    .plot-card-inner div[data-testid="stVegaLiteChart"] > div:first-child{
+      margin: 0 !important;
+      padding: 0 !important;
+      height: 0 !important;
+      display: none !important;
+      visibility: hidden !important;
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+    }
+
+    /* sometimes the bar is first child of the chart container wrapper */
+    .plot-card-inner > div:has(> div[data-testid="stVegaLiteChart"]) > div:first-child{
+      margin: 0 !important;
+      padding: 0 !important;
+      height: 0 !important;
+      display: none !important;
+      visibility: hidden !important;
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -366,14 +376,17 @@ for c in expected_cols:
     if c not in df.columns:
         df[c] = pd.NA
 
+# Fix Class_MirGeneDB placeholder
 df["Class_MirGeneDB"] = df["Class_MirGeneDB"].fillna("—")
 df["Class_MirGeneDB"] = df["Class_MirGeneDB"].replace(
     ["nan", "NaN", "NA", None, pd.NA, ""], "—"
 )
 
+# Fix family flags
 df["miRBase family"] = df["miRBase family"].fillna("NO")
 df["MirGeneDB family"] = df["MirGeneDB family"].fillna("—")
 
+# Repeat class cleanup
 def shorten_repeat(val):
     if not isinstance(val, str):
         return val
@@ -384,6 +397,7 @@ def shorten_repeat(val):
 df["Repeat_Class"] = df["Repeat_Class"].apply(shorten_repeat)
 df["Repeat_Class"] = df["Repeat_Class"].astype("string").str.replace("_", " ", regex=False)
 
+# Keep TRUE/FALSE text for these columns
 for c in ["Structure", "Conservation", "Expression"]:
     if c in df.columns:
         df[c] = df[c].map(lambda x: "TRUE" if x is True else ("FALSE" if x is False else x))
@@ -591,7 +605,9 @@ st.sidebar.markdown("---")
 show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
 
 if show_adv:
+    # --- SECTION 1: Show extra columns ---
     with st.sidebar.expander("Show extra columns", expanded=True):
+
         animals_to_show_sidebar = st.multiselect(
             "Show species columns:",
             list(animal_sidebar_names.values()),
@@ -611,7 +627,9 @@ if show_adv:
 
     st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
+    # --- SECTION 2: Filter extra columns ---
     with st.sidebar.expander("Filter extra columns", expanded=True):
+
         st.markdown("<div class='sidebar-section-title'>Conservation</div>", unsafe_allow_html=True)
         species_options = list(animal_sidebar_names.values())
 
@@ -1251,8 +1269,7 @@ st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
 btn_col, _ = st.columns([2, 8])
 with btn_col:
-    # TSV robust bytes
-    tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
+    tsv_bytes = tsv_export_df.to_csv(index=False, sep="\\t").encode("utf-8")
     st.download_button(
         "Download table (TSV)",
         data=tsv_bytes,
@@ -1323,16 +1340,9 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
         .configure_title(color="currentColor")
     )
 
-    # ✅ responsive come prima
     st.altair_chart(barplot, use_container_width=True)
 else:
     st.info("Repeat_Class is missing or empty: barplot not available.")
 
-st.markdown("</div>", unsafe_allow_html=True)
-
-# -----------------------------------------------------------
-# FOOTER
-# -----------------------------------------------------------
-st.markdown("---")
-st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
+# ✅ chiudi entrambi i div
+st.markdown("</div></div>", unsafe_allow_html=True)
