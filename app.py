@@ -241,9 +241,9 @@ st.markdown(
     ---------------------------- */
     .plot-card{
         background: var(--plot-card-bg);
-        border: 1px solid var(--panel-border);
+        border: 0px solid var(--panel-border);
         border-radius: 16px;
-        padding: 14px 14px 6px 14px;
+        padding: 0px;
         margin-top: 6px;
         margin-bottom: 10px;
 
@@ -1325,3 +1325,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
