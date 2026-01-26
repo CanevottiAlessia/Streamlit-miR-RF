@@ -1350,7 +1350,7 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
             titleFontSize=18,
             grid=True,
             gridColor="currentColor",
-            gridOpacity=alt.value(None),  # overridden below (see next)
+            gridOpacity=0.12,      # <-- SOLO numero
             domainColor="currentColor",
             domainOpacity=0.55,
             tickColor="currentColor",
@@ -1358,9 +1358,6 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
         )
         .configure_title(color="currentColor")
     )
-
-    # Use the CSS var --grid-opacity (we pass a constant fallback; CSS controls visuals via currentColor & opacity already)
-    barplot = barplot.configure_axis(gridOpacity=0.12)
 
     st.altair_chart(barplot, use_container_width=True)
 else:
@@ -1373,3 +1370,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
