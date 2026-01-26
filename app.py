@@ -98,7 +98,7 @@ st.markdown(
        (table handled separately below)
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
-        font-size: 20px !important;
+        font-size: 22px !important;
         background: var(--bg) !important;
         color: var(--text) !important;
     }
@@ -216,7 +216,7 @@ st.markdown(
        ICON SIZE
     ---------------------------- */
     .sidebar-icon img{
-      width: 96px !important;
+      width: 120px !important;
       height: auto !important;
     }
 
@@ -626,7 +626,7 @@ if show_adv:
             with col_icon:
                 if icon is not None:
                     st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                    st.image(icon, width=96)
+                    st.image(icon, width=120)
                     st.markdown("</div>", unsafe_allow_html=True)
                 else:
                     st.write("")
@@ -1276,16 +1276,16 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                 title="Repeat class",
                 axis=alt.Axis(
                     labelAngle=45,
-                    labelFontSize=14.5,
-                    titleFontSize=16
+                    labelFontSize=16.5,
+                    titleFontSize=18
                 )
             ),
             y=alt.Y(
                 "Count:Q",
                 title="Count",
                 axis=alt.Axis(
-                    labelFontSize=14,
-                    titleFontSize=16
+                    labelFontSize=16,
+                    titleFontSize=18
                 )
             ),
             color=alt.Color(
@@ -1303,9 +1303,11 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
         .configure_axis(
             labelColor="currentColor",
             titleColor="currentColor",
+            labelFontSize=16,
+            titleFontSize=18,
             grid=True,
             gridColor="currentColor",
-            gridOpacity=0.12,  # base; in dark ti risulta comunque soft perché currentColor è chiaro
+            gridOpacity=0.12,
             domainColor="currentColor",
             domainOpacity=0.55,
             tickColor="currentColor",
@@ -1325,4 +1327,5 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
