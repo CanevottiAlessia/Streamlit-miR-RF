@@ -884,7 +884,9 @@ if any_filter_active():
     if st.sidebar.button("Reset all filters", use_container_width=True):
         for k in FILTER_KEYS:
             st.session_state.pop(k, None)
+        st.session_state["show_adv"] = False  # <- QUI
         st.rerun()
+
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -1600,5 +1602,6 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
