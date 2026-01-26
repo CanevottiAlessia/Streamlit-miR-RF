@@ -81,8 +81,6 @@ To facilitate exploratory analyses, the application includes a **Reset all filte
   * advanced options collapsed
   * the full annotation table restored
 
-This feature enables rapid iteration between different filtering strategies without manual deselection of individual options.
-
 ---
 
 ## Table visualization
