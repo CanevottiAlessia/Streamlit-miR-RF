@@ -1539,7 +1539,7 @@ st.markdown(
 # -----------------------------------------------------------
 # DOWNLOAD BUTTONS (TSV + FASTA)
 # -----------------------------------------------------------
-tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
+tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")   #dos.to.unix
 
 st.download_button(
     "Download table (TSV)",
@@ -1636,6 +1636,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
-
