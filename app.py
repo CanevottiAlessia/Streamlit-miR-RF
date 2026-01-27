@@ -13,6 +13,21 @@ st.sidebar.caption(f"Running: {_THIS_FILE}")
 txt = _THIS_FILE.read_text(encoding="utf-8", errors="ignore")
 if "\\\\t" in txt:  # cerca il testo letterale \t (backslash+t)
     st.sidebar.error("Trovato '\\\\t' nel file in esecuzione! Cerca: sep=\"\\\\t\"")
+import pathlib
+import streamlit as st
+
+_THIS_FILE = pathlib.Path(__file__).resolve()
+st.sidebar.caption(f"Running: {_THIS_FILE}")
+
+txt = _THIS_FILE.read_text(encoding="utf-8", errors="ignore").splitlines()
+
+hits = []
+for i, line in enumerate(txt, start=1):
+    if "to_csv" in line or "sep=" in line or r"\t" in line:
+        hits.append(f"{i}: {line}")
+
+with st.sidebar.expander("DEBUG: righe sospette (to_csv / sep / \\t)", expanded=False):
+    st.code("\n".join(hits) if hits else "Nessuna riga sospetta trovata")
 
 
 # -----------------------------------------------------------
@@ -1659,6 +1674,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
