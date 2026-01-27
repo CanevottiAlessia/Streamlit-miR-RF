@@ -1552,7 +1552,7 @@ with btn_col:
         key="dl_tsv",
         use_container_width=True,
     )
-
+    
     st.download_button(
         "Get FASTA",
         data=generate_fasta(filtered),
@@ -1639,4 +1639,5 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
