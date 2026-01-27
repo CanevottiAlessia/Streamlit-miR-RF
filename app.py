@@ -1639,16 +1639,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # FOOTER
 # -----------------------------------------------------------
 st.markdown("---")
-st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
-
-
-
-
-
-
-
-
-
-
+st.caption("pre-miRNA Annotation Browser — Streamlit App ------------------------------------- CIAO")
