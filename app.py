@@ -1542,24 +1542,28 @@ st.markdown(
 # -----------------------------------------------------------
 st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
-tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
-st.download_button(
-    "Download table (TSV)",
-    data=tsv_bytes,
-    file_name="mirna_filtered_table.tsv",
-    mime="text/tab-separated-values",
-    key="dl_tsv",
-    use_container_width=True,
-)
-    
+btn_col, _ = st.columns([2, 8])
+with btn_col:
+    tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
+    st.download_button(
+        "Download table (TSV)",
+        data=tsv_bytes,
+        file_name="mirna_filtered_table.tsv",
+        mime="text/tab-separated-values",
+        key="dl_tsv",
+        use_container_width=True,
+    )
+
+    fasta_bytes = generate_fasta(filtered).encode("utf-8")
     st.download_button(
         "Get FASTA",
-        data=generate_fasta(filtered),
+        data=fasta_bytes,
         file_name="mirna_selected.fasta",
         mime="text/plain",
         key="dl_fasta",
         use_container_width=True,
     )
+
 
 # -----------------------------------------------------------
 # BARPLOT (Repeat distribution) — THEME-AWARE
@@ -1638,6 +1642,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
