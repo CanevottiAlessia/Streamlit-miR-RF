@@ -13,9 +13,7 @@ st.set_option("client.toolbarMode", "minimal")
 
 # -----------------------------------------------------------
 # GLOBAL THEME + RESPONSIVE CSS (LIGHT/DARK + BREAKPOINTS)
-#  + (NEW) -2px global typography
-#  + (NEW) darker "system name pills" inside tissue expanders
-#  + (NEW) tighter table cells
+# + UI tweaks: -2px overall typography, tighter tissue accordion, full-width system bars
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -51,6 +49,10 @@ st.markdown(
       --table-first-td-bg: #f2f2f2;
       --table-border: #000000;
 
+      /* darker system bar (light) */
+      --sysbar-bg: #d0d0d0;
+      --sysbar-border: rgba(0,0,0,0.20);
+
       /* Altair grid opacity (light) */
       --grid-opacity: 0.14;
     }
@@ -84,16 +86,20 @@ st.markdown(
         --table-first-td-bg: #333333;
         --table-border: #000000;
 
+        /* darker system bar (dark) */
+        --sysbar-bg: #3a3a3a;
+        --sysbar-border: rgba(255,255,255,0.18);
+
         /* Altair grid opacity (dark) */
         --grid-opacity: 0.10;
       }
     }
 
     /* =======================================================
-       GLOBAL FONT: RESPONSIVE (outside table)  (NEW: -2px)
+       GLOBAL FONT: RESPONSIVE (outside table)  (-2px)
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
-        font-size: clamp(14px, 1.2vw + 8px, 20px) !important;  /* was 16..22 */
+        font-size: clamp(14px, 1.2vw + 8px, 20px) !important;
         background: var(--bg) !important;
         color: var(--text) !important;
     }
@@ -148,12 +154,12 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* sidebar expanders: grey panels + pill on title only */
+    /* sidebar expanders: grey panels + pill on title only (TOP LEVEL) */
     section[data-testid="stSidebar"] [data-testid="stExpander"]{
         background: var(--panel-bg) !important;
         border: 1px solid var(--panel-border) !important;
     }
-    section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
+    section[data-testid="stSidebar"] [data-testid="stExpander"] > details > summary{
         display: inline-flex !important;
         align-items: center !important;
         background: var(--panel-bg) !important;
@@ -162,7 +168,7 @@ st.markdown(
         width: fit-content !important;
         color: var(--text) !important;
     }
-    section[data-testid="stSidebar"] [data-testid="stExpander"] summary *{
+    section[data-testid="stSidebar"] [data-testid="stExpander"] > details > summary *{
         background: transparent !important;
     }
 
@@ -177,55 +183,42 @@ st.markdown(
     a { color: var(--link) !important; }
 
     /* ---------------------------
-       SIDEBAR TYPOGRAPHY SIZES (NEW: -2px)
+       SIDEBAR TYPOGRAPHY SIZES (-2px)
     ---------------------------- */
     section[data-testid="stSidebar"] h2{
-      font-size: 22px !important;   /* was 24 */
+      font-size: 22px !important;
       font-weight: 800 !important;
       margin-top: 8px !important;
       margin-bottom: 10px !important;
     }
 
     section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-      font-size: 22px !important;   /* was 24 */
+      font-size: 22px !important;
       font-weight: 800 !important;
     }
 
-    section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
-      font-size: 10px !important;   /* was 12 */
+    /* top-level expander summary label */
+    section[data-testid="stSidebar"] [data-testid="stExpander"] > details > summary{
+      font-size: 11px !important;
       font-weight: 750 !important;
     }
 
-    /* Nested system expanders (Cardiorespiratory, etc.) */
-    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary{
-      font-size: 16px !important;   /* was 18 */
-      line-height: 1.05 !important;
-      padding-top: 4px !important;
-      padding-bottom: 4px !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary p,
-    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary span{
-      font-size: 16px !important;   /* was 18 */
-      line-height: 1.05 !important;
-      margin: 0 !important;
-    }
-
     .sidebar-section-title{
-      font-size: 18px;  /* was 20 */
+      font-size: 18px;
       font-weight: 700;
       margin: 8px 0 6px 0;
     }
 
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown p{
-      font-size: 14px !important; /* was 16 */
+      font-size: 14px !important;
     }
 
     /* ---------------------------
        ICON SIZE
     ---------------------------- */
     .sidebar-icon img{
-      width: 120px !important;
+      width: 110px !important;
       height: auto !important;
     }
 
@@ -281,43 +274,87 @@ st.markdown(
     }
 
     /* =======================================================
-       RESPONSIVE BREAKPOINTS (mobile / small screens) (NEW: -2px)
+       RESPONSIVE BREAKPOINTS (mobile / small screens)
     ======================================================= */
     @media (max-width: 900px){
       section[data-testid="stSidebar"] h2{
-        font-size: 16px !important; /* was 18 */
+        font-size: 16px !important;
       }
       section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-        font-size: 16px !important; /* was 18 */
+        font-size: 16px !important;
       }
       section[data-testid="stSidebar"] label,
       section[data-testid="stSidebar"] .stMarkdown p{
-        font-size: 12px !important; /* was 14 */
+        font-size: 12px !important;
       }
       .sidebar-icon img{
-        width: 84px !important;
+        width: 82px !important;
       }
     }
 
     /* =======================================================
-       (Extra) Riduci leggermente lo spazio verticale tra i blocchi
-       (colonne + expander tessuti)
+       TIGHTER VERTICAL SPACE BETWEEN SYSTEM ROWS
     ======================================================= */
     section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]{
       margin-top: 2px !important;
       margin-bottom: 2px !important;
-      gap: 0.35rem !important;
+      gap: 0.25rem !important;
     }
 
     /* =======================================================
-       (NEW) Darker "system-name pill" inside nested tissue expanders
-       This targets the <summary> element of nested expanders (the ones with system names)
+       "MATERIAL" ACCORDION MENU FOR SYSTEM EXPANDERS (nested)
+       - full-width darker bar
+       - compact spacing
+       - hover feedback
     ======================================================= */
-    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary{
-      background: color-mix(in srgb, var(--panel-bg) 75%, var(--text) 25%) !important;
-      border: 1px solid color-mix(in srgb, var(--text) 25%, transparent) !important;
+
+    /* Reduce padding/margins on nested expanders (system accordions) */
+    section[data-testid="stSidebar"]
+    [data-testid="stExpander"]
+    [data-testid="stExpander"]{
+      padding: 0 !important;
+      margin: 4px 0 !important;
       border-radius: 12px !important;
-      padding: 6px 10px !important;
+    }
+
+    /* Full-width bar for nested expander headers */
+    section[data-testid="stSidebar"]
+    [data-testid="stExpander"]
+    [data-testid="stExpander"] > details > summary{
+      width: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+
+      background: var(--sysbar-bg) !important;
+      border: 1px solid var(--sysbar-border) !important;
+
+      padding: 8px 12px !important;
+      border-radius: 10px !important;
+
+      font-size: 14px !important;
+      font-weight: 750 !important;
+
+      /* remove "pill" behavior */
+      box-shadow: none !important;
+    }
+
+    /* Better hover state like menu item */
+    section[data-testid="stSidebar"]
+    [data-testid="stExpander"]
+    [data-testid="stExpander"] > details > summary:hover{
+      filter: brightness(0.97);
+    }
+
+    /* Inner text tighter */
+    section[data-testid="stSidebar"]
+    [data-testid="stExpander"]
+    [data-testid="stExpander"] > details > summary p,
+    section[data-testid="stSidebar"]
+    [data-testid="stExpander"]
+    [data-testid="stExpander"] > details > summary span{
+      margin: 0 !important;
+      line-height: 1.1 !important;
     }
     </style>
     """,
@@ -534,7 +571,7 @@ FILTER_KEYS = [
     "cons_species_found", "cons_species_na", "cons_stability_choice",
 
     # expression (advanced)
-    "show_tissue_systems",   # NEW (multi)
+    "show_tissue_systems",
 
     # database / class (advanced)
     "show_class_cols",
@@ -551,6 +588,7 @@ def any_filter_active() -> bool:
     if (st.session_state.get("search_any", "") or "").strip():
         return True
 
+    # mutually exclusive (selectbox)
     if st.session_state.get("sb_conservation", "Show all") != "Show all":
         return True
     if st.session_state.get("sb_expression", "Show all") != "Show all":
@@ -560,6 +598,7 @@ def any_filter_active() -> bool:
     if st.session_state.get("sb_hsa", "Show all") != "Show all":
         return True
 
+    # other basic filters
     if st.session_state.get("ms_family", []):
         return True
     if st.session_state.get("ms_repeat", []):
@@ -594,14 +633,6 @@ def any_filter_active() -> bool:
         return True
 
     return False
-
-def reset_all_filters():
-    for k in FILTER_KEYS:
-        st.session_state.pop(k, None)
-    try:
-        st.rerun()
-    except Exception:
-        st.experimental_rerun()
 
 # -----------------------------------------------------------
 # SPECIES MAPPING: True/False/NA robust
@@ -693,6 +724,7 @@ structure_choice    = st.sidebar.selectbox("Structure:",    pass_sb_options, ind
 hsa_sb_options = ["Show all", "Only hsa-specific", "Not hsa-specific"]
 hsa_choice = st.sidebar.selectbox("hsa specificity:", hsa_sb_options, index=0, key="sb_hsa")
 
+# Everything else in Filters unchanged
 family_options = [
     "Single miRNAs – miRBase",
     "Single miRNAs – MirGeneDB",
@@ -713,6 +745,7 @@ repeats_selected = st.sidebar.multiselect(
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
 
+# IMPORTANT: always initialize (avoid NameError)
 animals_to_show = []
 tissues_to_show = []
 tissues_filter = []
@@ -754,6 +787,7 @@ if show_adv:
             key="cons_species_found",
         )
 
+        # Structure filter: stable -> True, unstable -> False (mutually exclusive)
         if species_found_sidebar:
             stability_choice = st.selectbox(
                 "Structure:",
@@ -778,29 +812,26 @@ if show_adv:
 
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
-        # NEW: multi-select systems (1..all)
-        system_disp_options = [system_display_name(k) for k in SYSTEM_TISSUES.keys()]
+        # Show tissue columns: MULTI-select SYSTEMS -> union of tissues
+        system_disp_list = [system_display_name(k) for k in SYSTEM_TISSUES.keys()]
         chosen_systems_disp = st.multiselect(
             "Show tissue columns (by system):",
-            system_disp_options,
+            system_disp_list,
             default=[],
             key="show_tissue_systems",
         )
 
+        chosen_sys_keys = [k for k in SYSTEM_TISSUES.keys() if system_display_name(k) in set(chosen_systems_disp)]
         tissues_to_show_set = set()
-        if chosen_systems_disp:
-            for disp in chosen_systems_disp:
-                sys_key = next((k for k in SYSTEM_TISSUES.keys() if system_display_name(k) == disp), None)
-                if sys_key:
-                    tissues_to_show_set.update([t for t in SYSTEM_TISSUES[sys_key] if t in tissue_sidebar_names])
+        for k in chosen_sys_keys:
+            tissues_to_show_set.update([t for t in SYSTEM_TISSUES[k] if t in tissue_sidebar_names])
         tissues_to_show = sorted(tissues_to_show_set)
 
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
         st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
-        # NEW: wrap the two filter blocks inside expanders
+        # Make "Expressed in" and "Not expressed in" into their own expandable windows
         with st.expander("Expressed in (select tissues by system):", expanded=False):
-
             tissues_filter_set = set()
 
             for system_name, sys_tissues in SYSTEM_TISSUES.items():
@@ -814,11 +845,12 @@ if show_adv:
                 with col_icon:
                     if icon is not None:
                         st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                        st.image(icon, width=120)
+                        st.image(icon, width=110)
                         st.markdown("</div>", unsafe_allow_html=True)
 
                 with col_exp:
                     display_system = system_display_name(system_name)
+                    # Nested system expander = "material" accordion via CSS above
                     with st.expander(display_system, expanded=False):
                         picked = st.multiselect(
                             "Select tissues",
@@ -830,7 +862,6 @@ if show_adv:
             tissues_filter = sorted(tissues_filter_set)
 
         with st.expander("Not expressed in (select tissues by system):", expanded=False):
-
             tissues_not_filter_set = set()
 
             for system_name, sys_tissues in SYSTEM_TISSUES.items():
@@ -844,7 +875,7 @@ if show_adv:
                 with col_icon:
                     if icon is not None:
                         st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                        st.image(icon, width=120)
+                        st.image(icon, width=110)
                         st.markdown("</div>", unsafe_allow_html=True)
 
                 with col_exp:
@@ -935,7 +966,7 @@ elif mirgene_filter == "Only in miRBase":
 if classes_selected and "Class_miRBase" in filtered.columns:
     filtered = filtered[filtered["Class_miRBase"].isin(classes_selected)]
 
-# Family filter
+# Family filter (unchanged)
 if family_selected:
     fam_mask = pd.Series(False, index=filtered.index)
     mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
@@ -969,6 +1000,7 @@ if species_found_cols:
     tmp_found = filtered[species_found_cols]
     filtered = filtered[tmp_found.isin([True, False]).all(axis=1)]
 
+    # stable -> True only, unstable -> False only
     if stability_choice and stability_choice != "All":
         allowed_val = True if stability_choice.startswith("Stable") else False
         filtered = filtered[tmp_found.isin([allowed_val]).all(axis=1)]
@@ -1203,7 +1235,7 @@ if visible_class_cols:
     styled_df = styled_df.applymap(class_bg, subset=visible_class_cols)
 
 def style_row(row):
-    # NEW: -2px for row font (was 14px -> 12px)
+    # -2px here as well (was 14px)
     styles = ["font-weight: 700; font-size: 12px;"] * len(row)
     idx = {c: i for i, c in enumerate(row.index)}
 
@@ -1230,7 +1262,7 @@ html_table = styled_df.hide(axis="index").to_html(escape=False)
 
 # -----------------------------------------------------------
 # CSS — TABLE + LEGEND (RESPONSIVE)
-#  + (NEW) narrower cell widths + smaller fonts (already -2px globally)
+# (cells narrower + slightly tighter paddings + -2px legend)
 # -----------------------------------------------------------
 custom_css = r"""
 <style>
@@ -1239,7 +1271,7 @@ custom_css = r"""
   overflow-y: auto !important;
   overflow-x: auto !important;
   border: 2px solid var(--table-border);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 
   width: 100% !important;
   max-width: 100% !important;
@@ -1260,22 +1292,22 @@ custom_css = r"""
 }
 
 /* -------------------------------------------------------
-   RESPONSIVE CELLS (NEW: narrower)
+   NARROWER CELLS
 ------------------------------------------------------- */
 .table-inner th,
 .table-inner td{
   border: 1px solid var(--table-border) !important;
-  border-radius: 8px !important;
+  border-radius: 7px !important;
 
   line-height: 1.15 !important;
-  min-height: 38px !important;
-  padding: 8px 8px !important;
+  min-height: 36px !important;
+  padding: 7px 7px !important;
 
-  font-size: clamp(12px, 0.9vw + 7px, 18px) !important; /* was 14..20 */
+  font-size: clamp(12px, 0.9vw + 7px, 18px) !important;
 
-  width: clamp(120px, 8.5vw, 160px) !important;
-  min-width: clamp(120px, 8.5vw, 160px) !important;
-  max-width: clamp(160px, 10vw, 190px) !important;
+  width: clamp(110px, 8vw, 150px) !important;
+  min-width: clamp(110px, 8vw, 150px) !important;
+  max-width: clamp(150px, 10vw, 180px) !important;
 
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -1299,15 +1331,15 @@ custom_css = r"""
   text-overflow: clip !important;
 }
 
-/* first column a bit narrower too (NEW) */
+/* first column slightly wider but still compact */
 .table-inner th:first-child{
   position: sticky !important;
   left: 0;
   z-index: 30 !important;
 
-  width: clamp(160px, 12vw, 220px) !important;
-  min-width: clamp(160px, 12vw, 220px) !important;
-  max-width: clamp(220px, 14vw, 260px) !important;
+  width: clamp(160px, 12vw, 210px) !important;
+  min-width: clamp(160px, 12vw, 210px) !important;
+  max-width: clamp(210px, 16vw, 260px) !important;
 
   background-color: var(--table-first-th-bg) !important;
   color: color-mix(in srgb, var(--text) 95%, transparent) !important;
@@ -1319,9 +1351,9 @@ custom_css = r"""
   left: 0;
   z-index: 25 !important;
 
-  width: clamp(160px, 12vw, 220px) !important;
-  min-width: clamp(160px, 12vw, 220px) !important;
-  max-width: clamp(220px, 14vw, 260px) !important;
+  width: clamp(160px, 12vw, 210px) !important;
+  min-width: clamp(160px, 12vw, 210px) !important;
+  max-width: clamp(210px, 16vw, 260px) !important;
 
   background-color: var(--table-first-td-bg) !important;
   color: color-mix(in srgb, var(--text) 95%, transparent) !important;
@@ -1334,22 +1366,22 @@ custom_css = r"""
   flex-wrap: wrap;
   gap: 12px 18px;
   align-items: flex-start;
-  margin-top: 10px;
-  margin-bottom: 12px;
+  margin-top: 8px;
+  margin-bottom: 10px;
 }
 
 .legend-card{
   flex: 1 1 240px;
   min-width: 240px;
-  font-size: 16px; /* was 18 */
+  font-size: 16px;
   font-weight: 400;
   line-height: 1.35;
 }
 
 .legend-title{
-  font-size: 18px; /* was 20 */
+  font-size: 18px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .legend-row{
@@ -1366,8 +1398,8 @@ custom_css = r"""
 }
 
 .swatch{
-  width: 16px;   /* was 18 */
-  height: 16px;  /* was 18 */
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   display: inline-block;
   vertical-align: middle;
@@ -1375,9 +1407,6 @@ custom_css = r"""
   box-sizing: border-box;
 }
 
-/* -------------------------------------------------------
-   MOBILE BREAKPOINT
-------------------------------------------------------- */
 @media (max-width: 900px){
   .table-container{
     max-height: 70vh;
@@ -1389,7 +1418,7 @@ custom_css = r"""
 
   .table-inner th,
   .table-inner td{
-    padding: 7px 7px !important;
+    padding: 6px 6px !important;
     border-radius: 6px !important;
 
     white-space: normal !important;
@@ -1398,10 +1427,10 @@ custom_css = r"""
 
   .legend-card{
     min-width: 210px;
-    font-size: 14px; /* was 16 */
+    font-size: 14px;
   }
   .legend-title{
-    font-size: 16px; /* was 18 */
+    font-size: 16px;
   }
 }
 </style>
@@ -1517,7 +1546,7 @@ btn_col, _ = st.columns([2, 8])
 with btn_col:
     st.download_button(
         "Download table (TSV)",
-        data=tsv_export_df.to_csv(index=False, sep="\t"),
+        data=tsv_export_df.to_csv(index=False, sep="\\t"),
         file_name="mirna_filtered_table.tsv",
         mime="text/tab-separated-values",
         key="dl_tsv",
@@ -1535,7 +1564,6 @@ with btn_col:
 
 # -----------------------------------------------------------
 # BARPLOT (Repeat distribution) — THEME-AWARE
-# (NEW: reduce fonts by 2px)
 # -----------------------------------------------------------
 ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
@@ -1561,17 +1589,17 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                 title="Repeat class",
                 axis=alt.Axis(
                     labelAngle=0,
-                    labelFontSize=12.5,  # was 14.5
-                    titleFontSize=16,    # was 18
-                    titlePadding=40,
+                    labelFontSize=12.5,
+                    titleFontSize=16,
+                    titlePadding=34,
                 )
             ),
             y=alt.Y(
                 "Count:Q",
                 title="Count",
                 axis=alt.Axis(
-                    labelFontSize=14,   # was 16
-                    titleFontSize=16    # was 18
+                    labelFontSize=14,
+                    titleFontSize=16
                 )
             ),
             color=alt.Color(
@@ -1581,14 +1609,14 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
             ),
             tooltip=["Repeat_Class", "Count", "Percent"]
         )
-        .properties(height=600)
+        .properties(height=560)
         .configure(background="transparent")
         .configure_view(fill="transparent", strokeOpacity=0)
         .configure_axis(
             labelColor="currentColor",
             titleColor="currentColor",
-            labelFontSize=14,      # was 16
-            titleFontSize=16,      # was 18
+            labelFontSize=14,
+            titleFontSize=16,
             grid=True,
             gridColor="currentColor",
             gridOpacity=0.12,
