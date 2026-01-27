@@ -313,7 +313,7 @@ st.markdown(
     [data-testid="stExpander"]
     [data-testid="stExpander"]{
       padding: 0 !important;
-      margin: 2px 0 !important; /*prima 4px/*
+      margin: 4px 0 !important;
       border-radius: 12px !important;
     }
 
@@ -1639,6 +1639,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
-
