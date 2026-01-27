@@ -5,31 +5,6 @@ import pandas as pd
 import altair as alt
 from PIL import Image
 
-import pathlib, re, streamlit as st
-
-_THIS_FILE = pathlib.Path(__file__).resolve()
-st.sidebar.caption(f"Running: {_THIS_FILE}")
-
-txt = _THIS_FILE.read_text(encoding="utf-8", errors="ignore")
-if "\\\\t" in txt:  # cerca il testo letterale \t (backslash+t)
-    st.sidebar.error("Trovato '\\\\t' nel file in esecuzione! Cerca: sep=\"\\\\t\"")
-import pathlib
-import streamlit as st
-
-_THIS_FILE = pathlib.Path(__file__).resolve()
-st.sidebar.caption(f"Running: {_THIS_FILE}")
-
-txt = _THIS_FILE.read_text(encoding="utf-8", errors="ignore").splitlines()
-
-hits = []
-for i, line in enumerate(txt, start=1):
-    if "to_csv" in line or "sep=" in line or r"\t" in line:
-        hits.append(f"{i}: {line}")
-
-with st.sidebar.expander("DEBUG: righe sospette (to_csv / sep / \\t)", expanded=False):
-    st.code("\n".join(hits) if hits else "Nessuna riga sospetta trovata")
-
-
 # -----------------------------------------------------------
 # STREAMLIT CONFIG (must be before any other st.* output)
 # -----------------------------------------------------------
@@ -1565,21 +1540,13 @@ st.markdown(
 # -----------------------------------------------------------
 # DOWNLOAD BUTTONS (TSV + FASTA)
 # -----------------------------------------------------------
-import io
-
 st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-
-TAB = "\t"   # <-- 1 singolo carattere tab
-
-# (debug temporaneo: vedi cosa sta passando davvero)
-# st.write("TAB repr:", repr(TAB), "len:", len(TAB))
 
 btn_col, _ = st.columns([2, 8])
 with btn_col:
-    tsv_str = tsv_export_df.to_csv(index=False, sep=TAB)
     st.download_button(
         "Download table (TSV)",
-        data=tsv_str.encode("utf-8"),
+        data=tsv_export_df.to_csv(index=False, sep=","),
         file_name="mirna_filtered_table.tsv",
         mime="text/tab-separated-values",
         key="dl_tsv",
@@ -1588,7 +1555,7 @@ with btn_col:
 
     st.download_button(
         "Get FASTA",
-        data=generate_fasta(filtered).encode("utf-8"),
+        data=generate_fasta(filtered),
         file_name="mirna_selected.fasta",
         mime="text/plain",
         key="dl_fasta",
@@ -1674,6 +1641,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
