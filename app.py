@@ -298,7 +298,7 @@ st.markdown(
     section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]{
       margin-top: 2px !important;
       margin-bottom: 2px !important;
-      gap: 0.25rem !important;
+      gap: 0.1rem !important;
     }
 
     /* =======================================================
@@ -1639,3 +1639,4 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
