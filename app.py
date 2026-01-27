@@ -500,24 +500,28 @@ SYSTEM_TISSUES = {
     ],
 }
 
+def system_display_name(system_key: str) -> str:
+    # "1. Cardiorespiratory system" -> "Cardiorespiratory"
+    return system_key.split(". ", 1)[-1].replace(" system", "")
+
 # -----------------------------------------------------------
 # RESET FILTERS (UX: show button only if something is active)
 # -----------------------------------------------------------
 FILTER_KEYS = [
     # basic filters
     "search_any",
-    "ms_conservation", "ms_expression", "ms_structure",
-    "ms_family", "ms_hsa", "ms_repeat",
+    "sb_conservation", "sb_expression", "sb_structure", "sb_hsa",
+    "ms_family", "ms_repeat",
 
     # advanced toggle
     "show_adv",
 
     # conservation (advanced)
     "show_species_cols",
-    "cons_species_found", "cons_species_na", "cons_stability",
+    "cons_species_found", "cons_species_na", "cons_stability_choice",
 
     # expression (advanced)
-    "show_tissue_cols",
+    "show_tissue_system",
 
     # database / class (advanced)
     "show_class_cols",
@@ -534,23 +538,25 @@ def any_filter_active() -> bool:
     # Basic filters
     if (st.session_state.get("search_any", "") or "").strip():
         return True
-    if st.session_state.get("ms_conservation", []):
+
+    # mutually exclusive (selectbox)
+    if st.session_state.get("sb_conservation", "Show all") != "Show all":
         return True
-    if st.session_state.get("ms_expression", []):
+    if st.session_state.get("sb_expression", "Show all") != "Show all":
         return True
-    if st.session_state.get("ms_structure", []):
+    if st.session_state.get("sb_structure", "Show all") != "Show all":
         return True
+    if st.session_state.get("sb_hsa", "Show all") != "Show all":
+        return True
+
+    # other basic filters unchanged
     if st.session_state.get("ms_family", []):
-        return True
-    if st.session_state.get("ms_hsa", []):
         return True
     if st.session_state.get("ms_repeat", []):
         return True
 
     # Advanced options
     if st.session_state.get("show_adv", False):
-        # even just opening advanced isn't a "filter", but it's a UI state;
-        # comment this out if you do NOT want reset button to appear only because advanced is on.
         return True
 
     if st.session_state.get("show_species_cols", []):
@@ -559,11 +565,12 @@ def any_filter_active() -> bool:
         return True
     if st.session_state.get("cons_species_na", []):
         return True
-    if st.session_state.get("cons_stability", []):
+    if st.session_state.get("cons_stability_choice", "All") != "All":
         return True
 
-    if st.session_state.get("show_tissue_cols", []):
+    if st.session_state.get("show_tissue_system", "None") != "None":
         return True
+
     for sys_name in SYSTEM_TISSUES.keys():
         if st.session_state.get(f"tree_pos_{sys_name}", []):
             return True
@@ -587,7 +594,6 @@ def reset_all_filters():
         st.rerun()
     except Exception:
         st.experimental_rerun()
-
 
 # -----------------------------------------------------------
 # SPECIES MAPPING: True/False/NA robust
@@ -670,11 +676,16 @@ st.sidebar.header("Filters")
 
 search_term = st.sidebar.text_input("Search any column:", key="search_any")
 
-pass_options = ["PASSED", "NOT PASSED"]
-conservation_selected = st.sidebar.multiselect("Conservation:", pass_options, default=[], key="ms_conservation")
-expression_selected   = st.sidebar.multiselect("Expression:",   pass_options, default=[], key="ms_expression")
-structure_selected    = st.sidebar.multiselect("Structure:",    pass_options, default=[], key="ms_structure")
+# ✅ Mutually exclusive -> dropdown with "Show all" as reset
+pass_sb_options = ["Show all", "PASSED", "NOT PASSED"]
+conservation_choice = st.sidebar.selectbox("Conservation:", pass_sb_options, index=0, key="sb_conservation")
+expression_choice   = st.sidebar.selectbox("Expression:",   pass_sb_options, index=0, key="sb_expression")
+structure_choice    = st.sidebar.selectbox("Structure:",    pass_sb_options, index=0, key="sb_structure")
 
+hsa_sb_options = ["Show all", "Only hsa-specific", "Not hsa-specific"]
+hsa_choice = st.sidebar.selectbox("hsa specificity:", hsa_sb_options, index=0, key="sb_hsa")
+
+# tutto il resto in Filters resta uguale
 family_options = [
     "Single miRNAs – miRBase",
     "Single miRNAs – MirGeneDB",
@@ -682,9 +693,6 @@ family_options = [
     "miRNAs in family – MirGeneDB",
 ]
 family_selected = st.sidebar.multiselect("Family:", family_options, default=[], key="ms_family")
-
-hsa_options = ["Only hsa-specific", "Not hsa-specific"]
-hsa_selected = st.sidebar.multiselect("hsa specificity:", hsa_options, default=[], key="ms_hsa")
 
 repeats_selected = st.sidebar.multiselect(
     "Repeat class:",
@@ -706,7 +714,7 @@ tissues_not_filter = []
 show_class_cols = False
 species_na_sidebar = []
 species_found_sidebar = []
-stable_unstable = []
+stability_choice = "All"
 mirgene_filter = "Show all"
 classes_selected = []
 
@@ -740,15 +748,16 @@ if show_adv:
             key="cons_species_found",
         )
 
+        # ✅ (1) Structure filter: stable -> True, unstable -> False (mutually exclusive)
         if species_found_sidebar:
-            stable_unstable = st.multiselect(
+            stability_choice = st.selectbox(
                 "Structure:",
-                ["Stable (R/D)", "Unstable (S/I)"],
-                default=[],
-                key="cons_stability",
+                ["All", "Stable (R/D)", "Unstable (S/I)"],
+                index=0,
+                key="cons_stability_choice",
             )
         else:
-            stable_unstable = []
+            stability_choice = "All"
 
         species_na_sidebar = st.multiselect(
             "Not found in:",
@@ -764,12 +773,27 @@ if show_adv:
 
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
-        tissues_to_show = st.multiselect(
-            "Show tissue columns:",
-            tissue_sidebar_names,
-            default=[],
-            key="show_tissue_cols",
+        # ✅ (2) Show tissue columns: select a SYSTEM, then show all tissues in that system
+        system_options = ["None"] + [system_display_name(k) for k in SYSTEM_TISSUES.keys()]
+        chosen_system_disp = st.selectbox(
+            "Show tissue columns (by system):",
+            system_options,
+            index=0,
+            key="show_tissue_system",
         )
+
+        if chosen_system_disp != "None":
+            # map display -> key
+            sys_key = next(
+                (k for k in SYSTEM_TISSUES.keys() if system_display_name(k) == chosen_system_disp),
+                None
+            )
+            if sys_key is not None:
+                tissues_to_show = [t for t in SYSTEM_TISSUES[sys_key] if t in tissue_sidebar_names]
+            else:
+                tissues_to_show = []
+        else:
+            tissues_to_show = []
 
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
         st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
@@ -798,7 +822,7 @@ if show_adv:
                     st.markdown("</div>", unsafe_allow_html=True)
 
             with col_exp:
-                display_system = system_name.split(". ", 1)[-1].replace(" system", "")
+                display_system = system_display_name(system_name)
                 with st.expander(display_system, expanded=False):
                     picked = st.multiselect(
                         "Select tissues",
@@ -835,7 +859,7 @@ if show_adv:
                     st.markdown("</div>", unsafe_allow_html=True)
 
             with col_exp:
-                display_system = system_name.split(". ", 1)[-1].replace(" system", "")
+                display_system = system_display_name(system_name)
                 with st.expander(display_system, expanded=False):
                     picked = st.multiselect(
                         "Select tissues",
@@ -884,32 +908,36 @@ if any_filter_active():
     if st.sidebar.button("Reset all filters", use_container_width=True):
         for k in FILTER_KEYS:
             st.session_state.pop(k, None)
-        st.session_state["show_adv"] = False  # <- QUI
+        st.session_state["show_adv"] = False
         st.rerun()
-
 
 # -----------------------------------------------------------
 # APPLY FILTERS
 # -----------------------------------------------------------
 filtered = df.copy()
 
-def apply_pass_filter(data: pd.DataFrame, selected: list, helper_col: str) -> pd.DataFrame:
-    if not selected:
+def apply_pass_choice(data: pd.DataFrame, choice: str, helper_col: str) -> pd.DataFrame:
+    if not choice or choice == "Show all":
         return data
-    want_true = "PASSED" in selected
-    want_false = "NOT PASSED" in selected
-    if want_true and want_false:
-        return data
-    if want_true:
+    if choice == "PASSED":
         return data[data[helper_col] == "TRUE"]
-    if want_false:
+    if choice == "NOT PASSED":
         return data[data[helper_col] == "FALSE"]
     return data
 
-filtered = apply_pass_filter(filtered, conservation_selected, "_Conservation_tf")
-filtered = apply_pass_filter(filtered, expression_selected,   "_Expression_tf")
-filtered = apply_pass_filter(filtered, structure_selected,    "_Structure_tf")
+filtered = apply_pass_choice(filtered, conservation_choice, "_Conservation_tf")
+filtered = apply_pass_choice(filtered, expression_choice,   "_Expression_tf")
+filtered = apply_pass_choice(filtered, structure_choice,    "_Structure_tf")
 
+# hsa specificity
+if hsa_choice != "Show all":
+    hsa_flag = filtered["hsa-specificity"].astype(str).str.strip().str.upper()
+    if hsa_choice == "Only hsa-specific":
+        filtered = filtered[hsa_flag == "YES"]
+    elif hsa_choice == "Not hsa-specific":
+        filtered = filtered[hsa_flag == "NO"]
+
+# Database/Class filters
 if mirgene_filter == "In both":
     filtered = filtered[filtered["Class_miRBase"] == filtered["Class_MirGeneDB"]]
 elif mirgene_filter == "Only in miRBase":
@@ -918,6 +946,7 @@ elif mirgene_filter == "Only in miRBase":
 if classes_selected and "Class_miRBase" in filtered.columns:
     filtered = filtered[filtered["Class_miRBase"].isin(classes_selected)]
 
+# Family filter (unchanged)
 if family_selected:
     fam_mask = pd.Series(False, index=filtered.index)
     mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
@@ -935,18 +964,11 @@ if family_selected:
 
     filtered = filtered[fam_mask]
 
-if hsa_selected:
-    hsa_flag = filtered["hsa-specificity"].astype(str).str.strip().str.upper()
-    hsa_mask = pd.Series(False, index=filtered.index)
-    if "Only hsa-specific" in hsa_selected:
-        hsa_mask |= (hsa_flag == "YES")
-    if "Not hsa-specific" in hsa_selected:
-        hsa_mask |= (hsa_flag == "NO")
-    filtered = filtered[hsa_mask]
-
+# Repeat class
 if repeats_selected:
     filtered = filtered[filtered["Repeat_Class"].isin(repeats_selected)]
 
+# Conservation advanced filters
 species_na_cols = [animal_sidebar_rev[x] for x in species_na_sidebar] if species_na_sidebar else []
 species_found_cols = [animal_sidebar_rev[x] for x in species_found_sidebar] if species_found_sidebar else []
 
@@ -958,14 +980,10 @@ if species_found_cols:
     tmp_found = filtered[species_found_cols]
     filtered = filtered[tmp_found.isin([True, False]).all(axis=1)]
 
-    if stable_unstable:
-        allowed = []
-        if "Stable" in stable_unstable:
-            allowed.append(True)
-        if "Unstable" in stable_unstable:
-            allowed.append(False)
-        if allowed:
-            filtered = filtered[tmp_found.isin(allowed).all(axis=1)]
+    # ✅ stable -> True only, unstable -> False only
+    if stability_choice and stability_choice != "All":
+        allowed_val = True if stability_choice.startswith("Stable") else False
+        filtered = filtered[tmp_found.isin([allowed_val]).all(axis=1)]
 
 # Expressed in: >= 1.5
 if tissues_filter:
@@ -979,6 +997,7 @@ if tissues_not_filter:
     not_expressed_mask = (tissue_num_not < 1.5).all(axis=1)
     filtered = filtered[not_expressed_mask]
 
+# Search any column
 if search_term:
     mask = filtered.astype(str).apply(lambda col: col.str.contains(search_term, case=False, na=False)).any(axis=1)
     filtered = filtered[mask]
@@ -1602,6 +1621,3 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
-
-
