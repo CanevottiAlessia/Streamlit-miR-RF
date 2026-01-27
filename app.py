@@ -1540,29 +1540,36 @@ st.markdown(
 # -----------------------------------------------------------
 # DOWNLOAD BUTTONS (TSV + FASTA)
 # -----------------------------------------------------------
+import io
+
 st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+TAB = "\t"   # <-- 1 singolo carattere tab
+
+# (debug temporaneo: vedi cosa sta passando davvero)
+# st.write("TAB repr:", repr(TAB), "len:", len(TAB))
 
 btn_col, _ = st.columns([2, 8])
 with btn_col:
-    tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
+    tsv_str = tsv_export_df.to_csv(index=False, sep=TAB)
     st.download_button(
         "Download table (TSV)",
-        data=tsv_bytes,
+        data=tsv_str.encode("utf-8"),
         file_name="mirna_filtered_table.tsv",
         mime="text/tab-separated-values",
         key="dl_tsv",
         use_container_width=True,
     )
 
-    fasta_bytes = generate_fasta(filtered).encode("utf-8")
     st.download_button(
         "Get FASTA",
-        data=fasta_bytes,
+        data=generate_fasta(filtered).encode("utf-8"),
         file_name="mirna_selected.fasta",
         mime="text/plain",
         key="dl_fasta",
         use_container_width=True,
     )
+
 
 
 # -----------------------------------------------------------
@@ -1642,6 +1649,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
