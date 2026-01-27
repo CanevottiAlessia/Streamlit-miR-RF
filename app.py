@@ -1560,9 +1560,6 @@ st.download_button(
     use_container_width=True,
 )
 
-
-
-
 # -----------------------------------------------------------
 # BARPLOT (Repeat distribution) — THEME-AWARE
 # -----------------------------------------------------------
@@ -1640,4 +1637,5 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
