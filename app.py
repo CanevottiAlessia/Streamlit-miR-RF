@@ -13,6 +13,9 @@ st.set_option("client.toolbarMode", "minimal")
 
 # -----------------------------------------------------------
 # GLOBAL THEME + RESPONSIVE CSS (LIGHT/DARK + BREAKPOINTS)
+#  + (NEW) -2px global typography
+#  + (NEW) darker "system name pills" inside tissue expanders
+#  + (NEW) tighter table cells
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -87,10 +90,10 @@ st.markdown(
     }
 
     /* =======================================================
-       GLOBAL FONT: RESPONSIVE (outside table)
+       GLOBAL FONT: RESPONSIVE (outside table)  (NEW: -2px)
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
-        font-size: clamp(16px, 1.2vw + 10px, 22px) !important;
+        font-size: clamp(14px, 1.2vw + 8px, 20px) !important;  /* was 16..22 */
         background: var(--bg) !important;
         color: var(--text) !important;
     }
@@ -174,48 +177,48 @@ st.markdown(
     a { color: var(--link) !important; }
 
     /* ---------------------------
-       SIDEBAR TYPOGRAPHY SIZES
+       SIDEBAR TYPOGRAPHY SIZES (NEW: -2px)
     ---------------------------- */
     section[data-testid="stSidebar"] h2{
-      font-size: 24px !important;
+      font-size: 22px !important;   /* was 24 */
       font-weight: 800 !important;
       margin-top: 8px !important;
       margin-bottom: 10px !important;
     }
 
     section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-      font-size: 24px !important;
+      font-size: 22px !important;   /* was 24 */
       font-weight: 800 !important;
     }
 
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
-      font-size: 12px !important;
+      font-size: 10px !important;   /* was 12 */
       font-weight: 750 !important;
     }
 
     /* Nested system expanders (Cardiorespiratory, etc.) */
     section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary{
-      font-size: 18px !important;
+      font-size: 16px !important;   /* was 18 */
       line-height: 1.05 !important;
       padding-top: 4px !important;
       padding-bottom: 4px !important;
     }
     section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary p,
     section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary span{
-      font-size: 18px !important;
+      font-size: 16px !important;   /* was 18 */
       line-height: 1.05 !important;
       margin: 0 !important;
     }
 
     .sidebar-section-title{
-      font-size: 20px;
+      font-size: 18px;  /* was 20 */
       font-weight: 700;
       margin: 8px 0 6px 0;
     }
 
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown p{
-      font-size: 16px !important;
+      font-size: 14px !important; /* was 16 */
     }
 
     /* ---------------------------
@@ -278,18 +281,18 @@ st.markdown(
     }
 
     /* =======================================================
-       RESPONSIVE BREAKPOINTS (mobile / small screens)
+       RESPONSIVE BREAKPOINTS (mobile / small screens) (NEW: -2px)
     ======================================================= */
     @media (max-width: 900px){
       section[data-testid="stSidebar"] h2{
-        font-size: 18px !important;
+        font-size: 16px !important; /* was 18 */
       }
       section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-        font-size: 18px !important;
+        font-size: 16px !important; /* was 18 */
       }
       section[data-testid="stSidebar"] label,
       section[data-testid="stSidebar"] .stMarkdown p{
-        font-size: 14px !important;
+        font-size: 12px !important; /* was 14 */
       }
       .sidebar-icon img{
         width: 84px !important;
@@ -304,6 +307,17 @@ st.markdown(
       margin-top: 2px !important;
       margin-bottom: 2px !important;
       gap: 0.35rem !important;
+    }
+
+    /* =======================================================
+       (NEW) Darker "system-name pill" inside nested tissue expanders
+       This targets the <summary> element of nested expanders (the ones with system names)
+    ======================================================= */
+    section[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpander"] summary{
+      background: color-mix(in srgb, var(--panel-bg) 75%, var(--text) 25%) !important;
+      border: 1px solid color-mix(in srgb, var(--text) 25%, transparent) !important;
+      border-radius: 12px !important;
+      padding: 6px 10px !important;
     }
     </style>
     """,
@@ -501,7 +515,6 @@ SYSTEM_TISSUES = {
 }
 
 def system_display_name(system_key: str) -> str:
-    # "1. Cardiorespiratory system" -> "Cardiorespiratory"
     return system_key.split(". ", 1)[-1].replace(" system", "")
 
 # -----------------------------------------------------------
@@ -521,7 +534,7 @@ FILTER_KEYS = [
     "cons_species_found", "cons_species_na", "cons_stability_choice",
 
     # expression (advanced)
-    "show_tissue_system",
+    "show_tissue_systems",   # NEW (multi)
 
     # database / class (advanced)
     "show_class_cols",
@@ -535,11 +548,9 @@ for sys_name in SYSTEM_TISSUES.keys():
     FILTER_KEYS.append(f"tree_neg_{sys_name}")
 
 def any_filter_active() -> bool:
-    # Basic filters
     if (st.session_state.get("search_any", "") or "").strip():
         return True
 
-    # mutually exclusive (selectbox)
     if st.session_state.get("sb_conservation", "Show all") != "Show all":
         return True
     if st.session_state.get("sb_expression", "Show all") != "Show all":
@@ -549,13 +560,11 @@ def any_filter_active() -> bool:
     if st.session_state.get("sb_hsa", "Show all") != "Show all":
         return True
 
-    # other basic filters unchanged
     if st.session_state.get("ms_family", []):
         return True
     if st.session_state.get("ms_repeat", []):
         return True
 
-    # Advanced options
     if st.session_state.get("show_adv", False):
         return True
 
@@ -568,7 +577,7 @@ def any_filter_active() -> bool:
     if st.session_state.get("cons_stability_choice", "All") != "All":
         return True
 
-    if st.session_state.get("show_tissue_system", "None") != "None":
+    if st.session_state.get("show_tissue_systems", []):
         return True
 
     for sys_name in SYSTEM_TISSUES.keys():
@@ -588,8 +597,7 @@ def any_filter_active() -> bool:
 
 def reset_all_filters():
     for k in FILTER_KEYS:
-        if k in st.session_state:
-            del st.session_state[k]
+        st.session_state.pop(k, None)
     try:
         st.rerun()
     except Exception:
@@ -676,7 +684,7 @@ st.sidebar.header("Filters")
 
 search_term = st.sidebar.text_input("Search any column:", key="search_any")
 
-# ✅ Mutually exclusive -> dropdown with "Show all" as reset
+# Mutually exclusive -> dropdown with "Show all" as reset
 pass_sb_options = ["Show all", "PASSED", "NOT PASSED"]
 conservation_choice = st.sidebar.selectbox("Conservation:", pass_sb_options, index=0, key="sb_conservation")
 expression_choice   = st.sidebar.selectbox("Expression:",   pass_sb_options, index=0, key="sb_expression")
@@ -685,7 +693,6 @@ structure_choice    = st.sidebar.selectbox("Structure:",    pass_sb_options, ind
 hsa_sb_options = ["Show all", "Only hsa-specific", "Not hsa-specific"]
 hsa_choice = st.sidebar.selectbox("hsa specificity:", hsa_sb_options, index=0, key="sb_hsa")
 
-# tutto il resto in Filters resta uguale
 family_options = [
     "Single miRNAs – miRBase",
     "Single miRNAs – MirGeneDB",
@@ -706,7 +713,6 @@ repeats_selected = st.sidebar.multiselect(
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
 
-# ✅ IMPORTANT: inizializza SEMPRE queste variabili (evita NameError quando toggli)
 animals_to_show = []
 tissues_to_show = []
 tissues_filter = []
@@ -748,7 +754,6 @@ if show_adv:
             key="cons_species_found",
         )
 
-        # ✅ (1) Structure filter: stable -> True, unstable -> False (mutually exclusive)
         if species_found_sidebar:
             stability_choice = st.selectbox(
                 "Structure:",
@@ -773,102 +778,86 @@ if show_adv:
 
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
-        # ✅ (2) Show tissue columns: select a SYSTEM, then show all tissues in that system
-        system_options = ["None"] + [system_display_name(k) for k in SYSTEM_TISSUES.keys()]
-        chosen_system_disp = st.selectbox(
+        # NEW: multi-select systems (1..all)
+        system_disp_options = [system_display_name(k) for k in SYSTEM_TISSUES.keys()]
+        chosen_systems_disp = st.multiselect(
             "Show tissue columns (by system):",
-            system_options,
-            index=0,
-            key="show_tissue_system",
+            system_disp_options,
+            default=[],
+            key="show_tissue_systems",
         )
 
-        if chosen_system_disp != "None":
-            # map display -> key
-            sys_key = next(
-                (k for k in SYSTEM_TISSUES.keys() if system_display_name(k) == chosen_system_disp),
-                None
-            )
-            if sys_key is not None:
-                tissues_to_show = [t for t in SYSTEM_TISSUES[sys_key] if t in tissue_sidebar_names]
-            else:
-                tissues_to_show = []
-        else:
-            tissues_to_show = []
+        tissues_to_show_set = set()
+        if chosen_systems_disp:
+            for disp in chosen_systems_disp:
+                sys_key = next((k for k in SYSTEM_TISSUES.keys() if system_display_name(k) == disp), None)
+                if sys_key:
+                    tissues_to_show_set.update([t for t in SYSTEM_TISSUES[sys_key] if t in tissue_sidebar_names])
+        tissues_to_show = sorted(tissues_to_show_set)
 
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
         st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
-        st.markdown(
-            "<div style='font-size:20px; font-weight:400; margin: 6px 0 6px 0;'>"
-            "Expressed in (select tissues by system):"
-            "</div>",
-            unsafe_allow_html=True
-        )
+        # NEW: wrap the two filter blocks inside expanders
+        with st.expander("Expressed in (select tissues by system):", expanded=False):
 
-        tissues_filter_set = set()
+            tissues_filter_set = set()
 
-        for system_name, sys_tissues in SYSTEM_TISSUES.items():
-            available = [t for t in sys_tissues if t in tissue_sidebar_names]
-            if not available:
-                continue
+            for system_name, sys_tissues in SYSTEM_TISSUES.items():
+                available = [t for t in sys_tissues if t in tissue_sidebar_names]
+                if not available:
+                    continue
 
-            icon = SYSTEM_ICONS.get(system_name)
-            col_icon, col_exp = st.columns([1.6, 10], gap="small")
+                icon = SYSTEM_ICONS.get(system_name)
+                col_icon, col_exp = st.columns([1.6, 10], gap="small")
 
-            with col_icon:
-                if icon is not None:
-                    st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                    st.image(icon, width=120)
-                    st.markdown("</div>", unsafe_allow_html=True)
+                with col_icon:
+                    if icon is not None:
+                        st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                        st.image(icon, width=120)
+                        st.markdown("</div>", unsafe_allow_html=True)
 
-            with col_exp:
-                display_system = system_display_name(system_name)
-                with st.expander(display_system, expanded=False):
-                    picked = st.multiselect(
-                        "Select tissues",
-                        available,
-                        key=f"tree_pos_{system_name}",
-                    )
-                    tissues_filter_set.update(picked)
+                with col_exp:
+                    display_system = system_display_name(system_name)
+                    with st.expander(display_system, expanded=False):
+                        picked = st.multiselect(
+                            "Select tissues",
+                            available,
+                            key=f"tree_pos_{system_name}",
+                        )
+                        tissues_filter_set.update(picked)
 
-        tissues_filter = sorted(tissues_filter_set)
+            tissues_filter = sorted(tissues_filter_set)
 
-        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+        with st.expander("Not expressed in (select tissues by system):", expanded=False):
 
-        st.markdown(
-            "<div style='font-size:20px; font-weight:400; margin: 6px 0 6px 0;'>"
-            "Not expressed in (select tissues by system):"
-            "</div>",
-            unsafe_allow_html=True
-        )
+            tissues_not_filter_set = set()
 
-        tissues_not_filter_set = set()
+            for system_name, sys_tissues in SYSTEM_TISSUES.items():
+                available = [t for t in sys_tissues if t in tissue_sidebar_names]
+                if not available:
+                    continue
 
-        for system_name, sys_tissues in SYSTEM_TISSUES.items():
-            available = [t for t in sys_tissues if t in tissue_sidebar_names]
-            if not available:
-                continue
+                icon = SYSTEM_ICONS.get(system_name)
+                col_icon, col_exp = st.columns([1.6, 10], gap="small")
 
-            icon = SYSTEM_ICONS.get(system_name)
-            col_icon, col_exp = st.columns([1.6, 10], gap="small")
+                with col_icon:
+                    if icon is not None:
+                        st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                        st.image(icon, width=120)
+                        st.markdown("</div>", unsafe_allow_html=True)
 
-            with col_icon:
-                if icon is not None:
-                    st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                    st.image(icon, width=120)
-                    st.markdown("</div>", unsafe_allow_html=True)
+                with col_exp:
+                    display_system = system_display_name(system_name)
+                    with st.expander(display_system, expanded=False):
+                        picked = st.multiselect(
+                            "Select tissues",
+                            available,
+                            key=f"tree_neg_{system_name}",
+                        )
+                        tissues_not_filter_set.update(picked)
 
-            with col_exp:
-                display_system = system_display_name(system_name)
-                with st.expander(display_system, expanded=False):
-                    picked = st.multiselect(
-                        "Select tissues",
-                        available,
-                        key=f"tree_neg_{system_name}",
-                    )
-                    tissues_not_filter_set.update(picked)
-
-        tissues_not_filter = sorted(tissues_not_filter_set)
+            tissues_not_filter = sorted(tissues_not_filter_set)
 
     # =========================================================
     # BOX 3 — DATABASE / CLASS
@@ -946,7 +935,7 @@ elif mirgene_filter == "Only in miRBase":
 if classes_selected and "Class_miRBase" in filtered.columns:
     filtered = filtered[filtered["Class_miRBase"].isin(classes_selected)]
 
-# Family filter (unchanged)
+# Family filter
 if family_selected:
     fam_mask = pd.Series(False, index=filtered.index)
     mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
@@ -980,7 +969,6 @@ if species_found_cols:
     tmp_found = filtered[species_found_cols]
     filtered = filtered[tmp_found.isin([True, False]).all(axis=1)]
 
-    # ✅ stable -> True only, unstable -> False only
     if stability_choice and stability_choice != "All":
         allowed_val = True if stability_choice.startswith("Stable") else False
         filtered = filtered[tmp_found.isin([allowed_val]).all(axis=1)]
@@ -1215,7 +1203,8 @@ if visible_class_cols:
     styled_df = styled_df.applymap(class_bg, subset=visible_class_cols)
 
 def style_row(row):
-    styles = ["font-weight: 700; font-size: 14px;"] * len(row)
+    # NEW: -2px for row font (was 14px -> 12px)
+    styles = ["font-weight: 700; font-size: 12px;"] * len(row)
     idx = {c: i for i, c in enumerate(row.index)}
 
     if "Conservation" in idx and "_Conservation_tf" in idx:
@@ -1241,6 +1230,7 @@ html_table = styled_df.hide(axis="index").to_html(escape=False)
 
 # -----------------------------------------------------------
 # CSS — TABLE + LEGEND (RESPONSIVE)
+#  + (NEW) narrower cell widths + smaller fonts (already -2px globally)
 # -----------------------------------------------------------
 custom_css = r"""
 <style>
@@ -1270,22 +1260,22 @@ custom_css = r"""
 }
 
 /* -------------------------------------------------------
-   RESPONSIVE CELLS
+   RESPONSIVE CELLS (NEW: narrower)
 ------------------------------------------------------- */
 .table-inner th,
 .table-inner td{
   border: 1px solid var(--table-border) !important;
   border-radius: 8px !important;
 
-  line-height: 1.25 !important;
-  min-height: 42px !important;
-  padding: 10px 10px !important;
+  line-height: 1.15 !important;
+  min-height: 38px !important;
+  padding: 8px 8px !important;
 
-  font-size: clamp(14px, 1.0vw + 8px, 20px) !important;
+  font-size: clamp(12px, 0.9vw + 7px, 18px) !important; /* was 14..20 */
 
-  width: clamp(150px, 10vw, 190px) !important;
-  min-width: clamp(150px, 10vw, 190px) !important;
-  max-width: clamp(190px, 12vw, 230px) !important;
+  width: clamp(120px, 8.5vw, 160px) !important;
+  min-width: clamp(120px, 8.5vw, 160px) !important;
+  max-width: clamp(160px, 10vw, 190px) !important;
 
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -1309,15 +1299,15 @@ custom_css = r"""
   text-overflow: clip !important;
 }
 
-/* first column wider but still responsive */
+/* first column a bit narrower too (NEW) */
 .table-inner th:first-child{
   position: sticky !important;
   left: 0;
   z-index: 30 !important;
 
-  width: clamp(190px, 14vw, 240px) !important;
-  min-width: clamp(190px, 14vw, 240px) !important;
-  max-width: clamp(240px, 18vw, 300px) !important;
+  width: clamp(160px, 12vw, 220px) !important;
+  min-width: clamp(160px, 12vw, 220px) !important;
+  max-width: clamp(220px, 14vw, 260px) !important;
 
   background-color: var(--table-first-th-bg) !important;
   color: color-mix(in srgb, var(--text) 95%, transparent) !important;
@@ -1329,9 +1319,9 @@ custom_css = r"""
   left: 0;
   z-index: 25 !important;
 
-  width: clamp(190px, 14vw, 240px) !important;
-  min-width: clamp(190px, 14vw, 240px) !important;
-  max-width: clamp(240px, 18vw, 300px) !important;
+  width: clamp(160px, 12vw, 220px) !important;
+  min-width: clamp(160px, 12vw, 220px) !important;
+  max-width: clamp(220px, 14vw, 260px) !important;
 
   background-color: var(--table-first-td-bg) !important;
   color: color-mix(in srgb, var(--text) 95%, transparent) !important;
@@ -1342,22 +1332,22 @@ custom_css = r"""
 .legend-wrap{
   display: flex;
   flex-wrap: wrap;
-  gap: 14px 22px;
+  gap: 12px 18px;
   align-items: flex-start;
   margin-top: 10px;
   margin-bottom: 12px;
 }
 
 .legend-card{
-  flex: 1 1 260px;
-  min-width: 260px;
-  font-size: 18px;
+  flex: 1 1 240px;
+  min-width: 240px;
+  font-size: 16px; /* was 18 */
   font-weight: 400;
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 .legend-title{
-  font-size: 20px;
+  font-size: 18px; /* was 20 */
   font-weight: 600;
   margin-bottom: 8px;
 }
@@ -1365,19 +1355,19 @@ custom_css = r"""
 .legend-row{
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 14px;
+  gap: 8px 12px;
   align-items: center;
 }
 
 .legend-item{
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .swatch{
-  width: 18px;
-  height: 18px;
+  width: 16px;   /* was 18 */
+  height: 16px;  /* was 18 */
   border-radius: 999px;
   display: inline-block;
   vertical-align: middle;
@@ -1399,7 +1389,7 @@ custom_css = r"""
 
   .table-inner th,
   .table-inner td{
-    padding: 8px 8px !important;
+    padding: 7px 7px !important;
     border-radius: 6px !important;
 
     white-space: normal !important;
@@ -1407,11 +1397,11 @@ custom_css = r"""
   }
 
   .legend-card{
-    min-width: 220px;
-    font-size: 16px;
+    min-width: 210px;
+    font-size: 14px; /* was 16 */
   }
   .legend-title{
-    font-size: 18px;
+    font-size: 16px; /* was 18 */
   }
 }
 </style>
@@ -1505,7 +1495,6 @@ if visible_class_cols:
 """)
 
 st.markdown(f"<div class='legend-wrap'>{''.join(legend_cards)}</div>", unsafe_allow_html=True)
-
 st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------
@@ -1546,6 +1535,7 @@ with btn_col:
 
 # -----------------------------------------------------------
 # BARPLOT (Repeat distribution) — THEME-AWARE
+# (NEW: reduce fonts by 2px)
 # -----------------------------------------------------------
 ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
@@ -1571,8 +1561,8 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                 title="Repeat class",
                 axis=alt.Axis(
                     labelAngle=0,
-                    labelFontSize=14.5,
-                    titleFontSize=18,
+                    labelFontSize=12.5,  # was 14.5
+                    titleFontSize=16,    # was 18
                     titlePadding=40,
                 )
             ),
@@ -1580,8 +1570,8 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
                 "Count:Q",
                 title="Count",
                 axis=alt.Axis(
-                    labelFontSize=16,
-                    titleFontSize=18
+                    labelFontSize=14,   # was 16
+                    titleFontSize=16    # was 18
                 )
             ),
             color=alt.Color(
@@ -1597,8 +1587,8 @@ if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any()
         .configure_axis(
             labelColor="currentColor",
             titleColor="currentColor",
-            labelFontSize=16,
-            titleFontSize=18,
+            labelFontSize=14,      # was 16
+            titleFontSize=16,      # was 18
             grid=True,
             gridColor="currentColor",
             gridOpacity=0.12,
