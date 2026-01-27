@@ -704,8 +704,7 @@ df["MirGeneDB_family_display"] = df.apply(
 # -----------------------------------------------------------
 st.title("pre-miRNA Annotation Browser")
 st.markdown(
-    "Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, "
-    "repeat classification and family context.    --------------------------------------------------------------------------    CIAO"
+    "Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, repeat classification and family context."
 )
 
 # -----------------------------------------------------------
@@ -1637,5 +1636,6 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
