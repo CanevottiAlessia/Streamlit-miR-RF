@@ -5,6 +5,16 @@ import pandas as pd
 import altair as alt
 from PIL import Image
 
+import pathlib, re, streamlit as st
+
+_THIS_FILE = pathlib.Path(__file__).resolve()
+st.sidebar.caption(f"Running: {_THIS_FILE}")
+
+txt = _THIS_FILE.read_text(encoding="utf-8", errors="ignore")
+if "\\\\t" in txt:  # cerca il testo letterale \t (backslash+t)
+    st.sidebar.error("Trovato '\\\\t' nel file in esecuzione! Cerca: sep=\"\\\\t\"")
+
+
 # -----------------------------------------------------------
 # STREAMLIT CONFIG (must be before any other st.* output)
 # -----------------------------------------------------------
@@ -1649,6 +1659,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
 
