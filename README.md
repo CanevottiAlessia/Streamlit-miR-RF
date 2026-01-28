@@ -174,4 +174,3 @@ Under these conditions, hsa-mir-145 appears among the filtered entries. The app 
 - is conserved in mouse,
 - displays high expression in multiple cardiovascular tissues,
 - is classified as structurally stable (R/D).
-
