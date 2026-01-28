@@ -172,7 +172,7 @@ A researcher interested in cardiovascular biology in mouse may wish to identify 
 **Structural robustness**
 - Set **Structure** to *PASSED* to focus on pre-miRNAs with stable predicted hairpin structures.
 
-Under these conditions, **99 precursor loci** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
+Under these conditions, a smaller set of pre-miRNAs are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
 - is conserved in mouse;
 - displays measurable expression across multiple cardiovascular tissues;
 - is classified as structurally stable (R or D).
