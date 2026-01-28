@@ -156,8 +156,7 @@ If you use this resource, please cite the accompanying manuscript:
 ### Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
 A researcher interested in cardiovascular biology in mouse may wish to identify human pre-miRNAs that are evolutionarily conserved in Mus musculus, structurally robust, and expressed in cardiovascular-related tissues, either to support existing knowledge or to generate hypotheses for downstream analyses.
 
-**Using the pre-miRNA Annotation Browser as a support tool.**
-The application can be used to narrow the search space by combining simple filters:
+**Using the pre-miRNA Annotation Browser as a support tool** → The application can be used to narrow the search space by combining simple filters:
 
 **Conservation support**
 - Set Conservation to PASSED.
@@ -170,7 +169,62 @@ The application can be used to narrow the search space by combining simple filte
 **Structural robustness**
 - Set Structure to PASSED to focus on pre-miRNAs with stable predicted hairpins.
 
-Under these conditions, hsa-mir-145 appears among the filtered entries. The app shows that this locus:
+Under these conditions, 99 precursors appear among the filtered entries. The app shows that this locus:
+- is conserved in mouse;
+- displays high expression in multiple cardiovascular tissues;
+- is classified as structurally stable (R/D).
+
+Alternatively, individual miRNAs of interest (e.g. hsa-mir-145) can be queried directly using the global search bar to inspect their conservation, expression, and structural profiles in the context of the full annotation dataset. For example, miR-145 has been implicated in vascular smooth muscle cell biology and pulmonary arterial hypertension in mouse models, where its dysregulation influences vascular remodeling and disease progression in vivo (Caruso et al., *Circulation Research*, 2012, https://doi.org/10.1161/CIRCRESAHA.112.267591).
+
+## Example use cases
+
+### Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
+
+A researcher interested in cardiovascular biology in mouse may wish to identify human pre-miRNAs that are evolutionarily conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues, either to support existing knowledge or to generate hypotheses for downstream analyses.
+
+**Using the pre-miRNA Annotation Browser as a support tool** → The application can be used to narrow the search space by combining simple filters:
+
+**Conservation support**
+- Set *Conservation* to **PASSED**.
+- In *Advanced options → Evolutionary conservation*, select *Mus musculus* under **Found in**.  
+  This restricts the table to pre-miRNAs with detectable conservation in mouse.
+
+**Tissue expression context**
+- Set *Expression* to **PASSED**.
+- In *Advanced options → Tissue expression*, select tissues belonging to the **Cardiorespiratory system** (e.g. artery, heart, ventricle, vein, circulating compartments).  
+  This highlights loci expressed in cardiovascular-relevant contexts.
+
+**Structural robustness**
+- Set *Structure* to **PASSED** to focus on pre-miRNAs with stable predicted hairpins.
+
+Under these conditions, *hsa-mir-145* appears among the filtered entries. The app shows that this locus:
 - is conserved in mouse,
 - displays high expression in multiple cardiovascular tissues,
 - is classified as structurally stable (R/D).
+
+In addition to filter-based exploration, individual miRNAs of interest can be queried directly using the global search bar. For example, *hsa-mir-145* can be inspected to retrieve its full annotation profile, enabling users to contextualize loci previously implicated in vascular biology and cardiovascular function in mouse models (e.g. Physiol Rep, 2021) within the integrative miR-RF framework.
+
+---
+
+### Use case 2 — Brain-associated miRNAs conserved in primates
+
+A researcher interested in brain-related processes in primates may wish to identify human pre-miRNAs that are conserved in closely related species, such as *Pan troglodytes* and *Pan paniscus*, and that show evidence of expression in neural tissues.
+
+**Using the pre-miRNA Annotation Browser as a support tool** → The application can be used to narrow the search space by combining simple filters:
+
+**Conservation support**
+- Set *Conservation* to **PASSED**.
+- In *Advanced options → Evolutionary conservation*, select *Pan troglodytes* and *Pan paniscus* under **Found in**.  
+  This restricts the table to pre-miRNAs conserved across closely related primate species.
+
+**Tissue expression context**
+- Set *Expression* to **PASSED**.
+- In *Advanced options → Tissue expression*, select tissues belonging to the **Neuro-Endocrine system** (e.g. brain, cortex, cerebellum, hippocampus, neuron-related samples).  
+  This highlights loci with detectable expression in neural contexts.
+
+**Structural robustness**
+- Set *Structure* to **PASSED** to focus on pre-miRNAs with stable predicted hairpin structures.
+
+Under these conditions, the filtered results provide a focused subset of pre-miRNAs that are conserved across primates, expressed in brain-related tissues, and supported by structurally robust hairpins. This subset can be used to inspect known brain-associated miRNAs or to identify additional candidates sharing similar annotation profiles.
+
+As in the mouse use case, individual loci of interest can also be queried directly using the global search bar to rapidly inspect conservation patterns, tissue expression profiles, and structural classification for specific miRNAs.
