@@ -199,7 +199,7 @@ st.markdown(
 
     /* top-level expander summary label */
     section[data-testid="stSidebar"] [data-testid="stExpander"] > details > summary{
-      font-size: 9px !important;    /* 11 -> 9 */
+      font-size: 11px !important;    
       font-weight: 750 !important;
     }
 
@@ -1645,3 +1645,4 @@ if show_repeat_plot:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
