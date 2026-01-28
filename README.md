@@ -1,7 +1,7 @@
 # pre-miRNA Annotation Browser
 
-An interactive Streamlit web application to explore, filter, and export the pre-miRNA annotations generated in **miR-RF**, as described in *[Manuscript title]*.
-This app provides an intuitive interface to inspect human pre-miRNAs evaluated through an integrative framework combining **structural stability**, **evolutionary conservation**, and **tissue expression**, and supports flexible, user-defined filtering strategies tailored to different biological questions.
+An interactive Streamlit web application to explore, filter, and export the pre-miRNA annotations generated in **miR-RF**, as described in *[article title]*.
+The app enables interactive inspection of human pre-miRNAs evaluated through an integrative framework combining **structural stability**, **evolutionary conservation**, and **tissue expression**, and supports flexible, user-defined filtering strategies tailored to different biological questions.
 
 🔗 **Live app:**
 [https://app-mir-rf-vfd7s8nncj3mx6anbaaxrh.streamlit.app/](https://app-mir-rf-vfd7s8nncj3mx6anbaaxrh.streamlit.app/)
@@ -10,14 +10,15 @@ This app provides an intuitive interface to inspect human pre-miRNAs evaluated t
 
 ## Overview
 
-Accurate interpretation of pre-miRNA annotations often depends on the specific research context. Rather than enforcing a single definition of bona fide microRNAs, this application enables users to interactively explore the full set of annotations and apply custom filters based on complementary sources of evidence.
+Accurate interpretation of pre-miRNA annotations often depends on the research context. Rather than enforcing a single definition of “valid” pre-miRNAs, this application enables users to explore the full annotation space and apply custom filters based on complementary evidence.
 
 The browser integrates:
+
 * miR-RF structural stability classes (R/D/I/S),
-* multi-species conservation profiles,
-* tissue-specific expression data,
+* multi-species conservation profiles and human specificity,
+* tissue expression values (RPMM),
 * miRNA family context (miRBase / MirGeneDB),
-* repeat annotation and human specificity.
+* repeat annotation.
 
 All results correspond to the analyses reported in the accompanying manuscript and are provided as a reusable resource for downstream studies.
 
@@ -25,94 +26,104 @@ All results correspond to the analyses reported in the accompanying manuscript a
 
 ## Key features
 
-### Interactive filtering
+### Interactive filtering (sidebar)
 
-Filters are available through a sidebar and can be combined arbitrarily:
+Filters can be combined arbitrarily:
 
-* **Global search** across all columns
-* **Pass/fail filters** for:
-  * Structural stability
-  * Evolutionary conservation
-  * Expression (RPMM ≥ 1.5)
+* **Global search** across all columns (“Search any column”)
+* **Pass/fail selectors** (with *Show all* option) for:
+
+  * Evolutionary conservation (PASSED / NOT PASSED)
+  * Expression (PASSED / NOT PASSED)
+  * Structural stability (PASSED / NOT PASSED)
+* **Human specificity selector** (with *Show all* option)
+
+  * Only hsa-specific / Not hsa-specific
 * **Family context**
+
   * Single miRNAs vs miRNAs in a family (miRBase and/or MirGeneDB)
-* **Human specificity**
-  * hsa-specific vs non–hsa-specific
-* **Repeat class**
+* **Repeat class selection**
+
   * LINE, SINE, LTR, DNA, Simple repeats, No repeat, etc.
 
 ---
 
 ### Advanced options
 
-Advanced filters can be enabled to refine queries further:
+Advanced filters and column display can be enabled through the **Advanced options** toggle.
 
 #### Evolutionary conservation
 
-* Show species-specific columns
+* Show species-specific columns (optional)
 * Filter by:
-  * “Found in” selected species
-  * “Not found in” selected species
-* Optional stratification by structural stability (stable R/D vs unstable I/S)
+
+  * **Found in:** selected species
+  * **Not found in:** selected species
+* Optional stratification by structural stability when “Found in” is active:
+
+  * Stable (R/D) vs Unstable (S/I)
 
 #### Tissue expression
 
-* Show tissue-specific expression columns
+* Show tissue columns **by anatomical system** (rather than individual tissue lists)
 * Filter by:
-  * Expressed in selected tissues (RPMM ≥ 1.5)
-  * Not expressed in selected tissues
-* Tissues are organized by **anatomical systems**, with visual icons for navigation
 
-#### Database and class
-* Show miRBase / MirGeneDB class annotations
-* Filter miRNAs:
+  * **Expressed in:** selected tissues (RPMM ≥ 1.5)
+  * **Not expressed in:** selected tissues (RPMM < 1.5)
+* Tissues are organized by anatomical systems and visual icons to support navigation.
+
+#### Database / class
+
+* Optional display of miRBase / MirGeneDB class columns
+* Filter entries:
+
   * present in both databases
   * annotated only in miRBase
-* Filter by structural stability class (R, D, I, S)
+* Filter by miRBase structural class (R, D, I, S)
+
+---
 
 ### Filter reset and state management
 
-To facilitate exploratory analyses, the application includes a **Reset all filters** button located at the bottom of the sidebar.
+For exploratory analyses, the app includes a **Reset all filters** button at the bottom of the sidebar.
 
-* The button becomes visible **only when at least one filter is active**
-* A single click clears all applied filters
-* The interface returns to the default state, with:
-  * all filters cleared
-  * advanced options collapsed
-  * the full annotation table restored
+* The button appears **only when at least one filter is active**
+* One click clears all filters, restores defaults, collapses advanced options, and reloads the full table.
 
 ---
 
 ## Table visualization
 
 Results are displayed in a responsive, scrollable table with:
-* Sticky header and first column
+
+* Sticky header and sticky first column
 * Color-coded cells with an integrated legend for:
+
   * pass/fail status (structure, conservation, expression)
   * family membership
-  * human specificity
+  * hsa-specificity
   * repeat presence
-  * species-level stability
-  * tissue expression threshold
-  * miRBase / MirGeneDB structural classes
+  * species-level stability and “not found” status
+  * tissue expression threshold (RPMM ≥ 1.5 vs < 1.5)
+  * miRBase / MirGeneDB structural classes (R/D/I/S), when enabled
 
 ---
 
 ## Data export
 
 The currently filtered dataset can be exported as:
-* **TSV table**
-  (all visible columns, clean formatting)
-* **FASTA file**
-  containing the pre-miRNA sequences of the selected entries
 
-These exports allow downstream analyses and custom pipelines.
+* **TSV table** (only visible columns; clean formatting)
+* **FASTA file** for the filtered subset (from the `sequence` column)
+
+These exports are intended to support downstream analyses and custom pipelines.
 
 ---
 
-## Summary plots
+## Summary plots (optional)
 
-The app dynamically generates a **repeat class distribution bar plot** (Altair) based on the currently filtered subset, enabling rapid assessment of repeat-associated patterns.
+A **repeat class distribution** bar plot (Altair) can be displayed **on demand** by enabling
+**“Show repeat class distribution”** in the sidebar. The plot is computed on the currently filtered subset.
 
 ---
 
@@ -121,7 +132,7 @@ The app dynamically generates a **repeat class distribution bar plot** (Altair) 
 * `app.py` – Streamlit application code
 * `sfile2_NEW_plusFam.csv` – curated dataset used by the app
 * `*.png` – anatomical system icons used in the interface
-* `README.md` – this documentation
+* `README.md` – documentation
 
 ---
 
@@ -129,13 +140,13 @@ The app dynamically generates a **repeat class distribution bar plot** (Altair) 
 
 If you use this resource, please cite the accompanying manuscript:
 
-> *...*, year.
+> *Authors*. *Title*. *Journal*, year. (to be updated)
 
 ---
 
 ## Notes
 
-* The application is designed as a **supporting resource** to the manuscript and reflects the same thresholds and classification criteria.
-* Users are encouraged to apply their own filtering strategies depending on their specific biological or clinical research question.
+* The application is intended as a **companion resource** to the manuscript and reflects the same thresholds and classification criteria.
+* Users are encouraged to apply filtering strategies appropriate to their research goals (e.g., prioritizing structural robustness for functional studies vs. relaxing constraints for exploratory expression surveys).
 
 ---
