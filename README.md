@@ -140,7 +140,7 @@ A **repeat class distribution** bar plot (Altair) can be displayed **on demand**
 
 If you use this resource, please cite the accompanying manuscript:
 
-> *Authors*. *Title*. *Journal*, year. (to be updated)
+> *Authors*. *Title*. *Journal*, year. (aggiorna)
 
 ---
 
@@ -155,29 +155,29 @@ If you use this resource, please cite the accompanying manuscript:
 
 ### Use case 1 - Cardiovascular-associated miRNAs conserved in mouse
 
-A researcher interested in cardiovascular biology in mouse may wish to identify human pre-miRNAs that are evolutionarily conserved in Mus musculus, structurally robust, and expressed in cardiovascular-related tissues, either to support existing knowledge or to generate hypotheses for downstream analyses.
+A researcher interested in cardiovascular biology in mouse may wish to identify human pre-miRNAs that are evolutionarily conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues, either to support existing knowledge or to generate hypotheses for downstream analyses.
 
-**Using the pre-miRNA Annotation Browser as a support tool** → The application can be used to narrow the search space by combining simple filters:
+**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a small set of complementary filters:
 
 **Conservation support**
-- Set Conservation to PASSED.
-- In Advanced options → Evolutionary conservation, select Mus musculus under "Found in".
+- Set **Conservation** to *PASSED*.
+- In **Advanced options → Evolutionary conservation**, select *Mus musculus* under **Found in**.  
   This restricts the table to pre-miRNAs with detectable conservation in mouse.
 
 **Tissue expression context**
-- Set Expression to PASSED.
-- In Advanced options → Tissue expression, select tissues belonging to the Cardiorespiratory system (e.g. artery, heart, ventricle, vein, circulating compartments).
+- Set **Expression** to *PASSED*.
+- In **Advanced options → Tissue expression**, select tissues belonging to the **Cardiorespiratory system** (e.g. artery, heart, ventricle, vein, circulating compartments).  
   This highlights loci expressed in cardiovascular-relevant contexts.
 
 **Structural robustness**
-- Set Structure to PASSED to focus on pre-miRNAs with stable predicted hairpins.
+- Set **Structure** to *PASSED* to focus on pre-miRNAs with stable predicted hairpin structures.
 
-Under these conditions, 99 precursors appear among the filtered entries. The app shows that this locus:
+Under these conditions, **99 precursor loci** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
 - is conserved in mouse;
-- displays high expression in multiple cardiovascular tissues;
-- is classified as structurally stable (R/D).
+- displays measurable expression across multiple cardiovascular tissues;
+- is classified as structurally stable (R or D).
 
-Alternatively, individual miRNAs of interest (e.g. hsa-mir-145) can be queried directly using the global search bar to inspect their conservation, expression, and structural profiles in the context of the full annotation dataset. For example, miR-145 has been implicated in vascular smooth muscle cell biology and pulmonary arterial hypertension in mouse models, where its dysregulation influences vascular remodeling and disease progression in vivo (Caruso et al., *Circulation Research*, 2012; https://doi.org/10.1161/CIRCRESAHA.112.267591).
+Alternatively, individual miRNAs of interest (e.g. *hsa-miR-145*) can be queried directly using the **global search bar** to inspect their conservation, expression, and structural profiles in the context of the full annotation dataset. For example, miR-145 has been implicated in vascular smooth muscle cell biology and pulmonary arterial hypertension in mouse models, where its dysregulation influences vascular remodeling and disease progression *in vivo* (Caruso *et al.*, *Circulation Research*, 2012; https://doi.org/10.1161/CIRCRESAHA.112.267591).
 
 ---
 
@@ -186,18 +186,18 @@ Alternatively, individual miRNAs of interest (e.g. hsa-mir-145) can be queried d
 A researcher interested in brain-related processes in primates may wish to identify human pre-miRNAs that are conserved in closely related species, such as *Pan troglodytes* and *Pan paniscus*, and that show evidence of expression in neural tissues.
 
 **Conservation support**
-- Set Set Conservation to PASSED.
-- In Advanced options → Evolutionary conservation, select *Pan troglodytes* and *Pan paniscus* under **Found in:**.  
+- Set **Conservation** to *PASSED*.
+- In **Advanced options → Evolutionary conservation**, select *Pan troglodytes* and *Pan paniscus* under **Found in**.  
   This restricts the table to pre-miRNAs conserved across closely related primate species.
 
 **Tissue expression context**
-- Set Expression to PASSED.
-- In Advanced options → Tissue expression, select tissues belonging to the **Neuro-Endocrine system** (e.g. brain, cortex, cerebellum, hippocampus, neuron-related samples).  
+- Set **Expression** to *PASSED*.
+- In **Advanced options → Tissue expression**, select tissues belonging to the **Neuro-Endocrine system** (e.g. brain, cortex, cerebellum, hippocampus, neuron-related samples).  
   This highlights loci with detectable expression in neural contexts.
 
 **Structural robustness**
-- Set Structure to PASSED to focus on pre-miRNAs with stable predicted hairpin structures.
+- Set **Structure** to *PASSED* to focus on pre-miRNAs with stable predicted hairpin structures.
 
-Under these conditions, the filtered results provide a focused subset of pre-miRNAs that are conserved across primates, expressed in brain-related tissues, and supported by structurally robust hairpins. This subset can be used to inspect known brain-associated miRNAs or to identify additional candidates sharing similar annotation profiles.
+Under these conditions, the filtered results provide a focused subset of pre-miRNAs that are conserved across primates, expressed in brain-related tissues, and supported by structurally robust hairpins. This subset can be used both to inspect known brain-associated miRNAs and to identify additional candidates sharing similar annotation profiles.
 
-Under these conditions, well-characterized brain-enriched miRNAs such as *hsa-miR-9* emerge among the filtered entries, being highly expressed and conserved in the developing and adult vertebrate brain (Coolen et al., Frontiers in Cellular Neuroscience, 2013; https://doi.org/10.3389/fncel.2013.00220).
+For instance, well-characterized brain-enriched miRNAs such as *hsa-miR-9* emerge among the filtered entries, consistent with their reported roles in neuronal differentiation and synaptic regulation and their conserved expression in the developing and adult vertebrate brain (Coolen *et al.*, *Frontiers in Cellular Neuroscience*, 2013; https://doi.org/10.3389/fncel.2013.00220).
