@@ -153,11 +153,11 @@ If you use this resource, please cite the accompanying manuscript:
 
 ## Example use cases
 
+**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a small set of complementary filters:
+
 ### Use case 1 - Cardiovascular-associated miRNAs conserved in mouse
 
 A researcher interested in cardiovascular biology in mouse may wish to identify human pre-miRNAs that are evolutionarily conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues, either to support existing knowledge or to generate hypotheses for downstream analyses.
-
-**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a small set of complementary filters:
 
 **Conservation support**
 - Set **Conservation** to *PASSED*.
