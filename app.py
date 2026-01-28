@@ -13,7 +13,7 @@ st.set_option("client.toolbarMode", "minimal")
 
 # -----------------------------------------------------------
 # GLOBAL THEME + RESPONSIVE CSS (LIGHT/DARK + BREAKPOINTS)
-# + UI tweaks: -2px overall typography, tighter tissue accordion, full-width system bars
+# -2px everywhere (outside + inside table)
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -99,7 +99,7 @@ st.markdown(
        GLOBAL FONT: RESPONSIVE (outside table)  (-2px)
     ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
-        font-size: clamp(14px, 1.2vw + 8px, 20px) !important;
+        font-size: clamp(12px, 1.2vw + 6px, 18px) !important;
         background: var(--bg) !important;
         color: var(--text) !important;
     }
@@ -186,32 +186,32 @@ st.markdown(
        SIDEBAR TYPOGRAPHY SIZES (-2px)
     ---------------------------- */
     section[data-testid="stSidebar"] h2{
-      font-size: 22px !important;
+      font-size: 20px !important;   /* 22 -> 20 */
       font-weight: 800 !important;
       margin-top: 8px !important;
       margin-bottom: 10px !important;
     }
 
     section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-      font-size: 22px !important;
+      font-size: 20px !important;   /* 22 -> 20 */
       font-weight: 800 !important;
     }
 
     /* top-level expander summary label */
     section[data-testid="stSidebar"] [data-testid="stExpander"] > details > summary{
-      font-size: 11px !important;
+      font-size: 9px !important;    /* 11 -> 9 */
       font-weight: 750 !important;
     }
 
     .sidebar-section-title{
-      font-size: 18px;
+      font-size: 16px;              /* 18 -> 16 */
       font-weight: 700;
       margin: 8px 0 6px 0;
     }
 
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown p{
-      font-size: 14px !important;
+      font-size: 12px !important;   /* 14 -> 12 */
     }
 
     /* ---------------------------
@@ -237,6 +237,16 @@ st.markdown(
         border-color: color-mix(in srgb, var(--btn-border) 70%, var(--text) 30%) !important;
     }
 
+    /* main page download buttons smaller (-2px) */
+    [data-testid="stDownloadButton"] button{
+        padding: 6px 12px !important;
+        font-size: 12px !important;     /* 14 -> 12 */
+        line-height: 1.1 !important;
+        border-radius: 10px !important;
+        width: auto !important;
+        min-height: 32px !important;    /* 34 -> 32 */
+    }
+
     /* Sidebar normal buttons (e.g., Reset) styled like download buttons */
     section[data-testid="stSidebar"] .stButton > button{
         background: var(--btn-bg) !important;
@@ -244,6 +254,7 @@ st.markdown(
         border: 1px solid var(--btn-border) !important;
         border-radius: 12px !important;
         font-weight: 800 !important;
+        font-size: 12px !important;     /* enforce -2px */
     }
     section[data-testid="stSidebar"] .stButton > button:hover{
         background: var(--btn-bg-hover) !important;
@@ -274,18 +285,18 @@ st.markdown(
     }
 
     /* =======================================================
-       RESPONSIVE BREAKPOINTS (mobile / small screens)
+       RESPONSIVE BREAKPOINTS (mobile / small screens) (-2px)
     ======================================================= */
     @media (max-width: 900px){
       section[data-testid="stSidebar"] h2{
-        font-size: 16px !important;
+        font-size: 14px !important;  /* 16 -> 14 */
       }
       section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-        font-size: 16px !important;
+        font-size: 14px !important;  /* 16 -> 14 */
       }
       section[data-testid="stSidebar"] label,
       section[data-testid="stSidebar"] .stMarkdown p{
-        font-size: 12px !important;
+        font-size: 10px !important;  /* 12 -> 10 */
       }
       .sidebar-icon img{
         width: 82px !important;
@@ -317,7 +328,7 @@ st.markdown(
       border-radius: 12px !important;
     }
 
-    /* Full-width bar for nested expander headers */
+    /* Full-width bar for nested expander headers (-2px) */
     section[data-testid="stSidebar"]
     [data-testid="stExpander"]
     [data-testid="stExpander"] > details > summary{
@@ -332,21 +343,18 @@ st.markdown(
       padding: 8px 12px !important;
       border-radius: 10px !important;
 
-      font-size: 14px !important;
+      font-size: 12px !important;     /* 14 -> 12 */
       font-weight: 750 !important;
 
-      /* remove "pill" behavior */
       box-shadow: none !important;
     }
 
-    /* Better hover state like menu item */
     section[data-testid="stSidebar"]
     [data-testid="stExpander"]
     [data-testid="stExpander"] > details > summary:hover{
       filter: brightness(0.97);
     }
 
-    /* Inner text tighter */
     section[data-testid="stSidebar"]
     [data-testid="stExpander"]
     [data-testid="stExpander"] > details > summary p,
@@ -355,6 +363,7 @@ st.markdown(
     [data-testid="stExpander"] > details > summary span{
       margin: 0 !important;
       line-height: 1.1 !important;
+      font-size: 12px !important;     /* force -2px also for inner text */
     }
     </style>
     """,
@@ -563,6 +572,9 @@ FILTER_KEYS = [
     "sb_conservation", "sb_expression", "sb_structure", "sb_hsa",
     "ms_family", "ms_repeat",
 
+    # repeat plot
+    "show_repeat_plot",
+
     # advanced toggle
     "show_adv",
 
@@ -602,6 +614,9 @@ def any_filter_active() -> bool:
     if st.session_state.get("ms_family", []):
         return True
     if st.session_state.get("ms_repeat", []):
+        return True
+
+    if st.session_state.get("show_repeat_plot", False):
         return True
 
     if st.session_state.get("show_adv", False):
@@ -714,7 +729,6 @@ st.sidebar.header("Filters")
 
 search_term = st.sidebar.text_input("Search any column:", key="search_any")
 
-# Mutually exclusive -> dropdown with "Show all" as reset
 pass_sb_options = ["Show all", "PASSED", "NOT PASSED"]
 conservation_choice = st.sidebar.selectbox("Conservation:", pass_sb_options, index=0, key="sb_conservation")
 expression_choice   = st.sidebar.selectbox("Expression:",   pass_sb_options, index=0, key="sb_expression")
@@ -723,7 +737,6 @@ structure_choice    = st.sidebar.selectbox("Structure:",    pass_sb_options, ind
 hsa_sb_options = ["Show all", "Only hsa-specific", "Not hsa-specific"]
 hsa_choice = st.sidebar.selectbox("hsa specificity:", hsa_sb_options, index=0, key="sb_hsa")
 
-# Everything else in Filters unchanged
 family_options = [
     "Single miRNAs – miRBase",
     "Single miRNAs – MirGeneDB",
@@ -739,12 +752,14 @@ repeats_selected = st.sidebar.multiselect(
     key="ms_repeat",
 )
 
+# Checkbox in SIDEBAR (subito sotto "Repeat class")
+st.sidebar.checkbox("Show repeat class distribution", value=False, key="show_repeat_plot")
+
 # -----------------------------------------------------------
 # SIDEBAR: ADVANCED OPTIONS
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
 
-# IMPORTANT: always initialize (avoid NameError)
 animals_to_show = []
 tissues_to_show = []
 tissues_filter = []
@@ -759,9 +774,6 @@ classes_selected = []
 show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
 
 if show_adv:
-    # =========================================================
-    # BOX 1 — CONSERVATION
-    # =========================================================
     with st.sidebar.expander("Evolutionary conservation", expanded=True):
 
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
@@ -786,7 +798,6 @@ if show_adv:
             key="cons_species_found",
         )
 
-        # Structure filter: stable -> True, unstable -> False (mutually exclusive)
         if species_found_sidebar:
             stability_choice = st.selectbox(
                 "Structure:",
@@ -804,14 +815,10 @@ if show_adv:
             key="cons_species_na",
         )
 
-    # =========================================================
-    # BOX 2 — EXPRESSION
-    # =========================================================
     with st.sidebar.expander("Tissue expression", expanded=True):
 
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
-        # Show tissue columns: MULTI-select SYSTEMS -> union of tissues
         system_disp_list = [system_display_name(k) for k in SYSTEM_TISSUES.keys()]
         chosen_systems_disp = st.multiselect(
             "Show tissue columns (by system):",
@@ -829,7 +836,6 @@ if show_adv:
         st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
         st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
-        # Make "Expressed in" and "Not expressed in" into their own expandable windows
         with st.expander("Expressed in (select tissues by system):", expanded=False):
             tissues_filter_set = set()
 
@@ -849,7 +855,6 @@ if show_adv:
 
                 with col_exp:
                     display_system = system_display_name(system_name)
-                    # Nested system expander = "material" accordion via CSS above
                     with st.expander(display_system, expanded=False):
                         picked = st.multiselect(
                             "Select tissues",
@@ -889,9 +894,6 @@ if show_adv:
 
             tissues_not_filter = sorted(tissues_not_filter_set)
 
-    # =========================================================
-    # BOX 3 — DATABASE / CLASS
-    # =========================================================
     with st.sidebar.expander("Database / Class", expanded=True):
 
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
@@ -999,7 +1001,6 @@ if species_found_cols:
     tmp_found = filtered[species_found_cols]
     filtered = filtered[tmp_found.isin([True, False]).all(axis=1)]
 
-    # stable -> True only, unstable -> False only
     if stability_choice and stability_choice != "All":
         allowed_val = True if stability_choice.startswith("Stable") else False
         filtered = filtered[tmp_found.isin([allowed_val]).all(axis=1)]
@@ -1220,7 +1221,10 @@ if "hsa-specificity" in df_display.columns:
     styled_df = (
         styled_df
         .applymap(color_hsa, subset=["hsa-specificity"])
-        .applymap(lambda _v: "color: transparent !important; text-shadow: 0 0 0 transparent !important;", subset=["hsa-specificity"])
+        .applymap(
+            lambda _v: "color: transparent !important; text-shadow: 0 0 0 transparent !important;",
+            subset=["hsa-specificity"],
+        )
     )
 
 if "Repeat Class" in df_display.columns:
@@ -1234,8 +1238,8 @@ if visible_class_cols:
     styled_df = styled_df.applymap(class_bg, subset=visible_class_cols)
 
 def style_row(row):
-    # -2px here as well (was 14px)
-    styles = ["font-weight: 700; font-size: 12px;"] * len(row)
+    # -2px (was 12px -> now 10px)
+    styles = ["font-weight: 700; font-size: 10px;"] * len(row)
     idx = {c: i for i, c in enumerate(row.index)}
 
     if "Conservation" in idx and "_Conservation_tf" in idx:
@@ -1260,13 +1264,12 @@ if helper_cols_present:
 html_table = styled_df.hide(axis="index").to_html(escape=False)
 
 # -----------------------------------------------------------
-# CSS — TABLE + LEGEND (RESPONSIVE)
-# (cells narrower + slightly tighter paddings + -2px legend)
+# CSS — TABLE + LEGEND (RESPONSIVE)  (-2px everywhere)
 # -----------------------------------------------------------
 custom_css = r"""
 <style>
 .table-container{
-  max-height: 902px;
+  max-height: 4000px;
   overflow-y: auto !important;
   overflow-x: auto !important;
   border: 2px solid var(--table-border);
@@ -1291,18 +1294,18 @@ custom_css = r"""
 }
 
 /* -------------------------------------------------------
-   NARROWER CELLS
+   CELLS (font -2px)
 ------------------------------------------------------- */
 .table-inner th,
 .table-inner td{
   border: 1px solid var(--table-border) !important;
   border-radius: 7px !important;
 
-  line-height: 1.15 !important;
+  line-height: 1 !important;
   min-height: 36px !important;
   padding: 7px 7px !important;
 
-  font-size: clamp(12px, 0.9vw + 7px, 18px) !important;
+  font-size: clamp(10px, 0.9vw + 5px, 16px) !important; /* 12->10, 7->5, 18->16 */
 
   width: clamp(110px, 8vw, 150px) !important;
   min-width: clamp(110px, 8vw, 150px) !important;
@@ -1330,7 +1333,7 @@ custom_css = r"""
   text-overflow: clip !important;
 }
 
-/* first column slightly wider but still compact */
+/* first column */
 .table-inner th:first-child{
   position: sticky !important;
   left: 0;
@@ -1360,6 +1363,7 @@ custom_css = r"""
   background-clip: padding-box;
 }
 
+/* legend (-2px) */
 .legend-wrap{
   display: flex;
   flex-wrap: wrap;
@@ -1372,13 +1376,13 @@ custom_css = r"""
 .legend-card{
   flex: 1 1 240px;
   min-width: 240px;
-  font-size: 16px;
+  font-size: 14px;   /* 16 -> 14 */
   font-weight: 400;
   line-height: 1.35;
 }
 
 .legend-title{
-  font-size: 18px;
+  font-size: 16px;   /* 18 -> 16 */
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -1426,10 +1430,10 @@ custom_css = r"""
 
   .legend-card{
     min-width: 210px;
-    font-size: 14px;
+    font-size: 12px; /* 14 -> 12 */
   }
   .legend-title{
-    font-size: 16px;
+    font-size: 14px; /* 16 -> 14 */
   }
 }
 </style>
@@ -1539,97 +1543,102 @@ st.markdown(
 # -----------------------------------------------------------
 # DOWNLOAD BUTTONS (TSV + FASTA)
 # -----------------------------------------------------------
-tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")   #dos.to.unix
+tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
 
-st.download_button(
-    "Download table (TSV)",
-    data=tsv_bytes,
-    file_name="mirna_filtered_table.tsv",
-    mime="text/tab-separated-values",
-    key="dl_tsv",
-    use_container_width=True,
-)
+dl_col, _ = st.columns([2, 10])
+with dl_col:
+    st.download_button(
+        "Download table (TSV)",
+        data=tsv_bytes,
+        file_name="mirna_filtered_table.tsv",
+        mime="text/tab-separated-values",
+        key="dl_tsv",
+        use_container_width=False,
+    )
 
-st.download_button(
-    "Get FASTA",
-    data=generate_fasta(filtered).encode("utf-8"),
-    file_name="mirna_selected.fasta",
-    mime="text/plain",
-    key="dl_fasta",
-    use_container_width=True,
-)
+    st.download_button(
+        "Get FASTA",
+        data=generate_fasta(filtered).encode("utf-8"),
+        file_name="mirna_selected.fasta",
+        mime="text/plain",
+        key="dl_fasta",
+        use_container_width=False,
+    )
 
 # -----------------------------------------------------------
-# BARPLOT (Repeat distribution) — THEME-AWARE
+# BARPLOT (Repeat distribution) — THEME-AWARE + shown on demand
 # -----------------------------------------------------------
 ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
 repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
 
-st.subheader("Repeat class distribution")
-st.markdown("<div class='plot-card'>", unsafe_allow_html=True)
+show_repeat_plot = st.session_state.get("show_repeat_plot", False)
 
-if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any():
-    repeat_counts = filtered.groupby("Repeat_Class").size().reset_index(name="Count")
-    repeat_counts["Percent"] = (repeat_counts["Count"] / repeat_counts["Count"].sum() * 100).round(2)
+if show_repeat_plot:
+    st.subheader("Repeat class distribution")
+    st.markdown("<div class='plot-card'>", unsafe_allow_html=True)
 
-    barplot = (
-        alt.Chart(repeat_counts)
-        .mark_bar(
-            stroke="currentColor",
-            strokeOpacity=0.55,
-            strokeWidth=1.2
+    if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any():
+        repeat_counts = filtered.groupby("Repeat_Class").size().reset_index(name="Count")
+        repeat_counts["Percent"] = (repeat_counts["Count"] / repeat_counts["Count"].sum() * 100).round(2)
+
+        barplot = (
+            alt.Chart(repeat_counts)
+            .mark_bar(
+                stroke="currentColor",
+                strokeOpacity=0.55,
+                strokeWidth=1.2
+            )
+            .encode(
+                x=alt.X(
+                    "Repeat_Class:N",
+                    sort=repeat_order,
+                    title="Repeat class",
+                    axis=alt.Axis(
+                        labelAngle=0,
+                        labelFontSize=10.5,   # 12.5 -> 10.5
+                        titleFontSize=14,     # 16 -> 14
+                        titlePadding=34,
+                    )
+                ),
+                y=alt.Y(
+                    "Count:Q",
+                    title="Count",
+                    axis=alt.Axis(
+                        labelFontSize=12,     # 14 -> 12
+                        titleFontSize=14      # 16 -> 14
+                    )
+                ),
+                color=alt.Color(
+                    "Repeat_Class:N",
+                    scale=alt.Scale(domain=repeat_order, range=ucscgb_palette),
+                    legend=None
+                ),
+                tooltip=["Repeat_Class", "Count", "Percent"]
+            )
+            .properties(height=560)
+            .configure(background="transparent")
+            .configure_view(fill="transparent", strokeOpacity=0)
+            .configure_axis(
+                labelColor="currentColor",
+                titleColor="currentColor",
+                labelFontSize=12,          # 14 -> 12
+                titleFontSize=14,          # 16 -> 14
+                grid=True,
+                gridColor="currentColor",
+                gridOpacity=0.12,
+                domainColor="currentColor",
+                domainOpacity=0.55,
+                tickColor="currentColor",
+                tickOpacity=0.55
+            )
+            .configure_title(color="currentColor")
         )
-        .encode(
-            x=alt.X(
-                "Repeat_Class:N",
-                sort=repeat_order,
-                title="Repeat class",
-                axis=alt.Axis(
-                    labelAngle=0,
-                    labelFontSize=12.5,
-                    titleFontSize=16,
-                    titlePadding=34,
-                )
-            ),
-            y=alt.Y(
-                "Count:Q",
-                title="Count",
-                axis=alt.Axis(
-                    labelFontSize=14,
-                    titleFontSize=16
-                )
-            ),
-            color=alt.Color(
-                "Repeat_Class:N",
-                scale=alt.Scale(domain=repeat_order, range=ucscgb_palette),
-                legend=None
-            ),
-            tooltip=["Repeat_Class", "Count", "Percent"]
-        )
-        .properties(height=560)
-        .configure(background="transparent")
-        .configure_view(fill="transparent", strokeOpacity=0)
-        .configure_axis(
-            labelColor="currentColor",
-            titleColor="currentColor",
-            labelFontSize=14,
-            titleFontSize=16,
-            grid=True,
-            gridColor="currentColor",
-            gridOpacity=0.12,
-            domainColor="currentColor",
-            domainOpacity=0.55,
-            tickColor="currentColor",
-            tickOpacity=0.55
-        )
-        .configure_title(color="currentColor")
-    )
 
-    st.altair_chart(barplot, use_container_width=True)
-else:
-    st.info("Repeat_Class is missing or empty: barplot not available.")
+        st.altair_chart(barplot, use_container_width=True)
+    else:
+        st.info("Repeat_Class is missing or empty: barplot not available.")
 
-st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------
 # FOOTER
