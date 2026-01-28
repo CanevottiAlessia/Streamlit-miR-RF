@@ -199,7 +199,7 @@ st.markdown(
 
     /* top-level expander summary label */
     section[data-testid="stSidebar"] [data-testid="stExpander"] > details > summary{
-      font-size: 14px !important;    /* 11 -> 9 */
+      font-size: 16px !important;    /* 11 -> 9 */
       font-weight: 750 !important;
     }
 
@@ -363,7 +363,7 @@ st.markdown(
     [data-testid="stExpander"] > details > summary span{
       margin: 0 !important;
       line-height: 1.1 !important;
-      font-size: 12px !important;     /* force -2px also for inner text */
+      font-size: 14px !important;     /* force -2px also for inner text */
     }
     </style>
     """,
