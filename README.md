@@ -148,5 +148,3 @@ If you use this resource, please cite the accompanying manuscript:
 
 * The application is intended as a **companion resource** to the manuscript and reflects the same thresholds and classification criteria.
 * Users are encouraged to apply filtering strategies appropriate to their research goals (e.g., prioritizing structural robustness for functional studies vs. relaxing constraints for exploratory expression surveys).
-
----
