@@ -148,3 +148,30 @@ If you use this resource, please cite the accompanying manuscript:
 
 * The application is intended as a **companion resource** to the manuscript and reflects the same thresholds and classification criteria.
 * Users are encouraged to apply filtering strategies appropriate to their research goals (e.g., prioritizing structural robustness for functional studies vs. relaxing constraints for exploratory expression surveys).
+
+---
+
+## Example use cases
+
+### Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
+A researcher interested in cardiovascular biology in mouse may wish to identify human pre-miRNAs that are evolutionarily conserved in Mus musculus, structurally robust, and expressed in cardiovascular-related tissues, either to support existing knowledge or to generate hypotheses for downstream analyses.
+
+**Using the pre-miRNA Annotation Browser as a support tool.**
+The application can be used to narrow the search space by combining simple filters:
+
+**Conservation support**
+- Set Conservation to PASSED.
+- In Advanced options → Evolutionary conservation, select Mus musculus under "Found in". This restricts the table to pre-miRNAs with detectable conservation in mouse.
+
+**Tissue expression context**
+- Set Expression to PASSED.
+- In Advanced options → Tissue expression, select tissues belonging to the Cardiorespiratory system (e.g. artery, heart, ventricle, vein, circulating compartments). This highlights loci expressed in cardiovascular-relevant contexts.
+
+**Structural robustness**
+- Set Structure to PASSED to focus on pre-miRNAs with stable predicted hairpins.
+
+Under these conditions, hsa-mir-145 appears among the filtered entries. The app shows that this locus:
+- is conserved in mouse,
+- displays high expression in multiple cardiovascular tissues,
+- is classified as structurally stable (R/D).
+
