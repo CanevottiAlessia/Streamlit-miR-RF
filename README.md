@@ -1,4 +1,4 @@
-# pre-miRNA Annotation Browser
+# miR-RF Browser
 
 An interactive Streamlit web application to explore, filter, and export the pre-miRNA annotations generated in **miR-RF**, as described in *[article title]*.
 The app enables interactive inspection of human pre-miRNAs evaluated through an integrative framework combining **structural stability**, **evolutionary conservation**, and **tissue expression**, and supports flexible, user-defined filtering strategies tailored to different biological questions.
