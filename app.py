@@ -717,7 +717,7 @@ df["MirGeneDB_family_display"] = df.apply(
 # -----------------------------------------------------------
 # TITLE
 # -----------------------------------------------------------
-st.title("pre-miRNA Annotation Browser")
+st.title("miR-RF Browser")
 st.markdown(
     "Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, repeat classification and family context."
 )
@@ -1645,3 +1645,4 @@ if show_repeat_plot:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
