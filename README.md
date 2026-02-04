@@ -10,7 +10,7 @@ The app enables interactive inspection of human pre-miRNAs evaluated through an 
 
 ## Overview
 
-Accurate interpretation of pre-miRNA annotations often depends on the research context. Rather than enforcing a single definition of “valid” pre-miRNAs, this application enables users to explore the full annotation space and apply custom filters based on complementary evidence.
+Accurate interpretation of pre-miRNA annotations often depends on the research context. Rather than enforcing a single definition of “valid” pre-miRNAs, this application enables users to explore the full annotation and apply custom filters.
 
 The browser integrates:
 
@@ -56,18 +56,15 @@ Advanced filters and column display can be enabled through the **Advanced option
 
 * Show species-specific columns (optional)
 * Filter by:
-
   * **Found in:** selected species
   * **Not found in:** selected species
-* Optional stratification by structural stability when “Found in” is active:
-
+* Optional stratification by structural stability when “Found in” is active
   * Stable (R/D) vs Unstable (S/I)
 
 #### Tissue expression
 
 * Show tissue columns **by anatomical system** (rather than individual tissue lists)
 * Filter by:
-
   * **Expressed in:** selected tissues (RPMM ≥ 1.5)
   * **Not expressed in:** selected tissues (RPMM < 1.5)
 * Tissues are organized by anatomical systems and visual icons to support navigation.
@@ -76,7 +73,6 @@ Advanced filters and column display can be enabled through the **Advanced option
 
 * Optional display of miRBase / MirGeneDB class columns
 * Filter entries:
-
   * present in both databases
   * annotated only in miRBase
 * Filter by miRBase structural class (R, D, I, S)
@@ -98,7 +94,6 @@ Results are displayed in a responsive, scrollable table with:
 
 * Sticky header and sticky first column
 * Color-coded cells with an integrated legend for:
-
   * pass/fail status (structure, conservation, expression)
   * family membership
   * hsa-specificity
@@ -112,7 +107,6 @@ Results are displayed in a responsive, scrollable table with:
 ## Data export
 
 The currently filtered dataset can be exported as:
-
 * **TSV table** (only visible columns; clean formatting)
 * **FASTA file** for the filtered subset (from the `sequence` column)
 
