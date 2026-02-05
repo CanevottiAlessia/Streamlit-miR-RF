@@ -5,6 +5,7 @@ import pandas as pd
 import altair as alt
 from PIL import Image
 
+
 # -----------------------------------------------------------
 # STREAMLIT CONFIG (must be before any other st.* output)
 # -----------------------------------------------------------
@@ -370,6 +371,32 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+
+# -----------------------------------------------------------
+# Docs icon helper (must be defined before use)
+# -----------------------------------------------------------
+st.markdown("""
+<style>
+  /* Small clickable docs icon near widgets */
+  .doc-icon {
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0.75;
+    display: inline-block;
+    padding-top: 28px; /* tweak for vertical alignment */
+  }
+  .doc-icon:hover { opacity: 1; }
+  .doc-icon a { text-decoration: none !important; }
+</style>
+""", unsafe_allow_html=True)
+
+def docs_icon(url: str, title: str = "Open docs"):
+    st.markdown(
+        f"<span class='doc-icon'><a href='{url}' target='_blank' title='{title}'>↗️</a></span>",
+        unsafe_allow_html=True
+    )
+
+
 # -----------------------------------------------------------
 # Load data
 # -----------------------------------------------------------
@@ -714,68 +741,141 @@ df["MirGeneDB_family_display"] = df.apply(
     axis=1
 )
 
-# -----------------------------------------------------------
-# TITLE
-# -----------------------------------------------------------
-st.title("miR-RF Browser")
-st.markdown(
-    "Interactively explore and filter pre-miRNA annotations by species conservation, tissue expression, repeat classification and family context."
-)
+# --- HEADER (title + help) ---
+col_title, col_help = st.columns([7, 2])
+
+with col_title:
+    st.title("miR-RF Browser")
+    st.markdown(
+        "Interactively explore and filter pre-miRNA annotations by species conservation, "
+        "tissue expression, repeat classification and family context."
+    )
+
+with col_help:
+    with st.popover("Quick Help", use_container_width=True):
+        st.markdown("""
+### How to use the app
+- Use the sidebar on the left to filter the dataset  
+- Enable *Advanced options* for additional controls/filters  
+- Export **TSV** / **FASTA** at the bottom of the table  
+- Try the **Example use cases** presets at the bottom of the scrollable sidebar to quickly apply filter combinations  
+- Use **Reset all filters** (bottom of the sidebar) to clear everything and start over
+""")
+
+REPO_URL = "https://github.com/CanevottiAlessia/Streamlit-miR-RF/blob/main/README.md"
+with st.sidebar.expander("Documentation (GitHub)", expanded=False):
+    st.markdown(f"""
+- [Overview]({REPO_URL}#overview)
+- [Key features]({REPO_URL}#key-features)
+- [Advanced options]({REPO_URL}#advanced-options)
+- [Data export]({REPO_URL}#data-export)
+- [Example use cases]({REPO_URL}#example-use-cases)
+""")
+
 
 # -----------------------------------------------------------
-# SIDEBAR: FILTERS (always visible)
+# SIDEBAR: FILTERS (always visible)  — option 3 (widget + icon)
 # -----------------------------------------------------------
 st.sidebar.header("Filters")
 
-search_term = st.sidebar.text_input("Search any column:", key="search_any")
+# Global search
+c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
+with c1:
+    search_term = st.text_input("Search any column:", key="search_any")
+with c2:
+    docs_icon(f"{REPO_URL}#Global-search", "Docs: Global search")
 
+# PASS/FAIL selectors (one icon for the whole block)
 pass_sb_options = ["Show all", "PASSED", "NOT PASSED"]
-conservation_choice = st.sidebar.selectbox("Conservation:", pass_sb_options, index=0, key="sb_conservation")
-expression_choice   = st.sidebar.selectbox("Expression:",   pass_sb_options, index=0, key="sb_expression")
-structure_choice    = st.sidebar.selectbox("Structure:",    pass_sb_options, index=0, key="sb_structure")
 
+c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
+with c1:
+    conservation_choice = st.selectbox("Conservation:", pass_sb_options, index=0, key="sb_conservation")
+    expression_choice   = st.selectbox("Expression:",   pass_sb_options, index=0, key="sb_expression")
+    structure_choice    = st.selectbox("Structure:",    pass_sb_options, index=0, key="sb_structure")
+with c2:
+    # adjust anchor to your actual README slug
+    docs_icon(f"{REPO_URL}#Pass-and-fail-selectors", "Docs: PASS/FAIL selectors")
+
+# Human specificity
 hsa_sb_options = ["Show all", "Only hsa-specific", "Not hsa-specific"]
-hsa_choice = st.sidebar.selectbox("hsa specificity:", hsa_sb_options, index=0, key="sb_hsa")
 
+c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
+with c1:
+    hsa_choice = st.selectbox("hsa specificity:", hsa_sb_options, index=0, key="sb_hsa")
+with c2:
+    docs_icon(f"{REPO_URL}#Human-specificity-selector", "Docs: Human specificity")
+
+# Family
 family_options = [
     "Single miRNAs – miRBase",
     "Single miRNAs – MirGeneDB",
     "miRNAs in family – miRBase",
     "miRNAs in family – MirGeneDB",
 ]
-family_selected = st.sidebar.multiselect("Family:", family_options, default=[], key="ms_family")
 
-repeats_selected = st.sidebar.multiselect(
-    "Repeat class:",
-    sorted(df["Repeat_Class"].dropna().unique()) if "Repeat_Class" in df.columns else [],
-    default=[],
-    key="ms_repeat",
-)
+c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
+with c1:
+    family_selected = st.multiselect("Family:", family_options, default=[], key="ms_family")
+with c2:
+    docs_icon(f"{REPO_URL}#Family-context", "Docs: Family context")
 
-# Checkbox in SIDEBAR (subito sotto "Repeat class")
-st.sidebar.checkbox("Show repeat class distribution", value=False, key="show_repeat_plot")
+# Repeat class
+c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
+with c1:
+    repeats_selected = st.multiselect(
+        "Repeat class:",
+        sorted(df["Repeat_Class"].dropna().unique()) if "Repeat_Class" in df.columns else [],
+        default=[],
+        key="ms_repeat",
+    )
+with c2:
+    docs_icon(f"{REPO_URL}#Repeat-class-selection", "Docs: Repeat class")
+
+# Repeat plot toggle (icon on the right)
+c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
+with c1:
+    st.checkbox("Show repeat class distribution", value=False, key="show_repeat_plot")
+with c2:
+    docs_icon(f"{REPO_URL}#Summary-plots", "Docs: Repeat plot")
+
 
 # -----------------------------------------------------------
-# SIDEBAR: ADVANCED OPTIONS
+# SIDEBAR: ADVANCED OPTIONS  — option 3 (toggle + icon + expanders)
 # -----------------------------------------------------------
-st.sidebar.markdown("---")
-
+# -----------------------------------------------------------
+# Defaults for ADVANCED OPTIONS variables (avoid NameError)
+# -----------------------------------------------------------
 animals_to_show = []
 tissues_to_show = []
 tissues_filter = []
 tissues_not_filter = []
-show_class_cols = False
+
 species_na_sidebar = []
 species_found_sidebar = []
 stability_choice = "All"
+
+show_class_cols = False
 mirgene_filter = "Show all"
 classes_selected = []
 
-show_adv = st.sidebar.toggle("Advanced options", value=False, key="show_adv")
+# Toggle "Advanced options" + docs icon
+c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
+with c1:
+    show_adv = st.toggle("Advanced options", value=False, key="show_adv")
+with c2:
+    docs_icon(f"{REPO_URL}#advanced-options", "Docs: Advanced options")
 
 if show_adv:
-    with st.sidebar.expander("Evolutionary conservation", expanded=True):
 
+    # --- Evolutionary conservation expander + docs icon
+    c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
+    with c1:
+        evo_exp = st.expander("Evolutionary conservation", expanded=True)
+    with c2:
+        docs_icon(f"{REPO_URL}#evolutionary-conservation", "Docs: Evolutionary conservation")
+
+    with evo_exp:
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
         animals_to_show_sidebar = st.multiselect(
@@ -815,8 +915,14 @@ if show_adv:
             key="cons_species_na",
         )
 
-    with st.sidebar.expander("Tissue expression", expanded=True):
+    # --- Tissue expression expander + docs icon
+    c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
+    with c1:
+        tissue_exp = st.expander("Tissue expression", expanded=True)
+    with c2:
+        docs_icon(f"{REPO_URL}#tissue-expression", "Docs: Tissue expression")
 
+    with tissue_exp:
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
         system_disp_list = [system_display_name(k) for k in SYSTEM_TISSUES.keys()]
@@ -894,8 +1000,14 @@ if show_adv:
 
             tissues_not_filter = sorted(tissues_not_filter_set)
 
-    with st.sidebar.expander("Database / Class", expanded=True):
+    # --- Database / class expander + docs icon
+    c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
+    with c1:
+        db_exp = st.expander("Database / Class", expanded=True)
+    with c2:
+        docs_icon(f"{REPO_URL}#database--class", "Docs: Database / Class")
 
+    with db_exp:
         st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
         show_class_cols = st.checkbox(
@@ -921,16 +1033,89 @@ if show_adv:
             key="class_filter",
         )
 
+
+def apply_preset(preset_name: str):
+    # 1) reset totale (come il tuo bottone "Reset all filters")
+    for k in FILTER_KEYS:
+        st.session_state.pop(k, None)
+
+    # 2) base common settings
+    st.session_state["show_adv"] = True
+    st.session_state["sb_conservation"] = "Show all"
+    st.session_state["sb_expression"] = "Show all"
+    st.session_state["sb_structure"] = "Show all"
+    st.session_state["sb_hsa"] = "Show all"
+    st.session_state["show_repeat_plot"] = False
+
+    # optional: keep these empty unless you want them
+    st.session_state["search_any"] = ""
+    st.session_state["ms_family"] = []
+    st.session_state["ms_repeat"] = []
+    st.session_state["db_filter"] = "Show all"
+    st.session_state["class_filter"] = []
+    st.session_state["show_class_cols"] = False
+
+    if preset_name == "cardio_mouse":
+        # Conservation → Found in mouse
+        st.session_state["cons_species_found"] = ["M. musculus"]
+        st.session_state["cons_species_na"] = []
+        st.session_state["cons_stability_choice"] = "Stable (R/D)"  # opzionale
+
+        # Tissue columns shown by system
+        st.session_state["show_tissue_systems"] = ["Cardiorespiratory"]
+
+        # Tissue filter (Expressed in...) for Cardiorespiratory system
+        st.session_state["tree_pos_1. Cardiorespiratory system"] = [
+            "heart", "ventricle", "artery", "vein",
+            "blood", "plasma", "serum", "platelet",
+            "lung", "bronchus", "pleurae", "larynx", "pharynx"
+        ]
+        st.session_state["tree_neg_1. Cardiorespiratory system"] = []
+
+    elif preset_name == "brain_primates":
+        # Conservation → Found in primates
+        st.session_state["cons_species_found"] = ["P. troglodytes", "P. paniscus"]
+        st.session_state["cons_species_na"] = ["M. mulatta", "L. catta"]
+        st.session_state["cons_stability_choice"] = "Stable (R/D)"  # opzionale
+
+        # Tissue columns shown by system
+        st.session_state["show_tissue_systems"] = ["Neuro-Endocrine"]
+
+    st.rerun()
+
 # -----------------------------------------------------------
-# SIDEBAR: RESET BUTTON (only if at least one filter is active)
+# EXAMPLE USE CASES (sidebar) + docs icon
+# -----------------------------------------------------------
+c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
+with c1:
+    with st.expander("Example use cases", expanded=False):
+        st.caption("Apply a preset configuration of filters.")
+        b1, b2 = st.columns(2)
+        with b1:
+            if st.button("Cardio + mouse", use_container_width=True):
+                apply_preset("cardio_mouse")
+        with b2:
+            if st.button("Brain + primates", use_container_width=True):
+                apply_preset("brain_primates")
+with c2:
+    docs_icon(f"{REPO_URL}#example-use-cases", "Docs: Example use cases")
+
+
+# -----------------------------------------------------------
+# RESET BUTTON + docs icon
 # -----------------------------------------------------------
 st.sidebar.markdown("---")
-if any_filter_active():
-    if st.sidebar.button("Reset all filters", use_container_width=True):
-        for k in FILTER_KEYS:
-            st.session_state.pop(k, None)
-        st.session_state["show_adv"] = False
-        st.rerun()
+
+c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
+with c1:
+    if any_filter_active():
+        if st.button("Reset all filters", use_container_width=True):
+            for k in FILTER_KEYS:
+                st.session_state.pop(k, None)
+            st.session_state["show_adv"] = False
+            st.rerun()
+with c2:
+    docs_icon(f"{REPO_URL}#filter-reset-and-state-management", "Docs: Reset filters")
 
 # -----------------------------------------------------------
 # APPLY FILTERS
@@ -1645,4 +1830,3 @@ if show_repeat_plot:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
-
