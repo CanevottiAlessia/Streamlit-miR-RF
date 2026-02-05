@@ -32,10 +32,10 @@ Filters can be combined arbitrarily:
 
 * ### **Global search** across all columns (“Search any column”) -> Search for one or more miRNAs.
 
-* **Pass/fail selectors** (with *Show all* option) for:
-  * ### Evolutionary conservation (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on conservation status across species.
-  * ### Expression (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on evidence of tissue expression.
-  * ### Structural stability (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs according to their structural stability classification.
+* ### **Pass/fail selectors** (with *Show all* option) for:
+  * Evolutionary conservation (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on conservation status across species.
+  * Expression (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on evidence of tissue expression.
+  * Structural stability (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs according to their structural stability classification.
 
 * ### **Human specificity selector** (with *Show all* option)  
   * Only hsa-specific / Not hsa-specific -> Restrict results to human-specific miRNAs or exclude them.
