@@ -117,7 +117,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
 ---
 
-### Summary plots (optional)
+### Summary plots
 
 A **repeat class distribution** bar plot (Altair) can be displayed **on demand** by enabling
 **“Show repeat class distribution”** in the sidebar. The plot is computed on the currently filtered subset.
