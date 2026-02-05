@@ -30,9 +30,11 @@ All results correspond to the analyses reported in the accompanying manuscript a
 
 Filters can be combined arbitrarily:
 
-* ### **Global search** across all columns (“Search any column”) -> Search for one or more miRNAs.
+* ### **Global search**
+  Across all columns (“Search any column”) -> Search for one or more miRNAs.
 
-* ### **Pass/fail selectors** (with *Show all* option) for:
+* ### **Pass/fail selectors**
+(with *Show all* option) for:
   * Evolutionary conservation (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on conservation status across species.
   * Expression (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on evidence of tissue expression.
   * Structural stability (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs according to their structural stability classification.
@@ -45,8 +47,7 @@ Filters can be combined arbitrarily:
 
 * ### **Repeat class selection**
   * LINE, SINE, LTR, DNA, Simple repeats, No repeat, etc. -> Filter miRNAs based on the presence and type of overlapping repeat elements.
-* ### **Show repeat class distribution** -> Show barplots (under the table) of repeat class distribution with relative counts. 
-
+    
 ---
 
 ### Advanced options
@@ -114,7 +115,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
 ---
 
-## Summary plots (optional)
+### Summary plots (optional)
 
 A **repeat class distribution** bar plot (Altair) can be displayed **on demand** by enabling
 **“Show repeat class distribution”** in the sidebar. The plot is computed on the currently filtered subset.
@@ -187,5 +188,3 @@ Under these conditions, 29 miRNAs are retained in the filtered table. For each e
 - not conserved in *Macaca mulatta* and *Lemur catta*
 - is classified as structurally stable (R or D)
 - displays expression across multiple neuro-endocrine tissues
-
-This subset can be used both to inspect known brain-associated miRNAs and to identify additional candidates sharing similar annotation profiles.
