@@ -33,7 +33,7 @@ Filters can be combined arbitrarily:
 ### **Global search**
   Across all columns (“Search any column”) -> Search for one or more miRNAs.
 
-### **Pass/fail selectors**
+### **Pass and fail selectors**
 (with *Show all* option) for:
   * Evolutionary conservation (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on conservation status across species.
   * Expression (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on evidence of tissue expression.
