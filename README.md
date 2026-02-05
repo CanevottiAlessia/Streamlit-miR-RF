@@ -30,22 +30,22 @@ All results correspond to the analyses reported in the accompanying manuscript a
 
 Filters can be combined arbitrarily:
 
-* ### **Global search** across all columns (“Search any column”) --> Search for one or more miRNAs.
+* ### **Global search** across all columns (“Search any column”) -> Search for one or more miRNAs.
 
 * **Pass/fail selectors** (with *Show all* option) for:
-  * ### Evolutionary conservation (PASSED / NOT PASSED) --> Retain or exclude human pre-miRNAs based on conservation status across species.
-  * ### Expression (PASSED / NOT PASSED) --> Retain or exclude human pre-miRNAs based on evidence of tissue expression.
-  * ### Structural stability (PASSED / NOT PASSED) --> Retain or exclude human pre-miRNAs according to their structural stability classification.
+  * ### Evolutionary conservation (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on conservation status across species.
+  * ### Expression (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on evidence of tissue expression.
+  * ### Structural stability (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs according to their structural stability classification.
 
 * ### **Human specificity selector** (with *Show all* option)  
-  * Only hsa-specific / Not hsa-specific --> Restrict results to human-specific miRNAs or exclude them.
+  * Only hsa-specific / Not hsa-specific -> Restrict results to human-specific miRNAs or exclude them.
 
 * ### **Family context**
-  * Single miRNAs vs miRNAs in a family (miRBase and/or MirGeneDB) --> Distinguish isolated miRNAs from those belonging to annotated miRNA families.
+  * Single miRNAs vs miRNAs in a family (miRBase and/or MirGeneDB) -> Distinguish isolated miRNAs from those belonging to annotated miRNA families.
 
 * ### **Repeat class selection**
-  * LINE, SINE, LTR, DNA, Simple repeats, No repeat, etc. --> Filter miRNAs based on the presence and type of overlapping repeat elements.
-* ### **Show repeat class distribution** --> Show barplots (under the table) of repeat class distribution with relative counts. 
+  * LINE, SINE, LTR, DNA, Simple repeats, No repeat, etc. -> Filter miRNAs based on the presence and type of overlapping repeat elements.
+* ### **Show repeat class distribution** -> Show barplots (under the table) of repeat class distribution with relative counts. 
 
 ---
 
