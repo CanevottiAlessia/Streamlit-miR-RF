@@ -30,21 +30,21 @@ All results correspond to the analyses reported in the accompanying manuscript a
 
 Filters can be combined arbitrarily:
 
-* **Global search** across all columns (“Search any column”)
+* ### **Global search** across all columns (“Search any column”) --> search for one or more miRNAs
+* 
 * **Pass/fail selectors** (with *Show all* option) for:
-
-  * Evolutionary conservation (PASSED / NOT PASSED)
-  * Expression (PASSED / NOT PASSED)
-  * Structural stability (PASSED / NOT PASSED)
-* **Human specificity selector** (with *Show all* option)
-
-  * Only hsa-specific / Not hsa-specific
-* **Family context**
-
-  * Single miRNAs vs miRNAs in a family (miRBase and/or MirGeneDB)
-* **Repeat class selection**
-
-  * LINE, SINE, LTR, DNA, Simple repeats, No repeat, etc.
+  * ### Evolutionary conservation (PASSED / NOT PASSED) -->
+  * ### Expression (PASSED / NOT PASSED) --> 
+  * ### Structural stability (PASSED / NOT PASSED) -->
+  * 
+* ### **Human specificity selector** (with *Show all* option)
+  * Only hsa-specific / Not hsa-specific -->
+    
+* ### **Family context**
+  * Single miRNAs vs miRNAs in a family (miRBase and/or MirGeneDB) --> 
+   
+* ### **Repeat class selection**
+  * LINE, SINE, LTR, DNA, Simple repeats, No repeat, etc. --> 
 
 ---
 
