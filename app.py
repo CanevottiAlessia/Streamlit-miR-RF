@@ -1087,9 +1087,16 @@ def apply_preset(preset_name: str):
 # EXAMPLE USE CASES (sidebar) + docs icon
 # -----------------------------------------------------------
 c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
+
 with c1:
     with st.expander("Example use cases", expanded=False):
-        st.caption("Apply a preset configuration of filters.")
+        st.markdown(
+            "<div style='font-size: 14px; line-height: 1.2; margin-top: 2px;'>"
+            "Apply a preset configuration of filters."
+            "</div>",
+            unsafe_allow_html=True
+        )
+
         b1, b2 = st.columns(2)
         with b1:
             if st.button("Cardio + mouse", use_container_width=True):
@@ -1097,9 +1104,9 @@ with c1:
         with b2:
             if st.button("Brain + primates", use_container_width=True):
                 apply_preset("brain_primates")
+
 with c2:
     docs_icon(f"{REPO_URL}#example-use-cases", "Docs: Example use cases")
-
 
 # -----------------------------------------------------------
 # RESET BUTTON + docs icon
@@ -1830,3 +1837,4 @@ if show_repeat_plot:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
