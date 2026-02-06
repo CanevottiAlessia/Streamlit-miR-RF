@@ -1,7 +1,7 @@
 # miR-RF Browser
 
 An interactive Streamlit web application to explore, filter, and export the pre-miRNA annotations generated in **miR-RF**, as described in *"An operational workflow for the systematic annotation of human miRNAs"*.
-The app enables interactive inspection of human pre-miRNAs evaluated through an integrative framework combining **structural stability**, **evolutionary conservation**, and **tissue expression**, and supports flexible, user-defined filtering strategies tailored to different biological questions.
+The application enables interactive inspection of human pre-miRNAs evaluated through an integrative framework combining **structural stability**, **evolutionary conservation**, and **tissue expression**, and supports flexible, user-defined filtering strategies tailored to different biological questions.
 
 🔗 **Live app:**
 [https://app-mir-rf-vfd7s8nncj3mx6anbaaxrh.streamlit.app/](https://app-mir-rf-vfd7s8nncj3mx6anbaaxrh.streamlit.app/)
@@ -9,8 +9,6 @@ The app enables interactive inspection of human pre-miRNAs evaluated through an 
 ---
 
 ## Overview
-
-Accurate interpretation of pre-miRNA annotations often depends on the research context. Rather than enforcing a single definition of “valid” pre-miRNAs, this application enables users to explore the full annotation and apply custom filters.
 
 The browser integrates:
 
@@ -137,7 +135,7 @@ A **repeat class distribution** bar plot (Altair) can be displayed **on demand**
 
 If you use this resource, please cite the accompanying manuscript:
 
-> *Authors*. *Title*. *Journal*, year. (aggiorna)
+> Canevotti et al., *"An operational workflow for the systematic annotation of human miRNAs"*, 
 
 ---
 
