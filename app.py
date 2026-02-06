@@ -1091,7 +1091,7 @@ c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
 with c1:
     with st.expander("Example use cases", expanded=False):
         st.markdown(
-            "<div style='font-size: 18px; line-height: 1.2; margin-top: 2px;'>"
+            "<div style='font-size: 16px; line-height: 1.2; margin-top: 2px;'>"
             "Apply a preset configuration of filters."
             "</div>",
             unsafe_allow_html=True
@@ -1837,5 +1837,6 @@ if show_repeat_plot:
 # -----------------------------------------------------------
 st.markdown("---")
 st.caption("pre-miRNA Annotation Browser — Streamlit App")
+
 
 
