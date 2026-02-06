@@ -131,11 +131,25 @@ A **repeat class distribution** bar plot (Altair) can be displayed **on demand**
 
 ---
 
+License
+This work is licensed under a Creative Commons Attribution 4.0 International License (CC BY 4.0).
+
+You are free to:
+
+Share — copy and redistribute the material in any medium or format
+Adapt — remix, transform, and build upon the material for any purpose, even commercially
+Under the following terms:
+
+Attribution — appropriate credit must be given to the original authors and the accompanying manuscript.
+For details, see: https://creativecommons.org/licenses/by/4.0/
+
+---
+
 ## Citation
 
 If you use this resource, please cite the accompanying manuscript:
-
 > Canevotti et al., *"An operational workflow for the systematic annotation of human miRNAs"*, 
+Manuscript under peer review.
 
 ---
 
