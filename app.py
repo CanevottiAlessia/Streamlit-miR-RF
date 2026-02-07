@@ -83,70 +83,6 @@ def _inject_doc_nav_js():
         height=0,
     )
 
-def _inject_sticky_tabs_js():
-    components.html(
-        """
-        <script>
-        (function () {
-          const root = window.parent.document;
-
-          function makeTabsSticky(){
-            const tabsBar = root.querySelector('div[data-testid="stTabs"] > div:first-child');
-            if (!tabsBar) return;
-
-            // evita di ri-applicare su rerender
-            if (tabsBar.getAttribute("data-sticky-applied") === "1") return;
-            tabsBar.setAttribute("data-sticky-applied", "1");
-
-            // header streamlit (se presente)
-            const header = root.querySelector('header[data-testid="stHeader"], div[data-testid="stHeader"]');
-            const headerH = header ? header.getBoundingClientRect().height : 0;
-
-            // crea/aggiorna uno spacer per non sovrapporre contenuti
-            let spacer = root.getElementById("tabs-sticky-spacer");
-            if (!spacer) {
-              spacer = root.createElement("div");
-              spacer.id = "tabs-sticky-spacer";
-              // lo mettiamo subito PRIMA del blocco tabs
-              const tabsRoot = root.querySelector('div[data-testid="stTabs"]');
-              if (tabsRoot && tabsRoot.parentNode) {
-                tabsRoot.parentNode.insertBefore(spacer, tabsRoot);
-              }
-            }
-
-            // stile fixed
-            tabsBar.style.position = "fixed";
-            tabsBar.style.top = headerH + "px";
-            tabsBar.style.left = "0";
-            tabsBar.style.right = "0";
-            tabsBar.style.zIndex = "9999";
-            tabsBar.style.background = "var(--bg, white)";
-            tabsBar.style.borderBottom = "1px solid rgba(0,0,0,0.12)";
-            tabsBar.style.paddingTop = "6px";
-            tabsBar.style.paddingBottom = "6px";
-
-            // spacer = altezza tabbar
-            const barH = tabsBar.getBoundingClientRect().height;
-            spacer.style.height = barH + "px";
-
-            // su resize ricalcola top e spacer
-            const onResize = () => {
-              const h = header ? header.getBoundingClientRect().height : 0;
-              tabsBar.style.top = h + "px";
-              spacer.style.height = tabsBar.getBoundingClientRect().height + "px";
-            };
-            window.addEventListener("resize", onResize);
-          }
-
-          // Streamlit rerendera: riprova periodicamente
-          setInterval(makeTabsSticky, 400);
-          setTimeout(makeTabsSticky, 50);
-        })();
-        </script>
-        """,
-        height=0,
-    )
-
 
 def doc_jump_link(section_id: str, label: str = "Docs") -> str:
     return f"""
@@ -973,7 +909,6 @@ tab_app, tab_docs = st.tabs(["App", "Documentation"])
 
 # ✅ inject the tab switch + scroll router once
 _inject_doc_nav_js()
-_inject_sticky_tabs_js()
 
 
 # -----------------------------------------------------------
@@ -2258,4 +2193,3 @@ Under these conditions, **29 miRNAs** are retained in the filtered table. For ea
 License: CC BY 4.0
 """
     )
-
