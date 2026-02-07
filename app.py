@@ -1,9 +1,10 @@
-import streamlit.components.v1 as components
-from pathlib import Path
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import altair as alt
+from pathlib import Path
 from PIL import Image
+import re
 
 
 # -----------------------------------------------------------
@@ -12,9 +13,158 @@ from PIL import Image
 st.set_page_config(layout="wide")
 st.set_option("client.toolbarMode", "minimal")
 
+
+# -----------------------------------------------------------
+# ✅ FIX: in-page navigation (NO new tab)
+# - Clicking a doc link:
+#   1) switches to Documentation tab (by TEXT, not index)
+#   2) scrolls to the right anchor in the same page
+# -----------------------------------------------------------
+def _inject_doc_nav_js():
+    components.html(
+        """
+        <script>
+        (function () {
+
+          function clickTabByText(tabText) {
+            const tabs = window.parent.document.querySelectorAll('button[role="tab"]');
+            if (!tabs || tabs.length === 0) return false;
+
+            const target = Array.from(tabs).find(b => (b.innerText || '').trim() === tabText);
+            if (target) { target.click(); return true; }
+            return false;
+          }
+
+          function scrollToId(id) {
+            const el = window.parent.document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            return !!el;
+          }
+
+          // Global function called by our click handlers
+          window.parent.mirrfNav = function(sectionId) {
+            // 1) switch tab
+            clickTabByText("Documentation");
+
+            // 2) wait for render, then scroll
+            let tries = 0;
+            const t = setInterval(() => {
+              tries++;
+              const ok = scrollToId(sectionId);
+              if (ok || tries >= 30) clearInterval(t);
+            }, 150);
+          };
+
+          // Bind clicks to all <a data-doc-id="..."> links (Streamlit-safe)
+          function bindDocLinks() {
+            const root = window.parent.document;
+            const links = root.querySelectorAll('a[data-doc-id]:not([data-doc-bound="1"])');
+
+            links.forEach(a => {
+              a.setAttribute("data-doc-bound", "1");
+              a.style.cursor = "pointer";
+
+              a.addEventListener("click", function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                const id = a.getAttribute("data-doc-id");
+                if (id && window.parent.mirrfNav) window.parent.mirrfNav(id);
+              }, true);
+            });
+          }
+
+          // Streamlit re-renders often -> rebind periodically
+          setInterval(bindDocLinks, 600);
+          setTimeout(bindDocLinks, 100);
+
+        })();
+        </script>
+        """,
+        height=0,
+    )
+
+
+def doc_jump_link(section_id: str, label: str = "Docs") -> str:
+    return f"""
+    <a href="#" data-doc-id="{section_id}"
+       style="text-decoration:none; font-weight:700;">
+       ℹ️ {label}
+    </a>
+    """
+
+
+# ✅ icon-only link (for inline placement next to widgets)
+def doc_jump_icon(section_id: str, title: str = "Docs") -> str:
+    return f"""
+    <a href="#" data-doc-id="{section_id}"
+       title="{title}"
+       style="
+         text-decoration:none;
+         font-weight:800;
+         padding: 0 6px;
+         line-height: 1;
+         display: inline-block;
+         transform: translateY(2px);
+       ">
+       ℹ️
+    </a>
+    """
+
+
+# -----------------------------------------------------------
+# ✅ NEW: INLINE label + doc icon (same row)
+# -----------------------------------------------------------
+def sidebar_label_with_doc(label: str, doc_id: str, icon_title="Docs"):
+    st.sidebar.markdown(
+        f"""
+        <div style="
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:10px;
+          margin: 2px 0 6px 0;
+        ">
+          <div style="font-weight:700;">{label}</div>
+          <div style="flex:0 0 auto;">{doc_jump_icon(doc_id, icon_title)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def sidebar_widget_inline_doc(widget_fn, label: str, doc_id: str, *args, icon_title="Docs", **kwargs):
+    # 1) label + icon (inline)
+    sidebar_label_with_doc(label, doc_id, icon_title=icon_title)
+
+    # 2) hide Streamlit default label
+    if "label_visibility" not in kwargs:
+        kwargs["label_visibility"] = "collapsed"
+
+    # most widgets expect a label as first positional argument
+    return widget_fn("", *args, **kwargs)
+
+
+# ✅ helper: render sidebar widget + icon on the same row (OLD - kept for compatibility)
+def sidebar_widget_with_doc(widget_fn, doc_id: str, *args, icon_title="Docs", pad_top_px=30, **kwargs):
+    col_w, col_i = st.sidebar.columns([12, 1], vertical_alignment="top")
+    with col_w:
+        out = widget_fn(*args, **kwargs)
+    with col_i:
+        st.markdown(
+            f"<div style='display:flex; justify-content:center; padding-top:{pad_top_px}px;'>"
+            f"{doc_jump_icon(doc_id, icon_title)}"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+    return out
+
+
 # -----------------------------------------------------------
 # GLOBAL THEME + RESPONSIVE CSS (LIGHT/DARK + BREAKPOINTS)
 # -2px everywhere (outside + inside table)
+# + ✅ tab bar bigger + sticky (ROBUST)
+# + ✅ anchors scroll-margin to avoid sticky bar overlap
+# + ✅ tabs bar stays above streamlit header overlays
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -187,32 +337,31 @@ st.markdown(
        SIDEBAR TYPOGRAPHY SIZES (-2px)
     ---------------------------- */
     section[data-testid="stSidebar"] h2{
-      font-size: 20px !important;   /* 22 -> 20 */
+      font-size: 20px !important;
       font-weight: 800 !important;
       margin-top: 8px !important;
       margin-bottom: 10px !important;
     }
 
     section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-      font-size: 20px !important;   /* 22 -> 20 */
+      font-size: 20px !important;
       font-weight: 800 !important;
     }
 
-    /* top-level expander summary label */
     section[data-testid="stSidebar"] [data-testid="stExpander"] > details > summary{
-      font-size: 16px !important;    /* 11 -> 9 */
+      font-size: 16px !important;
       font-weight: 750 !important;
     }
 
     .sidebar-section-title{
-      font-size: 16px;              /* 18 -> 16 */
+      font-size: 16px;
       font-weight: 700;
       margin: 8px 0 6px 0;
     }
 
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] .stMarkdown p{
-      font-size: 12px !important;   /* 14 -> 12 */
+      font-size: 12px !important;
     }
 
     /* ---------------------------
@@ -241,11 +390,11 @@ st.markdown(
     /* main page download buttons smaller (-2px) */
     [data-testid="stDownloadButton"] button{
         padding: 6px 12px !important;
-        font-size: 12px !important;     /* 14 -> 12 */
+        font-size: 12px !important;
         line-height: 1.1 !important;
         border-radius: 10px !important;
         width: auto !important;
-        min-height: 32px !important;    /* 34 -> 32 */
+        min-height: 32px !important;
     }
 
     /* Sidebar normal buttons (e.g., Reset) styled like download buttons */
@@ -255,7 +404,7 @@ st.markdown(
         border: 1px solid var(--btn-border) !important;
         border-radius: 12px !important;
         font-weight: 800 !important;
-        font-size: 12px !important;     /* enforce -2px */
+        font-size: 12px !important;
     }
     section[data-testid="stSidebar"] .stButton > button:hover{
         background: var(--btn-bg-hover) !important;
@@ -290,14 +439,14 @@ st.markdown(
     ======================================================= */
     @media (max-width: 900px){
       section[data-testid="stSidebar"] h2{
-        font-size: 14px !important;  /* 16 -> 14 */
+        font-size: 14px !important;
       }
       section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-        font-size: 14px !important;  /* 16 -> 14 */
+        font-size: 14px !important;
       }
       section[data-testid="stSidebar"] label,
       section[data-testid="stSidebar"] .stMarkdown p{
-        font-size: 10px !important;  /* 12 -> 10 */
+        font-size: 10px !important;
       }
       .sidebar-icon img{
         width: 82px !important;
@@ -315,12 +464,7 @@ st.markdown(
 
     /* =======================================================
        "MATERIAL" ACCORDION MENU FOR SYSTEM EXPANDERS (nested)
-       - full-width darker bar
-       - compact spacing
-       - hover feedback
     ======================================================= */
-
-    /* Reduce padding/margins on nested expanders (system accordions) */
     section[data-testid="stSidebar"]
     [data-testid="stExpander"]
     [data-testid="stExpander"]{
@@ -329,7 +473,6 @@ st.markdown(
       border-radius: 12px !important;
     }
 
-    /* Full-width bar for nested expander headers (-2px) */
     section[data-testid="stSidebar"]
     [data-testid="stExpander"]
     [data-testid="stExpander"] > details > summary{
@@ -344,7 +487,7 @@ st.markdown(
       padding: 8px 12px !important;
       border-radius: 10px !important;
 
-      font-size: 12px !important;     /* 14 -> 12 */
+      font-size: 12px !important;
       font-weight: 750 !important;
 
       box-shadow: none !important;
@@ -364,37 +507,50 @@ st.markdown(
     [data-testid="stExpander"] > details > summary span{
       margin: 0 !important;
       line-height: 1.1 !important;
-      font-size: 14px !important;     /* force -2px also for inner text */
+      font-size: 14px !important;
+    }
+
+    /* =======================================================
+       ✅ TABS BAR: sticky (robusto anche con header Streamlit)
+    ======================================================= */
+    div[data-testid="stTabs"]{
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 1005 !important;
+      background: var(--bg) !important;
+    }
+
+    div[data-testid="stTabs"] > div:first-child{
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 1006 !important;
+      background: var(--bg) !important;
+      padding-top: 6px !important;
+      padding-bottom: 6px !important;
+      border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent) !important;
+    }
+
+    div[data-testid="stHeader"]{
+      z-index: 1000 !important;
+    }
+
+    div[data-testid="stTabs"] button[role="tab"]{
+      font-size: 18px !important;
+      font-weight: 800 !important;
+      padding: 10px 18px !important;
+      border-radius: 14px !important;
+    }
+
+    /* =======================================================
+       ✅ DOC ANCHORS: prevent being hidden under sticky tabs
+    ======================================================= */
+    .doc-anchor{
+      scroll-margin-top: 90px;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
-
-
-# -----------------------------------------------------------
-# Docs icon helper (must be defined before use)
-# -----------------------------------------------------------
-st.markdown("""
-<style>
-  /* Small clickable docs icon near widgets */
-  .doc-icon {
-    font-size: 14px;
-    line-height: 1;
-    opacity: 0.75;
-    display: inline-block;
-    padding-top: 28px; /* tweak for vertical alignment */
-  }
-  .doc-icon:hover { opacity: 1; }
-  .doc-icon a { text-decoration: none !important; }
-</style>
-""", unsafe_allow_html=True)
-
-def docs_icon(url: str, title: str = "Open docs"):
-    st.markdown(
-        f"<span class='doc-icon'><a href='{url}' target='_blank' title='{title}'>↗️</a></span>",
-        unsafe_allow_html=True
-    )
 
 
 # -----------------------------------------------------------
@@ -404,7 +560,9 @@ def docs_icon(url: str, title: str = "Open docs"):
 def load_data():
     return pd.read_csv("sfile2_NEW_plusFam.csv")
 
+
 df = load_data()
+
 
 # -----------------------------------------------------------
 # LOAD ICONS (same folder as this script)
@@ -430,7 +588,9 @@ def load_icons():
         "Others system": safe_open("other.png"),
     }
 
+
 SYSTEM_ICONS = load_icons()
+
 
 # -----------------------------------------------------------
 # PREPROCESSING FIXES
@@ -440,45 +600,41 @@ df = df.replace(["nan", "NaN", "NAN", "-", ""], pd.NA)
 expected_cols = [
     "miRNA",
     "Conservation",
-    "Pan_troglodytes","Pan_paniscus","Macaca_mulatta","Lemur_catta","Felis_catus",
-    "Sus_scrofa","Bos_taurus","Mus_musculus","Gallus_gallus","Xenopus_tropicalis",
-    "Danio_rerio","Takifugu_rubripes",
+    "Pan_troglodytes", "Pan_paniscus", "Macaca_mulatta", "Lemur_catta", "Felis_catus",
+    "Sus_scrofa", "Bos_taurus", "Mus_musculus", "Gallus_gallus", "Xenopus_tropicalis",
+    "Danio_rerio", "Takifugu_rubripes",
     "Expression",
-    "blood","colon","liver","brain","oral_cavity","plasma","lung","kidney","PBMC","heart","serum",
-    "milk","placenta","astrocyte","glandular_breast_tissue","cartilage","adrenal_gland",
-    "amniotic_fluid","artery","lymphocyte_B","stomach","epidermis","bone","thyroid","skin",
-    "saliva","pancreas","sperm","bronchus","embryo","feces","ileum","retina","lavage","uterus",
-    "mesenchymal_stromal_cells","islet","melanocyte","prostate","lymphocyte","cortex","semen",
-    "foreskin","neuron","cd34","bone_marrow","fast_twitch","macrophage","ovary",
-    "chorionic_villi","cerebellum","urine","duodenum","csf","pleurae","spinal_cord","platelet",
-    "testis","bladder","hippocampus","pituitary_gland","cervix","dendritic_cells","larynx",
-    "ventricle","limb_muscle","keratinocyte","umbilical_cord","nucleus_pulposus",
-    "follicular_fluid","cd19","salivary_glands","basophils","mononuclear_cells","epithelium",
-    "adipose","natural_killer","meninges","vein","oocyte","temporomandibular_joint",
-    "grey_matter","pharynx","cd4","dermis","aqueous_humor","podocyte","choroid_plexus",
-    "esophagus","theca","vaginal_tissue","mesenchymal_stem_cells","tonsil",
+    "blood", "colon", "liver", "brain", "oral_cavity", "plasma", "lung", "kidney", "PBMC", "heart", "serum",
+    "milk", "placenta", "astrocyte", "glandular_breast_tissue", "cartilage", "adrenal_gland",
+    "amniotic_fluid", "artery", "lymphocyte_B", "stomach", "epidermis", "bone", "thyroid", "skin",
+    "saliva", "pancreas", "sperm", "bronchus", "embryo", "feces", "ileum", "retina", "lavage", "uterus",
+    "mesenchymal_stromal_cells", "islet", "melanocyte", "prostate", "lymphocyte", "cortex", "semen",
+    "foreskin", "neuron", "cd34", "bone_marrow", "fast_twitch", "macrophage", "ovary",
+    "chorionic_villi", "cerebellum", "urine", "duodenum", "csf", "pleurae", "spinal_cord", "platelet",
+    "testis", "bladder", "hippocampus", "pituitary_gland", "cervix", "dendritic_cells", "larynx",
+    "ventricle", "limb_muscle", "keratinocyte", "umbilical_cord", "nucleus_pulposus",
+    "follicular_fluid", "cd19", "salivary_glands", "basophils", "mononuclear_cells", "epithelium",
+    "adipose", "natural_killer", "meninges", "vein", "oocyte", "temporomandibular_joint",
+    "grey_matter", "pharynx", "cd4", "dermis", "aqueous_humor", "podocyte", "choroid_plexus",
+    "esophagus", "theca", "vaginal_tissue", "mesenchymal_stem_cells", "tonsil",
     "Structure",
-    "Class_miRBase","Class_MirGeneDB",
-    "MirGeneDB family","miRBase family",
-    "hsa-specificity","Repeat_Class",
+    "Class_miRBase", "Class_MirGeneDB",
+    "MirGeneDB family", "miRBase family",
+    "hsa-specificity", "Repeat_Class",
     "sequence",
-    "family_name_mirbase","family_name_mirgene",
+    "family_name_mirbase", "family_name_mirgene",
 ]
 for c in expected_cols:
     if c not in df.columns:
         df[c] = pd.NA
 
-# Fix Class_MirGeneDB placeholder
 df["Class_MirGeneDB"] = df["Class_MirGeneDB"].fillna("—")
-df["Class_MirGeneDB"] = df["Class_MirGeneDB"].replace(
-    ["nan", "NaN", "NA", None, pd.NA, ""], "—"
-)
+df["Class_MirGeneDB"] = df["Class_MirGeneDB"].replace(["nan", "NaN", "NA", None, pd.NA, ""], "—")
 
-# Fix family flags
 df["miRBase family"] = df["miRBase family"].fillna("NO")
 df["MirGeneDB family"] = df["MirGeneDB family"].fillna("—")
 
-# Repeat class cleanup
+
 def shorten_repeat(val):
     if not isinstance(val, str):
         return val
@@ -486,40 +642,42 @@ def shorten_repeat(val):
         val = val.split("(")[0]
     return val.split(",")[0].strip()
 
+
 df["Repeat_Class"] = df["Repeat_Class"].apply(shorten_repeat)
 df["Repeat_Class"] = df["Repeat_Class"].astype("string").str.replace("_", " ", regex=False)
 
-# Keep TRUE/FALSE text for these columns
 for c in ["Structure", "Conservation", "Expression"]:
     if c in df.columns:
         df[c] = df[c].map(lambda x: "TRUE" if x is True else ("FALSE" if x is False else x))
+
 
 # -----------------------------------------------------------
 # COLUMN GROUPS
 # -----------------------------------------------------------
 animal_cols = [
-    "Pan_troglodytes","Pan_paniscus","Macaca_mulatta","Lemur_catta","Felis_catus",
-    "Sus_scrofa","Bos_taurus","Mus_musculus","Gallus_gallus","Xenopus_tropicalis",
-    "Danio_rerio","Takifugu_rubripes"
+    "Pan_troglodytes", "Pan_paniscus", "Macaca_mulatta", "Lemur_catta", "Felis_catus",
+    "Sus_scrofa", "Bos_taurus", "Mus_musculus", "Gallus_gallus", "Xenopus_tropicalis",
+    "Danio_rerio", "Takifugu_rubripes"
 ]
 animal_cols = [c for c in animal_cols if c in df.columns]
 
 tissue_cols = [
-    "blood","colon","liver","brain","oral_cavity","plasma","lung","kidney","PBMC","heart","serum",
-    "milk","placenta","astrocyte","glandular_breast_tissue","cartilage","adrenal_gland",
-    "amniotic_fluid","artery","lymphocyte_B","stomach","epidermis","bone","thyroid","skin",
-    "saliva","pancreas","sperm","bronchus","embryo","feces","ileum","retina","lavage","uterus",
-    "mesenchymal_stromal_cells","islet","melanocyte","prostate","lymphocyte","cortex","semen",
-    "foreskin","neuron","cd34","bone_marrow","fast_twitch","macrophage","ovary",
-    "chorionic_villi","cerebellum","urine","duodenum","csf","pleurae","spinal_cord","platelet",
-    "testis","bladder","hippocampus","pituitary_gland","cervix","dendritic_cells","larynx",
-    "ventricle","limb_muscle","keratinocyte","umbilical_cord","nucleus_pulposus",
-    "follicular_fluid","cd19","salivary_glands","basophils","mononuclear_cells","epithelium",
-    "adipose","natural_killer","meninges","vein","oocyte","temporomandibular_joint",
-    "grey_matter","pharynx","cd4","dermis","aqueous_humor","podocyte","choroid_plexus",
-    "esophagus","theca","vaginal_tissue","mesenchymal_stem_cells","tonsil",
+    "blood", "colon", "liver", "brain", "oral_cavity", "plasma", "lung", "kidney", "PBMC", "heart", "serum",
+    "milk", "placenta", "astrocyte", "glandular_breast_tissue", "cartilage", "adrenal_gland",
+    "amniotic_fluid", "artery", "lymphocyte_B", "stomach", "epidermis", "bone", "thyroid", "skin",
+    "saliva", "pancreas", "sperm", "bronchus", "embryo", "feces", "ileum", "retina", "lavage", "uterus",
+    "mesenchymal_stromal_cells", "islet", "melanocyte", "prostate", "lymphocyte", "cortex", "semen",
+    "foreskin", "neuron", "cd34", "bone_marrow", "fast_twitch", "macrophage", "ovary",
+    "chorionic_villi", "cerebellum", "urine", "duodenum", "csf", "pleurae", "spinal_cord", "platelet",
+    "testis", "bladder", "hippocampus", "pituitary_gland", "cervix", "dendritic_cells", "larynx",
+    "ventricle", "limb_muscle", "keratinocyte", "umbilical_cord", "nucleus_pulposus",
+    "follicular_fluid", "cd19", "salivary_glands", "basophils", "mononuclear_cells", "epithelium",
+    "adipose", "natural_killer", "meninges", "vein", "oocyte", "temporomandibular_joint",
+    "grey_matter", "pharynx", "cd4", "dermis", "aqueous_humor", "podocyte", "choroid_plexus",
+    "esophagus", "theca", "vaginal_tissue", "mesenchymal_stem_cells", "tonsil",
 ]
 tissue_cols = [c for c in tissue_cols if c and (c in df.columns)]
+
 
 # -----------------------------------------------------------
 # DISPLAY NAMES (species italic)
@@ -528,10 +686,12 @@ def sci_name(col):
     genus, species = col.split("_", 1)
     return f"<i>{genus[0]}. {species}</i>"
 
+
 animal_display_names = {c: sci_name(c) for c in animal_cols}
 animal_sidebar_names = {c: animal_display_names[c].replace("<i>", "").replace("</i>", "") for c in animal_cols}
 animal_sidebar_rev = {v: k for k, v in animal_sidebar_names.items()}
 tissue_sidebar_names = tissue_cols[:]
+
 
 # -----------------------------------------------------------
 # Tissue "tree" definition
@@ -587,47 +747,36 @@ SYSTEM_TISSUES = {
     ],
 }
 
+
 def system_display_name(system_key: str) -> str:
     return system_key.split(". ", 1)[-1].replace(" system", "")
 
+
 # -----------------------------------------------------------
-# RESET FILTERS (UX: show button only if something is active)
+# RESET FILTERS
 # -----------------------------------------------------------
 FILTER_KEYS = [
-    # basic filters
     "search_any",
     "sb_conservation", "sb_expression", "sb_structure", "sb_hsa",
     "ms_family", "ms_repeat",
-
-    # repeat plot
     "show_repeat_plot",
-
-    # advanced toggle
     "show_adv",
-
-    # conservation (advanced)
     "show_species_cols",
     "cons_species_found", "cons_species_na", "cons_stability_choice",
-
-    # expression (advanced)
     "show_tissue_systems",
-
-    # database / class (advanced)
     "show_class_cols",
     "db_filter",
     "class_filter",
 ]
-
-# Add dynamic keys for tissue system trees
 for sys_name in SYSTEM_TISSUES.keys():
     FILTER_KEYS.append(f"tree_pos_{sys_name}")
     FILTER_KEYS.append(f"tree_neg_{sys_name}")
+
 
 def any_filter_active() -> bool:
     if (st.session_state.get("search_any", "") or "").strip():
         return True
 
-    # mutually exclusive (selectbox)
     if st.session_state.get("sb_conservation", "Show all") != "Show all":
         return True
     if st.session_state.get("sb_expression", "Show all") != "Show all":
@@ -637,7 +786,6 @@ def any_filter_active() -> bool:
     if st.session_state.get("sb_hsa", "Show all") != "Show all":
         return True
 
-    # other basic filters
     if st.session_state.get("ms_family", []):
         return True
     if st.session_state.get("ms_repeat", []):
@@ -676,6 +824,7 @@ def any_filter_active() -> bool:
 
     return False
 
+
 # -----------------------------------------------------------
 # SPECIES MAPPING: True/False/NA robust
 # -----------------------------------------------------------
@@ -686,6 +835,7 @@ binary_map = {
 }
 if animal_cols:
     df[animal_cols] = df[animal_cols].applymap(lambda x: binary_map.get(x, pd.NA))
+
 
 # -----------------------------------------------------------
 # Helper columns for filtering + display helpers
@@ -707,6 +857,7 @@ if tissue_cols:
 else:
     df["Expression_display"] = pd.NA
 
+
 def format_class_pair(row):
     a = row.get("Class_miRBase", pd.NA)
     b = row.get("Class_MirGeneDB", pd.NA)
@@ -714,7 +865,9 @@ def format_class_pair(row):
     b = "-" if pd.isna(b) or str(b).strip() in ["", "—"] else str(b).strip()
     return f"{a}/{b}"
 
+
 df["Structure_display"] = df.apply(format_class_pair, axis=1)
+
 
 def family_name_or_single(flag_val, name_val, empty_as=None):
     if str(flag_val).strip().upper() == "YES":
@@ -722,6 +875,7 @@ def family_name_or_single(flag_val, name_val, empty_as=None):
             return None
         return str(name_val).strip()
     return empty_as
+
 
 df["miRBase_family_display"] = df.apply(
     lambda r: family_name_or_single(
@@ -741,19 +895,52 @@ df["MirGeneDB_family_display"] = df.apply(
     axis=1
 )
 
-# --- HEADER (title + help) ---
-col_title, col_help = st.columns([7, 2])
 
-with col_title:
-    st.title("miR-RF Browser")
-    st.markdown(
-        "Interactively explore and filter pre-miRNA annotations by species conservation, "
-        "tissue expression, repeat classification and family context."
-    )
+# -----------------------------------------------------------
+# External repo link (optional)
+# -----------------------------------------------------------
+REPO_URL = "https://github.com/CanevottiAlessia/Streamlit-miR-RF/blob/main/README.md"
 
-with col_help:
-    with st.popover("Quick Help", use_container_width=True):
-        st.markdown("""
+
+# ===========================================================
+# TABS BAR (APP / DOCUMENTATION)
+# ===========================================================
+tab_app, tab_docs = st.tabs(["App", "Documentation"])
+
+# ✅ inject the tab switch + scroll router once
+_inject_doc_nav_js()
+
+
+# -----------------------------------------------------------
+# Sidebar: Documentation (internal anchors, no new tab)
+# (kept as main sections only)
+# -----------------------------------------------------------
+with st.sidebar.expander("Documentation", expanded=False):
+    st.markdown("- " + doc_jump_link("doc_overview", "Overview"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_key_features", "Key features"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_advanced", "Advanced options"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_export", "Data export"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_use_cases", "Example use cases"), unsafe_allow_html=True)
+    st.markdown(f"- [GitHub README (external)]({REPO_URL})")
+
+
+# ===========================================================
+# TAB 1 — APP (DEFAULT)
+# ===========================================================
+with tab_app:
+    # --- HEADER (title + help) ---
+    col_title, col_help = st.columns([7, 2])
+
+    with col_title:
+        st.title("miR-RF Browser")
+        st.markdown(
+            "Interactively explore and filter pre-miRNA annotations by species conservation, "
+            "tissue expression, repeat classification and family context."
+        )
+
+    with col_help:
+        with st.popover("Quick Help", use_container_width=True):
+            st.markdown("""
 ### How to use the app
 - Use the sidebar on the left to filter the dataset  
 - Enable *Advanced options* for additional controls/filters  
@@ -762,340 +949,324 @@ with col_help:
 - Use **Reset all filters** (bottom of the sidebar) to clear everything and start over
 """)
 
-REPO_URL = "https://github.com/CanevottiAlessia/Streamlit-miR-RF/blob/main/README.md"
-with st.sidebar.expander("Documentation (GitHub)", expanded=False):
-    st.markdown(f"""
-- [Overview]({REPO_URL}#overview)
-- [Key features]({REPO_URL}#key-features)
-- [Advanced options]({REPO_URL}#advanced-options)
-- [Data export]({REPO_URL}#data-export)
-- [Example use cases]({REPO_URL}#example-use-cases)
-""")
+    # -----------------------------------------------------------
+    # SIDEBAR: FILTERS + inline doc icons (FIXED: ℹ️ next to label)
+    # -----------------------------------------------------------
+    st.sidebar.header("Filters")
 
+    search_term = sidebar_widget_inline_doc(
+        st.sidebar.text_input,
+        "Search any column:",
+        "doc_filter_search_any",
+        key="search_any",
+    )
 
-# -----------------------------------------------------------
-# SIDEBAR: FILTERS (always visible)  — option 3 (widget + icon)
-# -----------------------------------------------------------
-st.sidebar.header("Filters")
+    pass_sb_options = ["Show all", "PASSED", "NOT PASSED"]
 
-# Global search
-c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
-with c1:
-    search_term = st.text_input("Search any column:", key="search_any")
-with c2:
-    docs_icon(f"{REPO_URL}#Global-search", "Docs: Global search")
+    conservation_choice = sidebar_widget_inline_doc(
+        st.sidebar.selectbox,
+        "Conservation:",
+        "doc_filter_conservation_pf",
+        pass_sb_options,
+        index=0,
+        key="sb_conservation",
+    )
 
-# PASS/FAIL selectors (one icon for the whole block)
-pass_sb_options = ["Show all", "PASSED", "NOT PASSED"]
+    expression_choice = sidebar_widget_inline_doc(
+        st.sidebar.selectbox,
+        "Expression:",
+        "doc_filter_expression_pf",
+        pass_sb_options,
+        index=0,
+        key="sb_expression",
+    )
 
-c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
-with c1:
-    conservation_choice = st.selectbox("Conservation:", pass_sb_options, index=0, key="sb_conservation")
-    expression_choice   = st.selectbox("Expression:",   pass_sb_options, index=0, key="sb_expression")
-    structure_choice    = st.selectbox("Structure:",    pass_sb_options, index=0, key="sb_structure")
-with c2:
-    # adjust anchor to your actual README slug
-    docs_icon(f"{REPO_URL}#Pass-and-fail-selectors", "Docs: PASS/FAIL selectors")
+    structure_choice = sidebar_widget_inline_doc(
+        st.sidebar.selectbox,
+        "Structure:",
+        "doc_filter_structure_pf",
+        pass_sb_options,
+        index=0,
+        key="sb_structure",
+    )
 
-# Human specificity
-hsa_sb_options = ["Show all", "Only hsa-specific", "Not hsa-specific"]
+    hsa_sb_options = ["Show all", "Only hsa-specific", "Not hsa-specific"]
+    hsa_choice = sidebar_widget_inline_doc(
+        st.sidebar.selectbox,
+        "hsa specificity:",
+        "doc_filter_hsa",
+        hsa_sb_options,
+        index=0,
+        key="sb_hsa",
+    )
 
-c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
-with c1:
-    hsa_choice = st.selectbox("hsa specificity:", hsa_sb_options, index=0, key="sb_hsa")
-with c2:
-    docs_icon(f"{REPO_URL}#Human-specificity-selector", "Docs: Human specificity")
+    family_options = [
+        "Single miRNAs – miRBase",
+        "Single miRNAs – MirGeneDB",
+        "miRNAs in family – miRBase",
+        "miRNAs in family – MirGeneDB",
+    ]
+    family_selected = sidebar_widget_inline_doc(
+        st.sidebar.multiselect,
+        "Family:",
+        "doc_filter_family",
+        family_options,
+        default=[],
+        key="ms_family",
+    )
 
-# Family
-family_options = [
-    "Single miRNAs – miRBase",
-    "Single miRNAs – MirGeneDB",
-    "miRNAs in family – miRBase",
-    "miRNAs in family – MirGeneDB",
-]
-
-c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
-with c1:
-    family_selected = st.multiselect("Family:", family_options, default=[], key="ms_family")
-with c2:
-    docs_icon(f"{REPO_URL}#Family-context", "Docs: Family context")
-
-# Repeat class
-c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
-with c1:
-    repeats_selected = st.multiselect(
+    repeats_selected = sidebar_widget_inline_doc(
+        st.sidebar.multiselect,
         "Repeat class:",
+        "doc_filter_repeat",
         sorted(df["Repeat_Class"].dropna().unique()) if "Repeat_Class" in df.columns else [],
         default=[],
         key="ms_repeat",
     )
-with c2:
-    docs_icon(f"{REPO_URL}#Repeat-class-selection", "Docs: Repeat class")
 
-# Repeat plot toggle (icon on the right)
-c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="top")
-with c1:
-    st.checkbox("Show repeat class distribution", value=False, key="show_repeat_plot")
-with c2:
-    docs_icon(f"{REPO_URL}#Summary-plots", "Docs: Repeat plot")
+    show_repeat_plot = sidebar_widget_inline_doc(
+        st.sidebar.checkbox,
+        "Show repeat class distribution",
+        "doc_filter_plot_repeat",
+        value=False,
+        key="show_repeat_plot",
+    )
 
+    # -----------------------------------------------------------
+    # SIDEBAR: ADVANCED OPTIONS
+    # -----------------------------------------------------------
+    animals_to_show = []
+    tissues_to_show = []
+    tissues_filter = []
+    tissues_not_filter = []
 
-# -----------------------------------------------------------
-# SIDEBAR: ADVANCED OPTIONS  — option 3 (toggle + icon + expanders)
-# -----------------------------------------------------------
-# -----------------------------------------------------------
-# Defaults for ADVANCED OPTIONS variables (avoid NameError)
-# -----------------------------------------------------------
-animals_to_show = []
-tissues_to_show = []
-tissues_filter = []
-tissues_not_filter = []
+    species_na_sidebar = []
+    species_found_sidebar = []
+    stability_choice = "All"
 
-species_na_sidebar = []
-species_found_sidebar = []
-stability_choice = "All"
+    show_class_cols = False
+    mirgene_filter = "Show all"
+    classes_selected = []
 
-show_class_cols = False
-mirgene_filter = "Show all"
-classes_selected = []
+    show_adv = sidebar_widget_inline_doc(
+        st.sidebar.toggle,
+        "Advanced options",
+        "doc_advanced_options",
+        value=False,
+        key="show_adv",
+    )
 
-# Toggle "Advanced options" + docs icon
-c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
-with c1:
-    show_adv = st.toggle("Advanced options", value=False, key="show_adv")
-with c2:
-    docs_icon(f"{REPO_URL}#advanced-options", "Docs: Advanced options")
-
-if show_adv:
-
-    # --- Evolutionary conservation expander + docs icon
-    c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
-    with c1:
-        evo_exp = st.expander("Evolutionary conservation", expanded=True)
-    with c2:
-        docs_icon(f"{REPO_URL}#evolutionary-conservation", "Docs: Evolutionary conservation")
-
-    with evo_exp:
-        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
-
-        animals_to_show_sidebar = st.multiselect(
-            "Show species columns:",
-            list(animal_sidebar_names.values()),
-            default=[],
-            key="show_species_cols",
-        )
-        animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
-
-        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
-
-        species_options = list(animal_sidebar_names.values())
-
-        species_found_sidebar = st.multiselect(
-            "Found in:",
-            species_options,
-            default=[],
-            key="cons_species_found",
-        )
-
-        if species_found_sidebar:
-            stability_choice = st.selectbox(
-                "Structure:",
-                ["All", "Stable (R/D)", "Unstable (S/I)"],
-                index=0,
-                key="cons_stability_choice",
+    if show_adv:
+        with st.sidebar.expander("Evolutionary conservation", expanded=True):
+            # link only to the main subsection (as requested)
+            st.sidebar.markdown(
+                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_conservation', 'Docs')}</div>",
+                unsafe_allow_html=True
             )
-        else:
-            stability_choice = "All"
 
-        species_na_sidebar = st.multiselect(
-            "Not found in:",
-            species_options,
-            default=[],
-            key="cons_species_na",
-        )
+            st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
-    # --- Tissue expression expander + docs icon
-    c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
-    with c1:
-        tissue_exp = st.expander("Tissue expression", expanded=True)
-    with c2:
-        docs_icon(f"{REPO_URL}#tissue-expression", "Docs: Tissue expression")
+            animals_to_show_sidebar = st.multiselect(
+                "Show species columns:",
+                list(animal_sidebar_names.values()),
+                default=[],
+                key="show_species_cols",
+            )
+            animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
 
-    with tissue_exp:
-        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
+            st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+            st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
-        system_disp_list = [system_display_name(k) for k in SYSTEM_TISSUES.keys()]
-        chosen_systems_disp = st.multiselect(
-            "Show tissue columns (by system):",
-            system_disp_list,
-            default=[],
-            key="show_tissue_systems",
-        )
+            species_options = list(animal_sidebar_names.values())
 
-        chosen_sys_keys = [k for k in SYSTEM_TISSUES.keys() if system_display_name(k) in set(chosen_systems_disp)]
-        tissues_to_show_set = set()
-        for k in chosen_sys_keys:
-            tissues_to_show_set.update([t for t in SYSTEM_TISSUES[k] if t in tissue_sidebar_names])
-        tissues_to_show = sorted(tissues_to_show_set)
+            species_found_sidebar = st.multiselect(
+                "Found in:",
+                species_options,
+                default=[],
+                key="cons_species_found",
+            )
 
-        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
+            if species_found_sidebar:
+                stability_choice = st.selectbox(
+                    "Structure:",
+                    ["All", "Stable (R/D)", "Unstable (S/I)"],
+                    index=0,
+                    key="cons_stability_choice",
+                )
+            else:
+                stability_choice = "All"
 
-        with st.expander("Expressed in (select tissues by system):", expanded=False):
-            tissues_filter_set = set()
+            species_na_sidebar = st.multiselect(
+                "Not found in:",
+                species_options,
+                default=[],
+                key="cons_species_na",
+            )
 
-            for system_name, sys_tissues in SYSTEM_TISSUES.items():
-                available = [t for t in sys_tissues if t in tissue_sidebar_names]
-                if not available:
-                    continue
+        with st.sidebar.expander("Tissue expression", expanded=True):
+            st.sidebar.markdown(
+                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_tissue', 'Docs')}</div>",
+                unsafe_allow_html=True
+            )
 
-                icon = SYSTEM_ICONS.get(system_name)
-                col_icon, col_exp = st.columns([1.6, 10], gap="small")
+            st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
-                with col_icon:
-                    if icon is not None:
-                        st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                        st.image(icon, width=110)
-                        st.markdown("</div>", unsafe_allow_html=True)
+            system_disp_list = [system_display_name(k) for k in SYSTEM_TISSUES.keys()]
+            chosen_systems_disp = st.multiselect(
+                "Show tissue columns (by system):",
+                system_disp_list,
+                default=[],
+                key="show_tissue_systems",
+            )
 
-                with col_exp:
-                    display_system = system_display_name(system_name)
-                    with st.expander(display_system, expanded=False):
-                        picked = st.multiselect(
-                            "Select tissues",
-                            available,
-                            key=f"tree_pos_{system_name}",
-                        )
-                        tissues_filter_set.update(picked)
+            chosen_sys_keys = [k for k in SYSTEM_TISSUES.keys() if system_display_name(k) in set(chosen_systems_disp)]
+            tissues_to_show_set = set()
+            for k in chosen_sys_keys:
+                tissues_to_show_set.update([t for t in SYSTEM_TISSUES[k] if t in tissue_sidebar_names])
+            tissues_to_show = sorted(tissues_to_show_set)
 
-            tissues_filter = sorted(tissues_filter_set)
+            st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+            st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
-        with st.expander("Not expressed in (select tissues by system):", expanded=False):
-            tissues_not_filter_set = set()
+            with st.expander("Expressed in (select tissues by system):", expanded=False):
+                tissues_filter_set = set()
 
-            for system_name, sys_tissues in SYSTEM_TISSUES.items():
-                available = [t for t in sys_tissues if t in tissue_sidebar_names]
-                if not available:
-                    continue
+                for system_name, sys_tissues in SYSTEM_TISSUES.items():
+                    available = [t for t in sys_tissues if t in tissue_sidebar_names]
+                    if not available:
+                        continue
 
-                icon = SYSTEM_ICONS.get(system_name)
-                col_icon, col_exp = st.columns([1.6, 10], gap="small")
+                    icon = SYSTEM_ICONS.get(system_name)
+                    col_icon, col_exp = st.columns([1.6, 10], gap="small")
 
-                with col_icon:
-                    if icon is not None:
-                        st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                        st.image(icon, width=110)
-                        st.markdown("</div>", unsafe_allow_html=True)
+                    with col_icon:
+                        if icon is not None:
+                            st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                            st.image(icon, width=110)
+                            st.markdown("</div>", unsafe_allow_html=True)
 
-                with col_exp:
-                    display_system = system_display_name(system_name)
-                    with st.expander(display_system, expanded=False):
-                        picked = st.multiselect(
-                            "Select tissues",
-                            available,
-                            key=f"tree_neg_{system_name}",
-                        )
-                        tissues_not_filter_set.update(picked)
+                    with col_exp:
+                        display_system = system_display_name(system_name)
+                        with st.expander(display_system, expanded=False):
+                            picked = st.multiselect(
+                                "Select tissues",
+                                available,
+                                key=f"tree_pos_{system_name}",
+                            )
+                            tissues_filter_set.update(picked)
 
-            tissues_not_filter = sorted(tissues_not_filter_set)
+                tissues_filter = sorted(tissues_filter_set)
 
-    # --- Database / class expander + docs icon
-    c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
-    with c1:
-        db_exp = st.expander("Database / Class", expanded=True)
-    with c2:
-        docs_icon(f"{REPO_URL}#database--class", "Docs: Database / Class")
+            with st.expander("Not expressed in (select tissues by system):", expanded=False):
+                tissues_not_filter_set = set()
 
-    with db_exp:
-        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
+                for system_name, sys_tissues in SYSTEM_TISSUES.items():
+                    available = [t for t in sys_tissues if t in tissue_sidebar_names]
+                    if not available:
+                        continue
 
-        show_class_cols = st.checkbox(
-            "Show Class columns",
-            value=False,
-            key="show_class_cols",
-        )
+                    icon = SYSTEM_ICONS.get(system_name)
+                    col_icon, col_exp = st.columns([1.6, 10], gap="small")
 
-        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
+                    with col_icon:
+                        if icon is not None:
+                            st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                            st.image(icon, width=110)
+                            st.markdown("</div>", unsafe_allow_html=True)
 
-        mirgene_filter = st.selectbox(
-            "Database:",
-            ["Show all", "In both", "Only in miRBase"],
-            key="db_filter",
-        )
+                    with col_exp:
+                        display_system = system_display_name(system_name)
+                        with st.expander(display_system, expanded=False):
+                            picked = st.multiselect(
+                                "Select tissues",
+                                available,
+                                key=f"tree_neg_{system_name}",
+                            )
+                            tissues_not_filter_set.update(picked)
 
-        classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
-        classes_selected = st.multiselect(
-            "Class:",
-            classes,
-            default=[],
-            key="class_filter",
-        )
+                tissues_not_filter = sorted(tissues_not_filter_set)
 
+        with st.sidebar.expander("Database / Class", expanded=True):
+            st.sidebar.markdown(
+                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_db_class', 'Docs')}</div>",
+                unsafe_allow_html=True
+            )
 
-def apply_preset(preset_name: str):
-    # 1) reset totale (come il tuo bottone "Reset all filters")
-    for k in FILTER_KEYS:
-        st.session_state.pop(k, None)
+            st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
-    # 2) base common settings
-    st.session_state["show_adv"] = True
-    st.session_state["sb_conservation"] = "Show all"
-    st.session_state["sb_expression"] = "Show all"
-    st.session_state["sb_structure"] = "Show all"
-    st.session_state["sb_hsa"] = "Show all"
-    st.session_state["show_repeat_plot"] = False
+            show_class_cols = st.checkbox(
+                "Show Class columns",
+                value=False,
+                key="show_class_cols",
+            )
 
-    # optional: keep these empty unless you want them
-    st.session_state["search_any"] = ""
-    st.session_state["ms_family"] = []
-    st.session_state["ms_repeat"] = []
-    st.session_state["db_filter"] = "Show all"
-    st.session_state["class_filter"] = []
-    st.session_state["show_class_cols"] = False
+            st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+            st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
-    if preset_name == "cardio_mouse":
-        # Conservation → Found in mouse
-        st.session_state["cons_species_found"] = ["M. musculus"]
-        st.session_state["cons_species_na"] = []
-        st.session_state["cons_stability_choice"] = "Stable (R/D)"  # opzionale
+            mirgene_filter = st.selectbox(
+                "Database:",
+                ["Show all", "In both", "Only in miRBase"],
+                key="db_filter",
+            )
 
-        # Tissue columns shown by system
-        st.session_state["show_tissue_systems"] = ["Cardiorespiratory"]
+            classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
+            classes_selected = st.multiselect(
+                "Class:",
+                classes,
+                default=[],
+                key="class_filter",
+            )
 
-        # Tissue filter (Expressed in...) for Cardiorespiratory system
-        st.session_state["tree_pos_1. Cardiorespiratory system"] = [
-            "heart", "ventricle", "artery", "vein",
-            "blood", "plasma", "serum", "platelet",
-            "lung", "bronchus", "pleurae", "larynx", "pharynx"
-        ]
-        st.session_state["tree_neg_1. Cardiorespiratory system"] = []
+    def apply_preset(preset_name: str):
+        for k in FILTER_KEYS:
+            st.session_state.pop(k, None)
 
-    elif preset_name == "brain_primates":
-        # Conservation → Found in primates
-        st.session_state["cons_species_found"] = ["P. troglodytes", "P. paniscus"]
-        st.session_state["cons_species_na"] = ["M. mulatta", "L. catta"]
-        st.session_state["cons_stability_choice"] = "Stable (R/D)"  # opzionale
+        st.session_state["show_adv"] = True
+        st.session_state["sb_conservation"] = "Show all"
+        st.session_state["sb_expression"] = "Show all"
+        st.session_state["sb_structure"] = "Show all"
+        st.session_state["sb_hsa"] = "Show all"
+        st.session_state["show_repeat_plot"] = False
 
-        # Tissue columns shown by system
-        st.session_state["show_tissue_systems"] = ["Neuro-Endocrine"]
+        st.session_state["search_any"] = ""
+        st.session_state["ms_family"] = []
+        st.session_state["ms_repeat"] = []
+        st.session_state["db_filter"] = "Show all"
+        st.session_state["class_filter"] = []
+        st.session_state["show_class_cols"] = False
 
-    st.rerun()
+        if preset_name == "cardio_mouse":
+            st.session_state["cons_species_found"] = ["M. musculus"]
+            st.session_state["cons_species_na"] = []
+            st.session_state["cons_stability_choice"] = "Stable (R/D)"
 
-# -----------------------------------------------------------
-# EXAMPLE USE CASES (sidebar) + docs icon
-# -----------------------------------------------------------
-c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
+            st.session_state["show_tissue_systems"] = ["Cardiorespiratory"]
+            st.session_state["tree_pos_1. Cardiorespiratory system"] = [
+                "heart", "ventricle", "artery", "vein",
+                "blood", "plasma", "serum", "platelet",
+                "lung", "bronchus", "pleurae", "larynx", "pharynx"
+            ]
+            st.session_state["tree_neg_1. Cardiorespiratory system"] = []
 
-with c1:
-    with st.expander("Example use cases", expanded=False):
+        elif preset_name == "brain_primates":
+            st.session_state["cons_species_found"] = ["P. troglodytes", "P. paniscus"]
+            st.session_state["cons_species_na"] = ["M. mulatta", "L. catta"]
+            st.session_state["cons_stability_choice"] = "Stable (R/D)"
+
+            st.session_state["show_tissue_systems"] = ["Neuro-Endocrine"]
+
+        st.rerun()
+
+    with st.sidebar.expander("Example use cases", expanded=False):
         st.markdown(
             "<div style='font-size: 15px; line-height: 1.2; margin-top: 2px;'>"
             "Apply a preset configuration of filters."
             "</div>",
             unsafe_allow_html=True
         )
+
+        # keep doc link (main section)
+        st.sidebar.markdown(doc_jump_link("doc_use_cases", "Docs"), unsafe_allow_html=True)
 
         b1, b2 = st.columns(2)
         with b1:
@@ -1105,543 +1276,520 @@ with c1:
             if st.button("Brain + primates", use_container_width=True):
                 apply_preset("brain_primates")
 
-with c2:
-    docs_icon(f"{REPO_URL}#example-use-cases", "Docs: Example use cases")
-
-# -----------------------------------------------------------
-# RESET BUTTON + docs icon
-# -----------------------------------------------------------
-st.sidebar.markdown("---")
-
-c1, c2 = st.sidebar.columns([14, 1], vertical_alignment="center")
-with c1:
+    st.sidebar.markdown("---")
     if any_filter_active():
-        if st.button("Reset all filters", use_container_width=True):
+        # (Reset is a main doc anchor; icon could be made inline too, but left like this)
+        st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (Reset)"), unsafe_allow_html=True)
+        if st.sidebar.button("Reset all filters", use_container_width=True):
             for k in FILTER_KEYS:
                 st.session_state.pop(k, None)
             st.session_state["show_adv"] = False
             st.rerun()
-with c2:
-    docs_icon(f"{REPO_URL}#filter-reset-and-state-management", "Docs: Reset filters")
 
-# -----------------------------------------------------------
-# APPLY FILTERS
-# -----------------------------------------------------------
-filtered = df.copy()
+    # -----------------------------------------------------------
+    # APPLY FILTERS
+    # -----------------------------------------------------------
+    filtered = df.copy()
 
-def apply_pass_choice(data: pd.DataFrame, choice: str, helper_col: str) -> pd.DataFrame:
-    if not choice or choice == "Show all":
+    def apply_pass_choice(data: pd.DataFrame, choice: str, helper_col: str) -> pd.DataFrame:
+        if not choice or choice == "Show all":
+            return data
+        if choice == "PASSED":
+            return data[data[helper_col] == "TRUE"]
+        if choice == "NOT PASSED":
+            return data[data[helper_col] == "FALSE"]
         return data
-    if choice == "PASSED":
-        return data[data[helper_col] == "TRUE"]
-    if choice == "NOT PASSED":
-        return data[data[helper_col] == "FALSE"]
-    return data
 
-filtered = apply_pass_choice(filtered, conservation_choice, "_Conservation_tf")
-filtered = apply_pass_choice(filtered, expression_choice,   "_Expression_tf")
-filtered = apply_pass_choice(filtered, structure_choice,    "_Structure_tf")
+    filtered = apply_pass_choice(filtered, conservation_choice, "_Conservation_tf")
+    filtered = apply_pass_choice(filtered, expression_choice, "_Expression_tf")
+    filtered = apply_pass_choice(filtered, structure_choice, "_Structure_tf")
 
-# hsa specificity
-if hsa_choice != "Show all":
-    hsa_flag = filtered["hsa-specificity"].astype(str).str.strip().str.upper()
-    if hsa_choice == "Only hsa-specific":
-        filtered = filtered[hsa_flag == "YES"]
-    elif hsa_choice == "Not hsa-specific":
-        filtered = filtered[hsa_flag == "NO"]
+    if hsa_choice != "Show all":
+        hsa_flag = filtered["hsa-specificity"].astype(str).str.strip().str.upper()
+        if hsa_choice == "Only hsa-specific":
+            filtered = filtered[hsa_flag == "YES"]
+        elif hsa_choice == "Not hsa-specific":
+            filtered = filtered[hsa_flag == "NO"]
 
-# Database/Class filters
-if mirgene_filter == "In both":
-    filtered = filtered[filtered["Class_miRBase"] == filtered["Class_MirGeneDB"]]
-elif mirgene_filter == "Only in miRBase":
-    filtered = filtered[(filtered["Class_miRBase"].notna()) & (filtered["Class_MirGeneDB"] == "—")]
+    if mirgene_filter == "In both":
+        filtered = filtered[filtered["Class_miRBase"] == filtered["Class_MirGeneDB"]]
+    elif mirgene_filter == "Only in miRBase":
+        filtered = filtered[(filtered["Class_miRBase"].notna()) & (filtered["Class_MirGeneDB"] == "—")]
 
-if classes_selected and "Class_miRBase" in filtered.columns:
-    filtered = filtered[filtered["Class_miRBase"].isin(classes_selected)]
+    if classes_selected and "Class_miRBase" in filtered.columns:
+        filtered = filtered[filtered["Class_miRBase"].isin(classes_selected)]
 
-# Family filter (unchanged)
-if family_selected:
-    fam_mask = pd.Series(False, index=filtered.index)
-    mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
-    mirgenedb_flag = filtered["MirGeneDB family"].astype(str).str.strip().str.upper()
+    if family_selected:
+        fam_mask = pd.Series(False, index=filtered.index)
+        mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
+        mirgenedb_flag = filtered["MirGeneDB family"].astype(str).str.strip().str.upper()
 
-    if "Single miRNAs – miRBase" in family_selected:
-        fam_mask |= (mirbase_flag == "NO")
-    if "miRNAs in family – miRBase" in family_selected:
-        fam_mask |= (mirbase_flag == "YES")
+        if "Single miRNAs – miRBase" in family_selected:
+            fam_mask |= (mirbase_flag == "NO")
+        if "miRNAs in family – miRBase" in family_selected:
+            fam_mask |= (mirbase_flag == "YES")
 
-    if "Single miRNAs – MirGeneDB" in family_selected:
-        fam_mask |= (mirgenedb_flag == "NO")
-    if "miRNAs in family – MirGeneDB" in family_selected:
-        fam_mask |= (mirgenedb_flag == "YES")
+        if "Single miRNAs – MirGeneDB" in family_selected:
+            fam_mask |= (mirgenedb_flag == "NO")
+        if "miRNAs in family – MirGeneDB" in family_selected:
+            fam_mask |= (mirgenedb_flag == "YES")
 
-    filtered = filtered[fam_mask]
+        filtered = filtered[fam_mask]
 
-# Repeat class
-if repeats_selected:
-    filtered = filtered[filtered["Repeat_Class"].isin(repeats_selected)]
+    if repeats_selected:
+        filtered = filtered[filtered["Repeat_Class"].isin(repeats_selected)]
 
-# Conservation advanced filters
-species_na_cols = [animal_sidebar_rev[x] for x in species_na_sidebar] if species_na_sidebar else []
-species_found_cols = [animal_sidebar_rev[x] for x in species_found_sidebar] if species_found_sidebar else []
+    species_na_cols = [animal_sidebar_rev[x] for x in species_na_sidebar] if species_na_sidebar else []
+    species_found_cols = [animal_sidebar_rev[x] for x in species_found_sidebar] if species_found_sidebar else []
 
-if species_na_cols:
-    tmp_na = filtered[species_na_cols]
-    filtered = filtered[tmp_na.isna().all(axis=1)]
+    if species_na_cols:
+        tmp_na = filtered[species_na_cols]
+        filtered = filtered[tmp_na.isna().all(axis=1)]
 
-if species_found_cols:
-    tmp_found = filtered[species_found_cols]
-    filtered = filtered[tmp_found.isin([True, False]).all(axis=1)]
+    if species_found_cols:
+        tmp_found = filtered[species_found_cols]
+        filtered = filtered[tmp_found.isin([True, False]).all(axis=1)]
 
-    if stability_choice and stability_choice != "All":
-        allowed_val = True if stability_choice.startswith("Stable") else False
-        filtered = filtered[tmp_found.isin([allowed_val]).all(axis=1)]
+        if stability_choice and stability_choice != "All":
+            allowed_val = True if stability_choice.startswith("Stable") else False
+            filtered = filtered[tmp_found.isin([allowed_val]).all(axis=1)]
 
-# Expressed in: >= 1.5
-if tissues_filter:
-    tissue_num = filtered[tissues_filter].apply(pd.to_numeric, errors="coerce")
-    expressed_mask = (tissue_num >= 1.5).all(axis=1)
-    filtered = filtered[expressed_mask]
+    if tissues_filter:
+        tissue_num = filtered[tissues_filter].apply(pd.to_numeric, errors="coerce")
+        expressed_mask = (tissue_num >= 1.5).all(axis=1)
+        filtered = filtered[expressed_mask]
 
-# Not expressed in: < 1.5
-if tissues_not_filter:
-    tissue_num_not = filtered[tissues_not_filter].apply(pd.to_numeric, errors="coerce")
-    not_expressed_mask = (tissue_num_not < 1.5).all(axis=1)
-    filtered = filtered[not_expressed_mask]
+    if tissues_not_filter:
+        tissue_num_not = filtered[tissues_not_filter].apply(pd.to_numeric, errors="coerce")
+        not_expressed_mask = (tissue_num_not < 1.5).all(axis=1)
+        filtered = filtered[not_expressed_mask]
 
-# Search any column
-if search_term:
-    mask = filtered.astype(str).apply(lambda col: col.str.contains(search_term, case=False, na=False)).any(axis=1)
-    filtered = filtered[mask]
+    if search_term:
+        mask = filtered.astype(str).apply(lambda col: col.str.contains(search_term, case=False, na=False)).any(axis=1)
+        filtered = filtered[mask]
 
-# -----------------------------------------------------------
-# FASTA EXPORT
-# -----------------------------------------------------------
-def generate_fasta(df_):
-    lines = []
-    for _, r in df_.iterrows():
-        if pd.notna(r.get("sequence", pd.NA)):
-            lines.append(f">{r['miRNA']}")
-            lines.append(str(r["sequence"]).replace(" ", "").upper())
-    return "\n".join(lines)
+    # -----------------------------------------------------------
+    # FASTA EXPORT
+    # -----------------------------------------------------------
+    def generate_fasta(df_):
+        lines = []
+        for _, r in df_.iterrows():
+            if pd.notna(r.get("sequence", pd.NA)):
+                lines.append(f">{r['miRNA']}")
+                lines.append(str(r["sequence"]).replace(" ", "").upper())
+        return "\n".join(lines)
 
-# -----------------------------------------------------------
-# PREP TABLE DISPLAY (WEB)
-# -----------------------------------------------------------
-df_display = filtered.copy()
+    # -----------------------------------------------------------
+    # PREP TABLE DISPLAY (WEB)
+    # -----------------------------------------------------------
+    df_display = filtered.copy()
 
-df_display["Conservation"] = df_display["Conservation_display"]
-df_display["Expression"] = df_display["Expression_display"]
-df_display["Structure"] = df_display["Structure_display"]
+    df_display["Conservation"] = df_display["Conservation_display"]
+    df_display["Expression"] = df_display["Expression_display"]
+    df_display["Structure"] = df_display["Structure_display"]
 
-df_display["miRBase family"] = df_display["miRBase_family_display"]
-df_display["MirGeneDB family"] = df_display["MirGeneDB_family_display"]
+    df_display["miRBase family"] = df_display["miRBase_family_display"]
+    df_display["MirGeneDB family"] = df_display["MirGeneDB_family_display"]
 
-df_display = df_display.rename(columns=animal_display_names)
+    df_display = df_display.rename(columns=animal_display_names)
 
-if "sequence" in df_display.columns:
-    df_display = df_display.drop(columns=["sequence"])
+    if "sequence" in df_display.columns:
+        df_display = df_display.drop(columns=["sequence"])
 
-df_display = df_display.rename(columns={
-    "Repeat_Class": "Repeat Class",
-    "Class_miRBase": "Class miRBase",
-    "Class_MirGeneDB": "Class MirGeneDB",
-})
+    df_display = df_display.rename(columns={
+        "Repeat_Class": "Repeat Class",
+        "Class_miRBase": "Class miRBase",
+        "Class_MirGeneDB": "Class MirGeneDB",
+    })
 
-mandatory_display_cols = [
-    "miRNA","Conservation","Expression","Structure",
-    "MirGeneDB family","miRBase family","hsa-specificity","Repeat Class",
-]
+    mandatory_display_cols = [
+        "miRNA", "Conservation", "Expression", "Structure",
+        "MirGeneDB family", "miRBase family", "hsa-specificity", "Repeat Class",
+    ]
 
-animals_to_show_display = [animal_display_names[c] for c in animals_to_show if c in animal_display_names]
-tissues_to_show_display = [c for c in tissues_to_show if c in df_display.columns]
-class_to_show_display = ["Class miRBase", "Class MirGeneDB"] if show_class_cols else []
+    animals_to_show_display = [animal_display_names[c] for c in animals_to_show if c in animal_display_names]
+    tissues_to_show_display = [c for c in tissues_to_show if c in df_display.columns]
+    class_to_show_display = ["Class miRBase", "Class MirGeneDB"] if show_class_cols else []
 
-desired_order = (
-    ["miRNA", "Conservation"]
-    + animals_to_show_display
-    + ["Expression"]
-    + tissues_to_show_display
-    + ["Structure"]
-    + class_to_show_display
-    + ["MirGeneDB family","miRBase family","hsa-specificity","Repeat Class"]
-)
+    desired_order = (
+        ["miRNA", "Conservation"]
+        + animals_to_show_display
+        + ["Expression"]
+        + tissues_to_show_display
+        + ["Structure"]
+        + class_to_show_display
+        + ["MirGeneDB family", "miRBase family", "hsa-specificity", "Repeat Class"]
+    )
 
-visible_cols = []
-for c in desired_order:
-    if (c in mandatory_display_cols) or (c in animals_to_show_display) or (c in tissues_to_show_display) or (c in class_to_show_display):
-        if c in df_display.columns:
-            visible_cols.append(c)
+    visible_cols = []
+    for c in desired_order:
+        if (c in mandatory_display_cols) or (c in animals_to_show_display) or (c in tissues_to_show_display) or (c in class_to_show_display):
+            if c in df_display.columns:
+                visible_cols.append(c)
 
-if not visible_cols:
-    visible_cols = [c for c in mandatory_display_cols if c in df_display.columns]
+    if not visible_cols:
+        visible_cols = [c for c in mandatory_display_cols if c in df_display.columns]
 
-helper_cols = [
-    "_Conservation_tf",
-    "_Expression_tf","_Structure_tf",
-    "_miRBase_family_flag","_MirGeneDB_family_flag",
-]
-helper_cols_present = [c for c in helper_cols if c in df_display.columns]
-df_display = df_display[visible_cols + helper_cols_present]
+    helper_cols = [
+        "_Conservation_tf",
+        "_Expression_tf", "_Structure_tf",
+        "_miRBase_family_flag", "_MirGeneDB_family_flag",
+    ]
+    helper_cols_present = [c for c in helper_cols if c in df_display.columns]
+    df_display = df_display[visible_cols + helper_cols_present]
 
-# -----------------------------------------------------------
-# PREP TABLE EXPORT (TSV CLEAN)
-# -----------------------------------------------------------
-def prepare_tsv_export(df_disp):
-    export_df = df_disp.copy()
-    export_df = export_df.drop(columns=helper_cols_present, errors="ignore")
-    export_df.columns = export_df.columns.str.replace(r"<.*?>", "", regex=True)
-    return export_df
+    # -----------------------------------------------------------
+    # PREP TABLE EXPORT (TSV CLEAN)
+    # -----------------------------------------------------------
+    def prepare_tsv_export(df_disp):
+        export_df = df_disp.copy()
+        export_df = export_df.drop(columns=helper_cols_present, errors="ignore")
+        export_df.columns = export_df.columns.str.replace(r"<.*?>", "", regex=True)
+        return export_df
 
-tsv_export_df = prepare_tsv_export(df_display)
+    tsv_export_df = prepare_tsv_export(df_display)
 
-# -----------------------------------------------------------
-# TABLE STYLING
-# -----------------------------------------------------------
-NA_SPECIES_COLOR = "#D9D9D9"
-TRUE_COLOR = "#009E73"
-FALSE_COLOR = "#D55E00"
-FAM_YES_COLOR = "#f4a582"
-FAM_NO_COLOR  = "#92c5de"
+    # -----------------------------------------------------------
+    # TABLE STYLING (UNCHANGED)
+    # -----------------------------------------------------------
+    NA_SPECIES_COLOR = "#D9D9D9"
+    TRUE_COLOR = "#009E73"
+    FALSE_COLOR = "#D55E00"
+    FAM_YES_COLOR = "#f4a582"
+    FAM_NO_COLOR = "#92c5de"
 
-REPEAT_NOREPEAT_COLOR = "#c7e9c0"
-REPEAT_OTHER_COLOR    = "#e6c28a"
+    REPEAT_NOREPEAT_COLOR = "#c7e9c0"
+    REPEAT_OTHER_COLOR = "#e6c28a"
 
-TISSUE_HIGH_BG = "#BDE131"
-TISSUE_LOW_BG  = "#FEE08B"
+    TISSUE_HIGH_BG = "#BDE131"
+    TISSUE_LOW_BG = "#FEE08B"
 
-CLASS_R_BG = "#1F78B4"
-CLASS_D_BG = "#A6CEE3"
-CLASS_I_BG = "#6A3D9A"
-CLASS_S_BG = "#CAB2D6"
+    CLASS_R_BG = "#1F78B4"
+    CLASS_D_BG = "#A6CEE3"
+    CLASS_I_BG = "#6A3D9A"
+    CLASS_S_BG = "#CAB2D6"
 
-def color_binary(v):
-    if pd.isna(v):
+    def color_binary(v):
+        if pd.isna(v):
+            return f"background-color:{NA_SPECIES_COLOR};"
+        if v is True:
+            return "background-color:#fdb863;"
+        if v is False:
+            return "background-color:#b2abd2;"
         return f"background-color:{NA_SPECIES_COLOR};"
-    if v is True:
-        return "background-color:#fdb863;"
-    if v is False:
-        return "background-color:#b2abd2;"
-    return f"background-color:{NA_SPECIES_COLOR};"
 
-def color_hsa(v):
-    if pd.isna(v):
+    def color_hsa(v):
+        if pd.isna(v):
+            return ""
+        return "background-color:#f1b6da;" if str(v) == "YES" else "background-color:#0072B2;"
+
+    def hide_text_species(_v):
+        return "color: transparent !important; text-shadow: 0 0 0 transparent !important;"
+
+    def bg_true_false(flag):
+        if pd.isna(flag):
+            return ""
+        f = str(flag).upper()
+        if f == "TRUE":
+            return f"background-color:{TRUE_COLOR};"
+        if f == "FALSE":
+            return f"background-color:{FALSE_COLOR};"
         return ""
-    return "background-color:#f1b6da;" if str(v) == "YES" else "background-color:#0072B2;"
 
-def hide_text_species(_v):
-    return "color: transparent !important; text-shadow: 0 0 0 transparent !important;"
-
-def bg_true_false(flag):
-    if pd.isna(flag):
-        return ""
-    f = str(flag).upper()
-    if f == "TRUE":
-        return f"background-color:{TRUE_COLOR};"
-    if f == "FALSE":
-        return f"background-color:{FALSE_COLOR};"
-    return ""
-
-def bg_family(flag):
-    if pd.isna(flag):
-        return ""
-    f = str(flag).upper()
-    if f == "YES":
-        return f"background-color:{FAM_YES_COLOR};"
-    if f == "NO":
+    def bg_family(flag):
+        if pd.isna(flag):
+            return ""
+        f = str(flag).upper()
+        if f == "YES":
+            return f"background-color:{FAM_YES_COLOR};"
+        if f == "NO":
+            return f"background-color:{FAM_NO_COLOR};"
+        if str(flag) == "—":
+            return ""
         return f"background-color:{FAM_NO_COLOR};"
-    if str(flag) == "—":
+
+    def bg_repeat(val):
+        if pd.isna(val):
+            return ""
+        v = str(val).strip()
+        if v.lower() == "no repeat":
+            return f"background-color:{REPEAT_NOREPEAT_COLOR};"
+        return f"background-color:{REPEAT_OTHER_COLOR};"
+
+    def fmt_2dec(v):
+        if pd.isna(v):
+            return ""
+        try:
+            return f"{float(v):.2f}"
+        except Exception:
+            return str(v)
+
+    def tissue_bg(v):
+        if pd.isna(v):
+            return ""
+        try:
+            x = float(v)
+        except Exception:
+            return ""
+        if x >= 1.5:
+            return f"background-color:{TISSUE_HIGH_BG}; color: black !important;"
+        return f"background-color:{TISSUE_LOW_BG}; color: black !important;"
+
+    def class_bg(v):
+        if pd.isna(v):
+            return ""
+        s = str(v).strip().upper()
+        if s == "R":
+            return f"background-color:{CLASS_R_BG}; color: white !important;"
+        if s == "D":
+            return f"background-color:{CLASS_D_BG}; color: black !important;"
+        if s == "I":
+            return f"background-color:{CLASS_I_BG}; color: white !important;"
+        if s == "S":
+            return f"background-color:{CLASS_S_BG}; color: black !important;"
         return ""
-    return f"background-color:{FAM_NO_COLOR};"
 
-def bg_repeat(val):
-    if pd.isna(val):
-        return ""
-    v = str(val).strip()
-    if v.lower() == "no repeat":
-        return f"background-color:{REPEAT_NOREPEAT_COLOR};"
-    return f"background-color:{REPEAT_OTHER_COLOR};"
+    visible_species_cols = [animal_display_names[c] for c in animals_to_show if c in animal_display_names]
+    visible_species_cols = [c for c in visible_species_cols if c in df_display.columns]
+    visible_tissue_cols = [c for c in tissues_to_show_display if c in df_display.columns]
+    visible_class_cols = [c for c in class_to_show_display if c in df_display.columns]
 
-def fmt_2dec(v):
-    if pd.isna(v):
-        return ""
-    try:
-        return f"{float(v):.2f}"
-    except Exception:
-        return str(v)
+    styled_df = df_display.style
 
-def tissue_bg(v):
-    if pd.isna(v):
-        return ""
-    try:
-        x = float(v)
-    except Exception:
-        return ""
-    if x >= 1.5:
-        return f"background-color:{TISSUE_HIGH_BG}; color: black !important;"
-    return f"background-color:{TISSUE_LOW_BG}; color: black !important;"
-
-def class_bg(v):
-    if pd.isna(v):
-        return ""
-    s = str(v).strip().upper()
-    if s == "R":
-        return f"background-color:{CLASS_R_BG}; color: white !important;"
-    if s == "D":
-        return f"background-color:{CLASS_D_BG}; color: black !important;"
-    if s == "I":
-        return f"background-color:{CLASS_I_BG}; color: white !important;"
-    if s == "S":
-        return f"background-color:{CLASS_S_BG}; color: black !important;"
-    return ""
-
-visible_species_cols = [animal_display_names[c] for c in animals_to_show if c in animal_display_names]
-visible_species_cols = [c for c in visible_species_cols if c in df_display.columns]
-visible_tissue_cols = [c for c in tissues_to_show_display if c in df_display.columns]
-visible_class_cols = [c for c in class_to_show_display if c in df_display.columns]
-
-styled_df = df_display.style
-
-if visible_species_cols:
-    styled_df = (
-        styled_df
-        .applymap(color_binary, subset=visible_species_cols)
-        .applymap(hide_text_species, subset=visible_species_cols)
-    )
-
-if "hsa-specificity" in df_display.columns:
-    styled_df = (
-        styled_df
-        .applymap(color_hsa, subset=["hsa-specificity"])
-        .applymap(
-            lambda _v: "color: transparent !important; text-shadow: 0 0 0 transparent !important;",
-            subset=["hsa-specificity"],
+    if visible_species_cols:
+        styled_df = (
+            styled_df
+            .applymap(color_binary, subset=visible_species_cols)
+            .applymap(hide_text_species, subset=visible_species_cols)
         )
-    )
 
-if "Repeat Class" in df_display.columns:
-    styled_df = styled_df.applymap(bg_repeat, subset=["Repeat Class"])
+    if "hsa-specificity" in df_display.columns:
+        styled_df = (
+            styled_df
+            .applymap(color_hsa, subset=["hsa-specificity"])
+            .applymap(
+                lambda _v: "color: transparent !important; text-shadow: 0 0 0 transparent !important;",
+                subset=["hsa-specificity"],
+            )
+        )
 
-if visible_tissue_cols:
-    styled_df = styled_df.format({c: fmt_2dec for c in visible_tissue_cols}, na_rep="")
-    styled_df = styled_df.applymap(tissue_bg, subset=visible_tissue_cols)
+    if "Repeat Class" in df_display.columns:
+        styled_df = styled_df.applymap(bg_repeat, subset=["Repeat Class"])
 
-if visible_class_cols:
-    styled_df = styled_df.applymap(class_bg, subset=visible_class_cols)
+    if visible_tissue_cols:
+        styled_df = styled_df.format({c: fmt_2dec for c in visible_tissue_cols}, na_rep="")
+        styled_df = styled_df.applymap(tissue_bg, subset=visible_tissue_cols)
 
-def style_row(row):
-    # -2px (was 12px -> now 10px)
-    styles = ["font-weight: 700; font-size: 10px;"] * len(row)
-    idx = {c: i for i, c in enumerate(row.index)}
+    if visible_class_cols:
+        styled_df = styled_df.applymap(class_bg, subset=visible_class_cols)
 
-    if "Conservation" in idx and "_Conservation_tf" in idx:
-        styles[idx["Conservation"]] += bg_true_false(row["_Conservation_tf"])
-    if "Expression" in idx and "_Expression_tf" in idx:
-        styles[idx["Expression"]] += bg_true_false(row["_Expression_tf"])
-    if "Structure" in idx and "_Structure_tf" in idx:
-        styles[idx["Structure"]] += bg_true_false(row["_Structure_tf"])
+    def style_row(row):
+        styles = ["font-weight: 700; font-size: 10px;"] * len(row)
+        idx = {c: i for i, c in enumerate(row.index)}
 
-    if "miRBase family" in idx and "_miRBase_family_flag" in idx:
-        styles[idx["miRBase family"]] += bg_family(row["_miRBase_family_flag"])
-    if "MirGeneDB family" in idx and "_MirGeneDB_family_flag" in idx:
-        styles[idx["MirGeneDB family"]] += bg_family(row["_MirGeneDB_family_flag"])
+        if "Conservation" in idx and "_Conservation_tf" in idx:
+            styles[idx["Conservation"]] += bg_true_false(row["_Conservation_tf"])
+        if "Expression" in idx and "_Expression_tf" in idx:
+            styles[idx["Expression"]] += bg_true_false(row["_Expression_tf"])
+        if "Structure" in idx and "_Structure_tf" in idx:
+            styles[idx["Structure"]] += bg_true_false(row["_Structure_tf"])
 
-    return styles
+        if "miRBase family" in idx and "_miRBase_family_flag" in idx:
+            styles[idx["miRBase family"]] += bg_family(row["_miRBase_family_flag"])
+        if "MirGeneDB family" in idx and "_MirGeneDB_family_flag" in idx:
+            styles[idx["MirGeneDB family"]] += bg_family(row["_MirGeneDB_family_flag"])
 
-styled_df = styled_df.apply(style_row, axis=1)
+        return styles
 
-if helper_cols_present:
-    styled_df = styled_df.hide(axis="columns", subset=helper_cols_present)
+    styled_df = styled_df.apply(style_row, axis=1)
 
-html_table = styled_df.hide(axis="index").to_html(escape=False)
+    if helper_cols_present:
+        styled_df = styled_df.hide(axis="columns", subset=helper_cols_present)
 
-# -----------------------------------------------------------
-# CSS — TABLE + LEGEND (RESPONSIVE)  (-2px everywhere)
-# -----------------------------------------------------------
-custom_css = r"""
-<style>
-.table-container{
-  max-height: 4000px;
-  overflow-y: auto !important;
-  overflow-x: auto !important;
-  border: 2px solid var(--table-border);
-  margin-bottom: 14px;
+    html_table = styled_df.hide(axis="index").to_html(escape=False)
 
-  width: 100% !important;
-  max-width: 100% !important;
-  -webkit-overflow-scrolling: touch;
-}
+    # -----------------------------------------------------------
+    # CSS — TABLE + LEGEND (RESPONSIVE)  (-2px everywhere)
+    # -----------------------------------------------------------
+    custom_css = r"""
+    <style>
+    .table-container{
+      max-height: 4000px;
+      overflow-y: auto !important;
+      overflow-x: auto !important;
+      border: 2px solid var(--table-border);
+      margin-bottom: 14px;
 
-.table-inner{
-  display: block !important;
-  width: 100% !important;
-}
+      width: 100% !important;
+      max-width: 100% !important;
+      -webkit-overflow-scrolling: touch;
+    }
 
-.table-inner table{
-  border-collapse: separate !important;
-  border-spacing: 0 !important;
-  table-layout: fixed !important;
-  width: max-content !important;
-  min-width: 100% !important;
-}
+    .table-inner{
+      display: block !important;
+      width: 100% !important;
+    }
 
-/* -------------------------------------------------------
-   CELLS (font -2px)
-------------------------------------------------------- */
-.table-inner th,
-.table-inner td{
-  border: 1px solid var(--table-border) !important;
-  border-radius: 7px !important;
+    .table-inner table{
+      border-collapse: separate !important;
+      border-spacing: 0 !important;
+      table-layout: fixed !important;
+      width: max-content !important;
+      min-width: 100% !important;
+    }
 
-  line-height: 1 !important;
-  min-height: 36px !important;
-  padding: 7px 7px !important;
+    .table-inner th,
+    .table-inner td{
+      border: 1px solid var(--table-border) !important;
+      border-radius: 7px !important;
 
-  font-size: clamp(10px, 0.9vw + 5px, 16px) !important; /* 12->10, 7->5, 18->16 */
+      line-height: 1 !important;
+      min-height: 36px !important;
+      padding: 7px 7px !important;
 
-  width: clamp(110px, 8vw, 150px) !important;
-  min-width: clamp(110px, 8vw, 150px) !important;
-  max-width: clamp(150px, 10vw, 180px) !important;
+      font-size: clamp(10px, 0.9vw + 5px, 16px) !important;
 
-  white-space: nowrap !important;
-  overflow: hidden !important;
+      width: clamp(110px, 8vw, 150px) !important;
+      min-width: clamp(110px, 8vw, 150px) !important;
+      max-width: clamp(150px, 10vw, 180px) !important;
 
-  text-align: center !important;
-  font-weight: 700 !important;
-  color: black !important;
-  vertical-align: middle !important;
-}
+      white-space: nowrap !important;
+      overflow: hidden !important;
 
-.table-inner th{
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: var(--table-th-bg) !important;
-  color: color-mix(in srgb, var(--text) 95%, transparent) !important;
-  font-weight: 800 !important;
+      text-align: center !important;
+      font-weight: 700 !important;
+      color: black !important;
+      vertical-align: middle !important;
+    }
 
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
-}
+    .table-inner th{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background-color: var(--table-th-bg) !important;
+      color: color-mix(in srgb, var(--text) 95%, transparent) !important;
+      font-weight: 800 !important;
 
-/* first column */
-.table-inner th:first-child{
-  position: sticky !important;
-  left: 0;
-  z-index: 30 !important;
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+    }
 
-  width: clamp(160px, 12vw, 210px) !important;
-  min-width: clamp(160px, 12vw, 210px) !important;
-  max-width: clamp(210px, 16vw, 260px) !important;
+    .table-inner th:first-child{
+      position: sticky !important;
+      left: 0;
+      z-index: 30 !important;
 
-  background-color: var(--table-first-th-bg) !important;
-  color: color-mix(in srgb, var(--text) 95%, transparent) !important;
-  background-clip: padding-box;
-}
+      width: clamp(160px, 12vw, 210px) !important;
+      min-width: clamp(160px, 12vw, 210px) !important;
+      max-width: clamp(210px, 16vw, 260px) !important;
 
-.table-inner td:first-child{
-  position: sticky !important;
-  left: 0;
-  z-index: 25 !important;
+      background-color: var(--table-first-th-bg) !important;
+      color: color-mix(in srgb, var(--text) 95%, transparent) !important;
+      background-clip: padding-box;
+    }
 
-  width: clamp(160px, 12vw, 210px) !important;
-  min-width: clamp(160px, 12vw, 210px) !important;
-  max-width: clamp(210px, 16vw, 260px) !important;
+    .table-inner td:first-child{
+      position: sticky !important;
+      left: 0;
+      z-index: 25 !important;
 
-  background-color: var(--table-first-td-bg) !important;
-  color: color-mix(in srgb, var(--text) 95%, transparent) !important;
-  font-weight: 800 !important;
-  background-clip: padding-box;
-}
+      width: clamp(160px, 12vw, 210px) !important;
+      min-width: clamp(160px, 12vw, 210px) !important;
+      max-width: clamp(210px, 16vw, 260px) !important;
 
-/* legend (-2px) */
-.legend-wrap{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 18px;
-  align-items: flex-start;
-  margin-top: 8px;
-  margin-bottom: 10px;
-}
+      background-color: var(--table-first-td-bg) !important;
+      color: color-mix(in srgb, var(--text) 95%, transparent) !important;
+      font-weight: 800 !important;
+      background-clip: padding-box;
+    }
 
-.legend-card{
-  flex: 1 1 240px;
-  min-width: 240px;
-  font-size: 14px;   /* 16 -> 14 */
-  font-weight: 400;
-  line-height: 1.35;
-}
+    .legend-wrap{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 18px;
+      align-items: flex-start;
+      margin-top: 8px;
+      margin-bottom: 10px;
+    }
 
-.legend-title{
-  font-size: 16px;   /* 18 -> 16 */
-  font-weight: 600;
-  margin-bottom: 6px;
-}
+    .legend-card{
+      flex: 1 1 240px;
+      min-width: 240px;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.35;
+    }
 
-.legend-row{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  align-items: center;
-}
+    .legend-title{
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
 
-.legend-item{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
+    .legend-row{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: center;
+    }
 
-.swatch{
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  display: inline-block;
-  vertical-align: middle;
-  border: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
-  box-sizing: border-box;
-}
+    .legend-item{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-@media (max-width: 900px){
-  .table-container{
-    max-height: 70vh;
-  }
+    .swatch{
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      display: inline-block;
+      vertical-align: middle;
+      border: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
+      box-sizing: border-box;
+    }
 
-  .table-inner table{
-    table-layout: auto !important;
-  }
+    @media (max-width: 900px){
+      .table-container{
+        max-height: 70vh;
+      }
 
-  .table-inner th,
-  .table-inner td{
-    padding: 6px 6px !important;
-    border-radius: 6px !important;
+      .table-inner table{
+        table-layout: auto !important;
+      }
 
-    white-space: normal !important;
-    word-break: break-word !important;
-  }
+      .table-inner th,
+      .table-inner td{
+        padding: 6px 6px !important;
+        border-radius: 6px !important;
 
-  .legend-card{
-    min-width: 210px;
-    font-size: 12px; /* 14 -> 12 */
-  }
-  .legend-title{
-    font-size: 14px; /* 16 -> 14 */
-  }
-}
-</style>
-"""
+        white-space: normal !important;
+        word-break: break-word !important;
+      }
 
-# -----------------------------------------------------------
-# ROW COUNT
-# -----------------------------------------------------------
-st.write(f"Rows shown: **{len(filtered)}**")
+      .legend-card{
+        min-width: 210px;
+        font-size: 12px;
+      }
+      .legend-title{
+        font-size: 14px;
+      }
+    }
+    </style>
+    """
 
-# -----------------------------------------------------------
-# LEGEND (ABOVE TABLE)
-# -----------------------------------------------------------
-legend_cards = []
+    # -----------------------------------------------------------
+    # ROW COUNT
+    # -----------------------------------------------------------
+    st.write(f"Rows shown: **{len(filtered)}**")
 
-legend_cards.append(f"""
+    # -----------------------------------------------------------
+    # LEGEND (ABOVE TABLE)
+    # -----------------------------------------------------------
+    legend_cards = []
+
+    legend_cards.append(f"""
 <div class="legend-card">
   <div class="legend-title">Filter</div>
   <div class="legend-row">
@@ -1651,7 +1799,7 @@ legend_cards.append(f"""
 </div>
 """)
 
-legend_cards.append(f"""
+    legend_cards.append(f"""
 <div class="legend-card">
   <div class="legend-title">Family</div>
   <div class="legend-row">
@@ -1661,7 +1809,7 @@ legend_cards.append(f"""
 </div>
 """)
 
-legend_cards.append(f"""
+    legend_cards.append(f"""
 <div class="legend-card">
   <div class="legend-title">hsa specificity</div>
   <div class="legend-row">
@@ -1671,7 +1819,7 @@ legend_cards.append(f"""
 </div>
 """)
 
-legend_cards.append(f"""
+    legend_cards.append(f"""
 <div class="legend-card">
   <div class="legend-title">Repeat Class</div>
   <div class="legend-row">
@@ -1681,9 +1829,9 @@ legend_cards.append(f"""
 </div>
 """)
 
-species_filter_active = bool(species_found_cols or species_na_sidebar)
-if visible_species_cols or species_filter_active:
-    legend_cards.append(f"""
+    species_filter_active = bool(species_found_cols or species_na_sidebar)
+    if visible_species_cols or species_filter_active:
+        legend_cards.append(f"""
 <div class="legend-card">
   <div class="legend-title">Species conservation</div>
   <div class="legend-row">
@@ -1694,8 +1842,8 @@ if visible_species_cols or species_filter_active:
 </div>
 """)
 
-if visible_tissue_cols:
-    legend_cards.append(f"""
+    if visible_tissue_cols:
+        legend_cards.append(f"""
 <div class="legend-card">
   <div class="legend-title">Tissue value</div>
   <div class="legend-row">
@@ -1705,8 +1853,8 @@ if visible_tissue_cols:
 </div>
 """)
 
-if visible_class_cols:
-    legend_cards.append(f"""
+    if visible_class_cols:
+        legend_cards.append(f"""
 <div class="legend-card">
   <div class="legend-title">Class (miRBase / MirGeneDB)</div>
   <div class="legend-row">
@@ -1718,126 +1866,330 @@ if visible_class_cols:
 </div>
 """)
 
-st.markdown(f"<div class='legend-wrap'>{''.join(legend_cards)}</div>", unsafe_allow_html=True)
-st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+    legend_html = f"<div class='legend-wrap'>{''.join(legend_cards)}</div><div style='height:6px'></div>"
 
-# -----------------------------------------------------------
-# SHOW TABLE
-# -----------------------------------------------------------
-st.markdown(
-    custom_css
-    + "<div class='table-container'><div class='table-inner'>"
-    + html_table
-    + "</div></div>",
-    unsafe_allow_html=True
-)
+    # -----------------------------------------------------------
+    # ✅ FIX (warning): remove Styler <style> from HTML and inject separately
+    # -----------------------------------------------------------
+    m = re.search(r"(<style.*?</style>)", html_table, flags=re.S)
+    styler_css = m.group(1) if m else ""
+    html_table_only = html_table.replace(styler_css, "")
 
-# -----------------------------------------------------------
-# DOWNLOAD BUTTONS (TSV + FASTA)
-# -----------------------------------------------------------
-tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
+    # 1) CSS custom (your table + legend)
+    st.markdown(custom_css, unsafe_allow_html=True)
 
-dl_col, _ = st.columns([2, 10])
-with dl_col:
-    st.download_button(
-        "Download table (TSV)",
-        data=tsv_bytes,
-        file_name="mirna_filtered_table.tsv",
-        mime="text/tab-separated-values",
-        key="dl_tsv",
-        use_container_width=False,
+    # 2) CSS generated by pandas Styler (colors etc.)
+    if styler_css:
+        st.markdown(styler_css, unsafe_allow_html=True)
+
+    # 3) HTML legend + table (NO <style> inside)
+    st.markdown(
+        legend_html
+        + "<div class='table-container'><div class='table-inner'>"
+        + html_table_only
+        + "</div></div>",
+        unsafe_allow_html=True
     )
 
-    st.download_button(
-        "Get FASTA",
-        data=generate_fasta(filtered).encode("utf-8"),
-        file_name="mirna_selected.fasta",
-        mime="text/plain",
-        key="dl_fasta",
-        use_container_width=False,
-    )
+    # -----------------------------------------------------------
+    # DOWNLOAD BUTTONS (TSV + FASTA)
+    # -----------------------------------------------------------
+    tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
 
-# -----------------------------------------------------------
-# BARPLOT (Repeat distribution) — THEME-AWARE + shown on demand
-# -----------------------------------------------------------
-ucscgb_palette = ["#009ADE","#7CC242","#F98B2A","#E4002B","#B7312C","#E78AC3","#00A4A6","#00458A"]
-repeat_order = ["LINE","SINE","LTR","DNA","Satellite repeats","Simple repeats","Low complexity","No repeat","tRNA","RC"]
-
-show_repeat_plot = st.session_state.get("show_repeat_plot", False)
-
-if show_repeat_plot:
-    st.subheader("Repeat class distribution")
-    st.markdown("<div class='plot-card'>", unsafe_allow_html=True)
-
-    if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any():
-        repeat_counts = filtered.groupby("Repeat_Class").size().reset_index(name="Count")
-        repeat_counts["Percent"] = (repeat_counts["Count"] / repeat_counts["Count"].sum() * 100).round(2)
-
-        barplot = (
-            alt.Chart(repeat_counts)
-            .mark_bar(
-                stroke="currentColor",
-                strokeOpacity=0.55,
-                strokeWidth=1.2
-            )
-            .encode(
-                x=alt.X(
-                    "Repeat_Class:N",
-                    sort=repeat_order,
-                    title="Repeat class",
-                    axis=alt.Axis(
-                        labelAngle=0,
-                        labelFontSize=10.5,   # 12.5 -> 10.5
-                        titleFontSize=14,     # 16 -> 14
-                        titlePadding=34,
-                    )
-                ),
-                y=alt.Y(
-                    "Count:Q",
-                    title="Count",
-                    axis=alt.Axis(
-                        labelFontSize=12,     # 14 -> 12
-                        titleFontSize=14      # 16 -> 14
-                    )
-                ),
-                color=alt.Color(
-                    "Repeat_Class:N",
-                    scale=alt.Scale(domain=repeat_order, range=ucscgb_palette),
-                    legend=None
-                ),
-                tooltip=["Repeat_Class", "Count", "Percent"]
-            )
-            .properties(height=560)
-            .configure(background="transparent")
-            .configure_view(fill="transparent", strokeOpacity=0)
-            .configure_axis(
-                labelColor="currentColor",
-                titleColor="currentColor",
-                labelFontSize=12,          # 14 -> 12
-                titleFontSize=14,          # 16 -> 14
-                grid=True,
-                gridColor="currentColor",
-                gridOpacity=0.12,
-                domainColor="currentColor",
-                domainOpacity=0.55,
-                tickColor="currentColor",
-                tickOpacity=0.55
-            )
-            .configure_title(color="currentColor")
+    dl_col, _ = st.columns([2, 10])
+    with dl_col:
+        st.download_button(
+            "Download table (TSV)",
+            data=tsv_bytes,
+            file_name="mirna_filtered_table.tsv",
+            mime="text/tab-separated-values",
+            key="dl_tsv",
+            use_container_width=False,
         )
 
-        st.altair_chart(barplot, use_container_width=True)
-    else:
-        st.info("Repeat_Class is missing or empty: barplot not available.")
+        st.download_button(
+            "Get FASTA",
+            data=generate_fasta(filtered).encode("utf-8"),
+            file_name="mirna_selected.fasta",
+            mime="text/plain",
+            key="dl_fasta",
+            use_container_width=False,
+        )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    # -----------------------------------------------------------
+    # BARPLOT (Repeat distribution) — THEME-AWARE + shown on demand
+    # -----------------------------------------------------------
+    ucscgb_palette = ["#009ADE", "#7CC242", "#F98B2A", "#E4002B", "#B7312C", "#E78AC3", "#00A4A6", "#00458A"]
+    repeat_order = ["LINE", "SINE", "LTR", "DNA", "Satellite repeats", "Simple repeats", "Low complexity", "No repeat", "tRNA", "RC"]
 
-# -----------------------------------------------------------
-# FOOTER
-# -----------------------------------------------------------
-st.markdown("---")
-st.caption("pre-miRNA Annotation Browser — Streamlit App")
+    show_repeat_plot = st.session_state.get("show_repeat_plot", False)
+
+    if show_repeat_plot:
+        st.subheader("Repeat class distribution")
+        st.markdown("<div class='plot-card'>", unsafe_allow_html=True)
+
+        if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any():
+            repeat_counts = filtered.groupby("Repeat_Class").size().reset_index(name="Count")
+            repeat_counts["Percent"] = (repeat_counts["Count"] / repeat_counts["Count"].sum() * 100).round(2)
+
+            barplot = (
+                alt.Chart(repeat_counts)
+                .mark_bar(
+                    stroke="currentColor",
+                    strokeOpacity=0.55,
+                    strokeWidth=1.2
+                )
+                .encode(
+                    x=alt.X(
+                        "Repeat_Class:N",
+                        sort=repeat_order,
+                        title="Repeat class",
+                        axis=alt.Axis(
+                            labelAngle=0,
+                            labelFontSize=10.5,
+                            titleFontSize=14,
+                            titlePadding=34,
+                        )
+                    ),
+                    y=alt.Y(
+                        "Count:Q",
+                        title="Count",
+                        axis=alt.Axis(
+                            labelFontSize=12,
+                            titleFontSize=14
+                        )
+                    ),
+                    color=alt.Color(
+                        "Repeat_Class:N",
+                        scale=alt.Scale(domain=repeat_order, range=ucscgb_palette),
+                        legend=None
+                    ),
+                    tooltip=["Repeat_Class", "Count", "Percent"]
+                )
+                .properties(height=560)
+                .configure(background="transparent")
+                .configure_view(fill="transparent", strokeOpacity=0)
+                .configure_axis(
+                    labelColor="currentColor",
+                    titleColor="currentColor",
+                    labelFontSize=12,
+                    titleFontSize=14,
+                    grid=True,
+                    gridColor="currentColor",
+                    gridOpacity=0.12,
+                    domainColor="currentColor",
+                    domainOpacity=0.55,
+                    tickColor="currentColor",
+                    tickOpacity=0.55
+                )
+                .configure_title(color="currentColor")
+            )
+
+            st.altair_chart(barplot, use_container_width=True)
+        else:
+            st.info("Repeat_Class is missing or empty: barplot not available.")
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.caption("pre-miRNA Annotation Browser — Streamlit App")
 
 
+# ===========================================================
+# TAB 2 — DOCUMENTATION (split into sections + granular anchors)
+# ===========================================================
+with tab_docs:
+    # -----------------------------
+    # TOP / Overview
+    # -----------------------------
+    st.markdown('<div id="doc_overview" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown(
+        r"""
+# miR-RF Browser
 
+An interactive Streamlit web application to explore, filter, and export the pre-miRNA annotations generated in **miR-RF**, as described in *"An operational workflow for the systematic annotation of human miRNAs"*.
 
+The application enables interactive inspection of human pre-miRNAs evaluated through an integrative framework combining **structural stability**, **evolutionary conservation**, and **tissue expression**, and supports flexible, user-defined filtering strategies tailored to different biological questions.
+"""
+    )
+
+    st.markdown("---")
+
+    # -----------------------------
+    # Key features
+    # -----------------------------
+    st.markdown('<div id="doc_key_features" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("## Key features")
+
+    # Anchors: base filters (granular — needed for the ℹ️ next to filters)
+    st.markdown('<div id="doc_filter_search_any" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Global search")
+    st.markdown('Across all columns (“Search any column”) — search for one or more miRNAs.')
+
+    st.markdown('<div id="doc_filter_conservation_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Conservation")
+    st.markdown("Retain or exclude human pre-miRNAs based on conservation status across species (**PASSED / NOT PASSED**).")
+
+    st.markdown('<div id="doc_filter_expression_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Expression")
+    st.markdown("Retain or exclude human pre-miRNAs based on evidence of tissue expression (**PASSED / NOT PASSED**).")
+
+    st.markdown('<div id="doc_filter_structure_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Structural stability")
+    st.markdown("Retain or exclude human pre-miRNAs according to structural stability classification (**PASSED / NOT PASSED**).")
+
+    st.markdown('<div id="doc_filter_hsa" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Human specificity selector")
+    st.markdown("Restrict results to **Only hsa-specific** miRNAS or exclude them with **Not hsa-specific**.")
+
+    st.markdown('<div id="doc_filter_family" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Family context")
+    st.markdown("Distinguish **single miRNAs** vs **miRNAs in a family** (miRBase and/or MirGeneDB).")
+
+    st.markdown('<div id="doc_filter_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Repeat class selection")
+    st.markdown("Filter miRNAs based on the presence and type of overlapping repeat elements (LINE, SINE, LTR, DNA, etc.).")
+
+    st.markdown('<div id="doc_filter_plot_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Summary plot — repeat distribution")
+    st.markdown('Enable **“Show repeat class distribution”** to display a bar plot on the filtered subset.')
+
+    st.markdown('<div id="doc_filter_reset" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Reset filters")
+    st.markdown("Use **Reset all filters** to clear all selections and restore defaults (appears only if a filter is active).")
+
+    st.markdown("---")
+
+    # -----------------------------
+    # Advanced options (ONLY main subsections)
+    # -----------------------------
+    st.markdown('<div id="doc_advanced" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("## Advanced options")
+
+    st.markdown('<div id="doc_advanced_options" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("Enable **Advanced options** in the sidebar to unlock additional controls and column display options.")
+
+    st.markdown('<div id="doc_adv_conservation" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Evolutionary conservation (advanced)")
+    st.markdown("""
+- **Show species columns** (optional): display per-species conservation cells.  
+- **Filter by**: **Found in** selected species / **Not found in** selected species.  
+- Optional: stratify by structural stability when **Found in** is active: **Stable (R/D)** vs **Unstable (S/I)**.  
+""")
+
+    st.markdown('<div id="doc_adv_tissue" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Tissue expression (advanced)")
+    st.markdown("""
+- **Show tissue columns** by anatomical system (with icons).  
+- **Expressed in**: selected tissues with **RPMM ≥ 1.5** (all selected must pass).  
+- **Not expressed in**: selected tissues with **RPMM < 1.5** (all selected must pass).  
+""")
+
+    st.markdown('<div id="doc_adv_db_class" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("### Database / class (advanced)")
+    st.markdown("""
+- Optional: **Show Class columns** (miRBase / MirGeneDB).  
+- **Database filter**: entries present in both DBs or only in miRBase.  
+- **Class filter**: filter by miRBase structural class (R, D, I, S).  
+""")
+
+    st.markdown("---")
+
+    # -----------------------------
+    # Table visualization
+    # -----------------------------
+    st.markdown("## Table visualization")
+    st.markdown(
+        """
+Results are displayed in a responsive, scrollable table with:
+
+- Sticky header and sticky first column  
+- Color-coded cells with an integrated legend for:
+  - pass/fail status (structure, conservation, expression)
+  - family membership
+  - hsa-specificity
+  - repeat presence
+  - species-level stability and “not found” status
+  - tissue expression threshold (RPMM ≥ 1.5 vs < 1.5)
+  - miRBase / MirGeneDB structural classes (R/D/I/S), when enabled
+"""
+    )
+
+    st.markdown("---")
+
+    # -----------------------------
+    # Data export
+    # -----------------------------
+    st.markdown('<div id="doc_export" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("## Data export")
+    st.markdown(
+        """
+The currently filtered dataset can be exported as:
+
+- **TSV table** (only visible columns; clean formatting)  
+- **FASTA file** for the filtered subset (from the `sequence` column)
+
+These exports are intended to support downstream analyses and custom pipelines.
+"""
+    )
+
+    st.markdown("---")
+
+    # -----------------------------
+    # Example use cases (FULL TEXT)
+    # -----------------------------
+    st.markdown('<div id="doc_use_cases" class="doc-anchor"></div>', unsafe_allow_html=True)
+    st.markdown("## Example use cases")
+    st.markdown(
+        """
+**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters. 
+
+### Use case 1 - Cardiovascular-associated miRNAs conserved in mouse
+
+This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
+
+**Conservation support**
+- In **Advanced options → Evolutionary conservation**, select *M. musculus* under **Found in**.  
+  This restricts the table to pre-miRNAs with detectable conservation in mouse.
+- In **Advanced options → Evolutionary conservation**, select *Stable (R/D)* under **Structure**.
+
+**Tissue expression context**
+- In **Advanced options → Tissue expression**, select tissues belonging to the **Cardiorespiratory system** (e.g. artery, heart, ventricle, vein, circulating compartments), under **Expressed in (select tissues by system):**  
+  This highlights loci expressed in cardiovascular-relevant contexts.
+
+Under these conditions, **99 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
+- is conserved in mouse;
+- displays expression across multiple cardiovascular tissues;
+- is classified as structurally stable (R or D).
+
+---
+
+### Use case 2 - Brain-associated miRNAs conserved in primates
+
+This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
+
+**Conservation support**
+- In **Advanced options → Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
+- In **Advanced options → Evolutionary conservation**, select *Stable (R/D)* under **Structure**.
+- In **Advanced options → Evolutionary conservation**, select *M. mulatta* and *L. catta* under **Not found in**.  
+
+**Tissue expression context**
+- In **Advanced options → Tissue expression**, select tissues belonging to the **Neuro-Endocrine system** (e.g. brain, cortex, cerebellum, hippocampus, neuron-related samples), under **Show tissue columns (by system):**  
+  This option displays the corresponding tissue expression columns but does not filter the results.
+
+Under these conditions, **29 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
+- is conserved in *Pan troglodytes* and *Pan paniscus*;
+- not conserved in *Macaca mulatta* and *Lemur catta*;
+- is classified as structurally stable (R or D);
+- displays expression across multiple neuro-endocrine tissues.
+"""
+    )
+
+    st.markdown("---")
+    st.markdown(
+        f"""
+**Repository:** {REPO_URL}
+
+License: CC BY 4.0
+"""
+    )
