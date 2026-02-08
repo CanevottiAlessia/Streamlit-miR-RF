@@ -67,7 +67,7 @@ def _inject_doc_nav_js():
               a.addEventListener("click", function(e){
                 e.preventDefault();
                 e.stopPropagation();
-                const id = a.getAttribute("data-doc-id");
+                const id = a.getAttribute'setAttribute' ? a.getAttribute("data-doc-id") : a.getAttribute("data-doc-id");
                 if (id && window.parent.mirrfNav) window.parent.mirrfNav(id);
               }, true);
             });
@@ -162,7 +162,7 @@ def sidebar_widget_with_doc(widget_fn, doc_id: str, *args, icon_title="Docs", pa
 # -----------------------------------------------------------
 # GLOBAL THEME + RESPONSIVE CSS (LIGHT/DARK + BREAKPOINTS)
 # -2px everywhere (outside + inside table)
-# + ✅ tab bar bigger + sticky (ROBUST)
+# + ✅ tab bar bigger + sticky (ROBUST)  <-- FIXED HERE
 # + ✅ anchors scroll-margin to avoid sticky bar overlap
 # + ✅ tabs bar stays above streamlit header overlays
 # -----------------------------------------------------------
@@ -206,6 +206,9 @@ st.markdown(
 
       /* Altair grid opacity (light) */
       --grid-opacity: 0.14;
+
+      /* ✅ Streamlit header height estimate for sticky tabs (tweak if needed) */
+      --st-header-h: 3.5rem;
     }
 
     @media (prefers-color-scheme: dark){
@@ -243,6 +246,9 @@ st.markdown(
 
         /* Altair grid opacity (dark) */
         --grid-opacity: 0.10;
+
+        /* keep header estimate */
+        --st-header-h: 3.5rem;
       }
     }
 
@@ -511,27 +517,33 @@ st.markdown(
     }
 
     /* =======================================================
-       ✅ TABS BAR: sticky (robusto anche con header Streamlit)
+       ✅ STICKY TABS (ROBUST): header + tabs bar
     ======================================================= */
-    div[data-testid="stTabs"]{
+
+    /* Header Streamlit sopra a tutto */
+    div[data-testid="stHeader"]{
       position: sticky !important;
       top: 0 !important;
-      z-index: 1005 !important;
+      z-index: 2000 !important;
+    }
+
+    /* Wrapper tabs: sticky sotto header */
+    div[data-testid="stTabs"]{
+      position: sticky !important;
+      top: var(--st-header-h) !important;
+      z-index: 1990 !important;
       background: var(--bg) !important;
     }
 
+    /* La "tab bar" vera e propria */
     div[data-testid="stTabs"] > div:first-child{
       position: sticky !important;
-      top: 0 !important;
-      z-index: 1006 !important;
+      top: var(--st-header-h) !important;
+      z-index: 1991 !important;
       background: var(--bg) !important;
       padding-top: 6px !important;
       padding-bottom: 6px !important;
       border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent) !important;
-    }
-
-    div[data-testid="stHeader"]{
-      z-index: 1000 !important;
     }
 
     div[data-testid="stTabs"] button[role="tab"]{
@@ -542,11 +554,12 @@ st.markdown(
     }
 
     /* =======================================================
-       ✅ DOC ANCHORS: prevent being hidden under sticky tabs
+       ✅ DOC ANCHORS: prevent being hidden under sticky header+tabs
     ======================================================= */
     .doc-anchor{
-      scroll-margin-top: 90px;
+      scroll-margin-top: calc(var(--st-header-h) + 90px);
     }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -645,6 +658,12 @@ def shorten_repeat(val):
 
 df["Repeat_Class"] = df["Repeat_Class"].apply(shorten_repeat)
 df["Repeat_Class"] = df["Repeat_Class"].astype("string").str.replace("_", " ", regex=False)
+
+# ✅ FIX: rename specific repeat labels everywhere (table + plot + filters)
+df["Repeat_Class"] = df["Repeat_Class"].replace({
+    "DNA": "DNA repeats",
+    "Low complexity": "Low complexity repeats",
+})
 
 for c in ["Structure", "Conservation", "Expression"]:
     if c in df.columns:
@@ -1920,7 +1939,15 @@ with tab_app:
     # BARPLOT (Repeat distribution) — THEME-AWARE + shown on demand
     # -----------------------------------------------------------
     ucscgb_palette = ["#009ADE", "#7CC242", "#F98B2A", "#E4002B", "#B7312C", "#E78AC3", "#00A4A6", "#00458A"]
-    repeat_order = ["LINE", "SINE", "LTR", "DNA", "Satellite repeats", "Simple repeats", "Low complexity", "No repeat", "tRNA", "RC"]
+
+    # ✅ FIX: updated labels in order list
+    repeat_order = [
+        "LINE", "SINE", "LTR",
+        "DNA repeats",
+        "Satellite repeats", "Simple repeats",
+        "Low complexity repeats",
+        "No repeat", "tRNA", "RC"
+    ]
 
     show_repeat_plot = st.session_state.get("show_repeat_plot", False)
 
@@ -2048,7 +2075,7 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
 
     st.markdown('<div id="doc_filter_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Repeat class selection")
-    st.markdown("Filter miRNAs based on the presence and type of overlapping repeat elements (LINE, SINE, LTR, DNA, etc.).")
+    st.markdown("Filter miRNAs based on the presence and type of overlapping repeat elements (LINE, SINE, LTR, DNA repeats, etc.).")
 
     st.markdown('<div id="doc_filter_plot_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Summary plot — repeat distribution")
