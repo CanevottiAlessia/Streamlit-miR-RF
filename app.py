@@ -93,23 +93,22 @@ def doc_jump_link(section_id: str, label: str = "Docs") -> str:
     """
 
 
-# ✅ icon-only link (for inline placement next to widgets)
 def doc_jump_icon(section_id: str, title: str = "Docs") -> str:
     return f"""
     <a href="#" data-doc-id="{section_id}"
        title="{title}"
        style="
          text-decoration:none;
-         font-weight:800;
-         padding: 0 6px;
+         font-weight:700;
+         font-size: 12px;
+         padding: 0 4px;
          line-height: 1;
          display: inline-block;
-         transform: translateY(2px);
+         transform: translateY(1px);
        ">
        ℹ️
     </a>
     """
-
 
 # -----------------------------------------------------------
 # ✅ NEW: INLINE label + doc icon (same row)
@@ -2219,6 +2218,7 @@ Under these conditions, **29 miRNAs** are retained in the filtered table. For ea
 License: CC BY 4.0
 """
     )
+
 
 
 
