@@ -67,7 +67,7 @@ def _inject_doc_nav_js():
               a.addEventListener("click", function(e){
                 e.preventDefault();
                 e.stopPropagation();
-                const id = a.getAttribute'setAttribute' ? a.getAttribute("data-doc-id") : a.getAttribute("data-doc-id");
+                const id = a.getAttribute("data-doc-id");
                 if (id && window.parent.mirrfNav) window.parent.mirrfNav(id);
               }, true);
             });
@@ -2220,3 +2220,4 @@ Under these conditions, **29 miRNAs** are retained in the filtered table. For ea
 License: CC BY 4.0
 """
     )
+
