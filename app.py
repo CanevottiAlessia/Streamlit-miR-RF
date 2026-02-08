@@ -517,36 +517,34 @@ st.markdown(
     }
 
     /* =======================================================
-       ✅ TABS BAR: FIXED (davvero attaccata in alto)
+       ✅ TABS BAR: STICKY (robusto)
     ======================================================= */
     
-    /* Se vuoi tener conto dell’header Streamlit sopra, metti 3.5rem.
-       Se non la vedi o non ti serve, lascia 0px. */
-    :root{
-      --st-header-h: 0px;
-      --tabbar-h: 58px;  /* altezza stimata della barra tabs: se copre contenuto, aumenta (64-70px) */
+    /* IMPORTANTISSIMO: se un genitore ha overflow, sticky non funziona */
+    div[data-testid="stAppViewContainer"],
+    div[data-testid="stMain"],
+    div[data-testid="stTabs"]{
+      overflow: visible !important;
     }
     
-    /* La barra dei tabs (tab-list BaseWeb) */
-    div[data-testid="stTabs"] [data-baseweb="tab-list"]{
-      position: fixed !important;
+    /* se vuoi tener conto della header Streamlit, metti 3.5rem; altrimenti 0px */
+    :root{
+      --st-header-h: 0px;
+      --tabs-h: 58px;  /* se serve aumenta a 64/70 */
+    }
+    
+    /* la barra vera dei tabs */
+    div[data-testid="stTabs"] div[role="tablist"]{
+      position: sticky !important;
       top: var(--st-header-h) !important;
-      left: 0 !important;
-      right: 0 !important;
-      z-index: 99999 !important;
+      z-index: 10050 !important;
       background: var(--bg) !important;
       border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent) !important;
       padding-top: 6px !important;
       padding-bottom: 6px !important;
     }
     
-    /* Sposta giù TUTTO il contenuto dentro i tabs
-       (altrimenti finisce sotto la barra fixed) */
-    div[data-testid="stTabs"]{
-      padding-top: calc(var(--tabbar-h) + var(--st-header-h)) !important;
-    }
-    
-    /* Stile dei bottoni tab (come prima) */
+    /* stile bottoni tabs */
     div[data-testid="stTabs"] button[role="tab"]{
       font-size: 18px !important;
       font-weight: 800 !important;
@@ -554,12 +552,6 @@ st.markdown(
       border-radius: 14px !important;
     }
     
-    /* Anchor docs: evita che finisca sotto la barra */
-    .doc-anchor{
-      scroll-margin-top: calc(var(--tabbar-h) + var(--st-header-h) + 20px) !important;
-    }
-
-
     /* =======================================================
        ✅ DOC ANCHORS: prevent being hidden under sticky header+tabs
     ======================================================= */
@@ -2227,6 +2219,7 @@ Under these conditions, **29 miRNAs** are retained in the filtered table. For ea
 License: CC BY 4.0
 """
     )
+
 
 
 
