@@ -208,7 +208,7 @@ st.markdown(
       --grid-opacity: 0.14;
 
       /* ✅ Streamlit header height estimate for sticky tabs (tweak if needed) */
-      --st-header-h: 3.5rem;
+      --st-header-h: 4rem;
     }
 
     @media (prefers-color-scheme: dark){
@@ -2227,5 +2227,6 @@ Under these conditions, **29 miRNAs** are retained in the filtered table. For ea
 License: CC BY 4.0
 """
     )
+
 
 
