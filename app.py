@@ -2128,20 +2128,40 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
 
     # Anchors: base filters (granular — needed for the ℹ️ next to filters)
     st.markdown('<div id="doc_filter_search_any" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Global search")
-    st.markdown('Across all columns (“Search any column”) — search for one or more miRNAs.')
+    st.markdown("### Search any column")
+    st.markdown(
+    "Search for one or more miRNAs across **all columns** (case-insensitive). "
+    "The query performs a **partial match**, so it will return rows where the text **contains** your input. "
+    "Advanced users can also use **regular expressions (regex)** to refine the search (e.g., anchors, alternatives)."
+    )
 
     st.markdown('<div id="doc_filter_conservation_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Conservation")
-    st.markdown("Retain or exclude human pre-miRNAs based on conservation status across species (**PASSED / NOT PASSED**).")
+    st.markdown(
+        "Retain or exclude human pre-miRNAs based on their **evolutionary conservation status** across the selected species. "
+        "**Show all** - default - shows all pre-miRNAs, "
+        "**PASSED** indicates presence of conservation evidence under the applied criteria, "
+        "**NOT PASSED** indicates lack of conservation evidence under the applied criteria."
+    )
 
     st.markdown('<div id="doc_filter_expression_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Expression")
-    st.markdown("Retain or exclude human pre-miRNAs based on evidence of tissue expression (**PASSED / NOT PASSED**).")
+    st.markdown(
+        "Retain or exclude human pre-miRNAs based on evidence of **tissue expression**. "
+        "**Show all** - default - shows all pre-miRNAs, "
+        "**PASSED** indicates presence of expression evidence under the defined criteria, "
+        "**NOT PASSED** indicates lack of expression evidence under the applied criteria."
+    )
 
     st.markdown('<div id="doc_filter_structure_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Structural stability")
-    st.markdown("Retain or exclude human pre-miRNAs according to structural stability classification (**PASSED / NOT PASSED**).")
+    st.markdown(
+        "Retain or exclude human pre-miRNAs according to their **structural classification** in miRBase / MirGeneDB. "
+        "**Show all** - default - shows all pre-miRNAs, "
+        "**PASSED** indicates loci classified as R or D, "
+        "**NOT PASSED** indicates loci classified as I or S."
+    )
+
 
     st.markdown('<div id="doc_filter_hsa" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Human specificity selector")
@@ -2298,3 +2318,4 @@ Under these conditions, **29 miRNAs** are retained in the filtered table. For ea
 License: CC BY 4.0
 """
     )
+
