@@ -1729,51 +1729,43 @@ with tab_app:
     .table-inner td{
       border: 1px solid var(--table-border) !important;
       border-radius: 7px !important;
-
+    
       line-height: 1 !important;
       min-height: 36px !important;
       padding: 7px 7px !important;
-
+    
       font-size: clamp(10px, 0.9vw + 5px, 16px) !important;
-
+    
       width: clamp(110px, 8vw, 150px) !important;
       min-width: clamp(110px, 8vw, 150px) !important;
       max-width: clamp(150px, 10vw, 180px) !important;
-
+    
       white-space: nowrap !important;
       overflow: hidden !important;
-
+    
       text-align: center !important;
       font-weight: 700 !important;
       color: black !important;
       vertical-align: middle !important;
+    
+      /* ✅ IMPORTANT: NON forzare background qui,
+         altrimenti uccidi i colori dello Styler */
     }
 
-    .table-inner th{
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background-color: var(--table-th-bg) !important;
-      color: color-mix(in srgb, var(--text) 95%, transparent) !important;
-      font-weight: 800 !important;
-
-      white-space: normal !important;
-      overflow: visible !important;
-      text-overflow: clip !important;
-    }
-
-    .table-inner th:first-child{
-      position: sticky !important;
-      left: 0;
-      z-index: 30 !important;
-
-      width: clamp(160px, 12vw, 210px) !important;
-      min-width: clamp(160px, 12vw, 210px) !important;
-      max-width: clamp(210px, 16vw, 260px) !important;
-
-      background-color: var(--table-first-th-bg) !important;
-      color: color-mix(in srgb, var(--text) 95%, transparent) !important;
-      background-clip: padding-box;
+    /* ✅ ONLY OUTER BORDER TRANSPARENT */
+    .table-inner thead tr:first-child th{ border-top-color: transparent !important; }
+    .table-inner tbody tr:last-child td{ border-bottom-color: transparent !important; }
+    
+    .table-inner tr th:first-child,
+    .table-inner tr td:first-child{ border-left-color: transparent !important; }
+    
+    .table-inner tr th:last-child,
+    .table-inner tr td:last-child{ border-right-color: transparent !important; }
+    
+    /* opzionale: elimina qualsiasi “bordo” del tag table (se mai comparisse) */
+    .table-inner table{
+      border: none !important;
+      outline: none !important;
     }
 
     .table-inner td:first-child{
@@ -2361,3 +2353,4 @@ These exports are intended to support downstream analyses and custom pipelines.
     License: CC BY 4.0
     """
 )
+
