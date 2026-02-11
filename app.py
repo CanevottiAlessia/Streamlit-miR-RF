@@ -2115,10 +2115,24 @@ with tab_docs:
 An interactive Streamlit web application to explore, filter, and export the pre-miRNA annotations generated in **miR-RF**, as described in *"An operational workflow for the systematic annotation of human miRNAs"*.
 
 The application enables interactive inspection of human pre-miRNAs evaluated through an integrative framework combining **structural stability**, **evolutionary conservation**, and **tissue expression**, and supports flexible, user-defined filtering strategies tailored to different biological questions.
+
+### Table visualization
+Results are displayed in a responsive table with:
+
+- Sticky header and sticky first column  
+- Color-coded cells with an integrated legend for:
+  - pass/fail status (structure, conservation, expression)
+  - family membership
+  - hsa-specificity
+  - repeat presence
+  - species-level stability and “not found” status
+  - tissue expression threshold (RPMM ≥ 1.5 vs < 1.5)
+  - miRBase / MirGeneDB structural classes (R/D/I/S), when enabled
 """
     )
 
     st.markdown("---")
+    
 
     # -----------------------------
     # Key features
@@ -2269,27 +2283,6 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
 
     st.markdown("---")
 
-    # -----------------------------
-    # Table visualization
-    # -----------------------------
-    st.markdown("## Table visualization")
-    st.markdown(
-        """
-Results are displayed in a responsive, scrollable table with:
-
-- Sticky header and sticky first column  
-- Color-coded cells with an integrated legend for:
-  - pass/fail status (structure, conservation, expression)
-  - family membership
-  - hsa-specificity
-  - repeat presence
-  - species-level stability and “not found” status
-  - tissue expression threshold (RPMM ≥ 1.5 vs < 1.5)
-  - miRBase / MirGeneDB structural classes (R/D/I/S), when enabled
-"""
-    )
-
-    st.markdown("---")
 
     # -----------------------------
     # Data export
