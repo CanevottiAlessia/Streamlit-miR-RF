@@ -926,12 +926,6 @@ df["MirGeneDB_family_display"] = df.apply(
 )
 
 
-# -----------------------------------------------------------
-# External repo link (optional)
-# -----------------------------------------------------------
-REPO_URL = "https://github.com/CanevottiAlessia/Streamlit-miR-RF/blob/main/README.md"
-
-
 # ===========================================================
 # TABS BAR (APP / DOCUMENTATION)
 # ===========================================================
@@ -951,8 +945,7 @@ with st.sidebar.expander("Documentation", expanded=False):
     st.markdown("- " + doc_jump_link("doc_advanced", "Advanced options"), unsafe_allow_html=True)
     st.markdown("- " + doc_jump_link("doc_export", "Data export"), unsafe_allow_html=True)
     st.markdown("- " + doc_jump_link("doc_use_cases", "Example use cases"), unsafe_allow_html=True)
-    st.markdown(f"- [GitHub README (external)]({REPO_URL})")
-
+    
 
 # ===========================================================
 # TAB 1 — APP (DEFAULT)
