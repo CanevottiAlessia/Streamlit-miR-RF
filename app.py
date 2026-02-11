@@ -2135,7 +2135,7 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
     - Matching is **case-insensitive**.
     - The search performs a **partial match**: rows are retained if any cell **contains** the input text.
     - **Regular expressions (regex)** are supported for advanced queries  
-      (e.g. `^hsa-` to match entries starting with *hsa-*).
+      (e.g. `^hsa-` to match entries starting with *hsa-let*).
     """
     )
     
@@ -2176,8 +2176,6 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
     """
     )
 
-
-
     st.markdown('<div id="doc_filter_hsa" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### hsa specificity")
     st.markdown(
@@ -2190,18 +2188,16 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
     """
     )
 
-
     st.markdown('<div id="doc_filter_family" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Family")
     st.markdown(
         """
-    Distinguish between **single miRNAs** and **miRNAs belonging to a family**, using annotations from **miRBase** and/or **MirGeneDB**.
+    Filter between **single miRNAs** and **miRNAs belonging to a family**, using annotations from **miRBase** and/or **MirGeneDB**.
     
     - **Single miRNAs**: loci not assigned to any family in the selected database.
     - **miRNAs in family**: loci annotated as part of a family (family name may be shown when available).
     """
     )
-
 
     st.markdown('<div id="doc_filter_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Repeat class")
@@ -2214,7 +2210,6 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
     """
     )
 
-
     st.markdown('<div id="doc_filter_plot_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Show repeat class distribution")
     st.markdown(
@@ -2225,7 +2220,6 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
     - Useful to quickly assess whether filtering enriches for specific repeat categories.
     """
     )
-
 
     st.markdown('<div id="doc_filter_reset" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Reset all filters")
@@ -2245,7 +2239,7 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
     # Advanced options (ONLY main subsections)
     # -----------------------------
     st.markdown('<div id="doc_advanced" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## Advanced options")
+    st.markdown("### Advanced options")
 
     st.markdown('<div id="doc_advanced_options" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("Enable **Advanced options** in the sidebar to unlock additional controls and column display options.")
@@ -2253,7 +2247,7 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
     st.markdown('<div id="doc_adv_conservation" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Evolutionary conservation (advanced)")
     st.markdown("""
-- **Show species columns** (optional): display per-species conservation cells.  
+- **Show species columns**: display per-species conservation cells.  
 - **Filter by**: **Found in** selected species / **Not found in** selected species.  
 - Optional: stratify by structural stability when **Found in** is active: **Stable (R/D)** vs **Unstable (S/I)**.  
 """)
@@ -2262,16 +2256,15 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
     st.markdown("### Tissue expression (advanced)")
     st.markdown("""
 - **Show tissue columns** by anatomical system (with icons).  
-- **Expressed in**: selected tissues with **RPMM ≥ 1.5** (all selected must pass).  
-- **Not expressed in**: selected tissues with **RPMM < 1.5** (all selected must pass).  
+- **Filter by**: **Expressed in**: selected tissues with **RPMM ≥ 1.5** (all selected must pass) / **Not expressed in**: selected tissues with **RPMM < 1.5** (all selected must pass).  
 """)
 
     st.markdown('<div id="doc_adv_db_class" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Database / class (advanced)")
     st.markdown("""
-- Optional: **Show Class columns** (miRBase / MirGeneDB).  
+- **Show Class columns** (miRBase / MirGeneDB).  
 - **Database filter**: entries present in both DBs or only in miRBase.  
-- **Class filter**: filter by miRBase structural class (R, D, I, S).  
+- **Class filter**: filter by miRBase / MirGene structural class (R, D, I, S).  
 """)
 
     st.markdown("---")
@@ -2374,5 +2367,3 @@ Under these conditions, **29 miRNAs** are retained in the filtered table. For ea
 License: CC BY 4.0
 """
     )
-
-
