@@ -168,7 +168,6 @@ ICONS = {
 # + ✅ Sidebar più larga
 # + ✅ Barra pagination più piccola + sticky
 # + ✅ Remove margins around table container
-# + ✅ FIX: table frame border transparent
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -201,9 +200,7 @@ st.markdown(
       --table-th-bg: #eaeaea;
       --table-first-th-bg: #eaeaea;
       --table-first-td-bg: #f2f2f2;
-
-      /* ✅ FIX: table border/frame transparent */
-      --table-border: transparent;
+      --table-border: #000000;
 
       --sysbar-bg: #d0d0d0;
       --sysbar-border: rgba(0,0,0,0.20);
@@ -246,9 +243,7 @@ st.markdown(
         --table-th-bg: #222222;
         --table-first-th-bg: #222222;
         --table-first-td-bg: #333333;
-
-        /* ✅ FIX: table border/frame transparent */
-        --table-border: transparent;
+        --table-border: #000000;
 
         --sysbar-bg: #3a3a3a;
         --sysbar-border: rgba(255,255,255,0.18);
@@ -844,7 +839,7 @@ _inject_doc_nav_js()
 
 
 # -----------------------------------------------------------
-# Sidebar: Documentation (NO GitHub references)
+# Sidebar: Documentation
 # -----------------------------------------------------------
 with st.sidebar.expander("Documentation", expanded=False):
     st.markdown(f"- {doc_jump_link('doc_overview', 'Overview')}", unsafe_allow_html=True)
@@ -1321,7 +1316,7 @@ with tab_app:
     if "miRNA" in filtered.columns:
         _sort_cols.append("miRNA")
     if _sort_cols:
-        filtered_sorted = filtered.sort_values(_sort_cols, ascending=[True]*len(_sort_cols)).reset_index(drop=True)
+        filtered_sorted = filtered.sort_values(_sort_cols, ascending=[True] * len(_sort_cols)).reset_index(drop=True)
     else:
         filtered_sorted = filtered.reset_index(drop=True)
 
@@ -1366,32 +1361,27 @@ with tab_app:
         return "\n".join(lines)
 
     # -----------------------------------------------------------
-    # PREP TABLE DISPLAY (WEB) + ✅ FIX: export uses FULL filtered, not just current page
+    # PREP TABLE DISPLAY (WEB)
     # -----------------------------------------------------------
-    def build_display_df(source_df: pd.DataFrame) -> pd.DataFrame:
-        _df_display = source_df.copy()
+    df_display = page_filtered.copy()
 
-        _df_display["Conservation"] = _df_display["Conservation_display"]
-        _df_display["Expression"] = _df_display["Expression_display"]
-        _df_display["Structure"] = _df_display["Structure_display"]
+    df_display["Conservation"] = df_display["Conservation_display"]
+    df_display["Expression"] = df_display["Expression_display"]
+    df_display["Structure"] = df_display["Structure_display"]
 
-        _df_display["miRBase family"] = _df_display["miRBase_family_display"]
-        _df_display["MirGeneDB family"] = _df_display["MirGeneDB_family_display"]
+    df_display["miRBase family"] = df_display["miRBase_family_display"]
+    df_display["MirGeneDB family"] = df_display["MirGeneDB_family_display"]
 
-        _df_display = _df_display.rename(columns=animal_display_names)
+    df_display = df_display.rename(columns=animal_display_names)
 
-        if "sequence" in _df_display.columns:
-            _df_display = _df_display.drop(columns=["sequence"])
+    if "sequence" in df_display.columns:
+        df_display = df_display.drop(columns=["sequence"])
 
-        _df_display = _df_display.rename(columns={
-            "Repeat_Class": "Repeat Class",
-            "Class_miRBase": "Class miRBase",
-            "Class_MirGeneDB": "Class MirGeneDB",
-        })
-
-        return _df_display
-
-    df_display = build_display_df(page_filtered)
+    df_display = df_display.rename(columns={
+        "Repeat_Class": "Repeat Class",
+        "Class_miRBase": "Class miRBase",
+        "Class_MirGeneDB": "Class MirGeneDB",
+    })
 
     mandatory_display_cols = [
         "miRNA", "Conservation", "Expression", "Structure",
@@ -1430,7 +1420,7 @@ with tab_app:
     df_display = df_display[visible_cols + helper_cols_present]
 
     # -----------------------------------------------------------
-    # PREP TABLE EXPORT (TSV CLEAN)  ✅ FIX: export all filtered rows
+    # PREP TABLE EXPORT (TSV CLEAN)  ✅ FIX: export ALL rows (not only 50)
     # -----------------------------------------------------------
     def prepare_tsv_export(df_disp):
         export_df = df_disp.copy()
@@ -1438,11 +1428,31 @@ with tab_app:
         export_df.columns = export_df.columns.str.replace(r"<.*?>", "", regex=True)
         return export_df
 
-    # ✅ build full export dataframe with the SAME visible cols order + helpers (then stripped)
-    df_export_full = build_display_df(filtered_sorted)
-    helper_cols_present_export = [c for c in helper_cols if c in df_export_full.columns]
-    df_export_full = df_export_full[visible_cols + helper_cols_present_export]
-    tsv_export_df = prepare_tsv_export(df_export_full)
+    # Build a full (non-paginated) export dataframe that matches the current visible columns
+    export_full = filtered_sorted.copy()
+
+    export_full["Conservation"] = export_full["Conservation_display"]
+    export_full["Expression"] = export_full["Expression_display"]
+    export_full["Structure"] = export_full["Structure_display"]
+
+    export_full["miRBase family"] = export_full["miRBase_family_display"]
+    export_full["MirGeneDB family"] = export_full["MirGeneDB_family_display"]
+
+    export_full = export_full.rename(columns=animal_display_names)
+
+    if "sequence" in export_full.columns:
+        export_full = export_full.drop(columns=["sequence"])
+
+    export_full = export_full.rename(columns={
+        "Repeat_Class": "Repeat Class",
+        "Class_miRBase": "Class miRBase",
+        "Class_MirGeneDB": "Class MirGeneDB",
+    })
+
+    helper_cols_present_export = [c for c in helper_cols if c in export_full.columns]
+    export_full = export_full[[c for c in (visible_cols + helper_cols_present_export) if c in export_full.columns]]
+
+    tsv_export_df = prepare_tsv_export(export_full)
 
     # -----------------------------------------------------------
     # TABLE STYLING
@@ -1606,6 +1616,7 @@ with tab_app:
     # -----------------------------------------------------------
     # CSS — TABLE + LEGEND
     # ✅ remove margins around table and make background fully covered
+    # ✅ FIX: make ONLY the outer border of the table transparent (keep inner cell borders intact)
     # -----------------------------------------------------------
     custom_css = r"""
     <style>
@@ -1672,6 +1683,14 @@ with tab_app:
 
       background: var(--bg) !important;
     }
+
+    /* ✅ ONLY OUTER BORDER TRANSPARENT (do NOT touch inside cell borders/colors) */
+    .table-inner thead tr:first-child th{ border-top-color: transparent !important; }
+    .table-inner tbody tr:last-child td{ border-bottom-color: transparent !important; }
+    .table-inner tr th:first-child,
+    .table-inner tr td:first-child{ border-left-color: transparent !important; }
+    .table-inner tr th:last-child,
+    .table-inner tr td:last-child{ border-right-color: transparent !important; }
 
     .table-inner th{
       position: sticky;
@@ -1892,7 +1911,6 @@ with tab_app:
 
     # -----------------------------------------------------------
     # DOWNLOAD BUTTONS (TSV + FASTA)
-    # ✅ FIX: TSV exports ALL filtered rows (not only current page)
     # -----------------------------------------------------------
     tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
 
@@ -2010,8 +2028,6 @@ with tab_app:
 
 # ===========================================================
 # TAB 2 — DOCUMENTATION
-# ✅ removed all GitHub references
-# ✅ replaced most emojis with Linux-safe symbols (kept as minimal bullets)
 # ===========================================================
 with tab_docs:
     st.markdown('<div id="doc_overview" class="doc-anchor"></div>', unsafe_allow_html=True)
