@@ -5,6 +5,8 @@ import altair as alt
 from pathlib import Path
 from PIL import Image
 import re
+import base64
+from io import BytesIO
 
 
 
@@ -531,20 +533,20 @@ st.markdown(
     /* =======================================================
        ✅ TABS BAR: STICKY (robusto)
     ======================================================= */
-    
+
     /* IMPORTANTISSIMO: se un genitore ha overflow, sticky non funziona */
     div[data-testid="stAppViewContainer"],
     div[data-testid="stMain"],
     div[data-testid="stTabs"]{
       overflow: visible !important;
     }
-    
+
     /* se vuoi tener conto della header Streamlit, metti 3.5rem; altrimenti 0px */
     :root{
       --st-header-h: 0px;
       --tabs-h: 58px;  /* se serve aumenta a 64/70 */
     }
-    
+
     /* la barra vera dei tabs */
     div[data-testid="stTabs"] div[role="tablist"]{
       position: sticky !important;
@@ -555,7 +557,7 @@ st.markdown(
       padding-top: 6px !important;
       padding-bottom: 6px !important;
     }
-    
+
     /* stile bottoni tabs */
     div[data-testid="stTabs"] button[role="tab"]{
       font-size: 18px !important;
@@ -563,7 +565,7 @@ st.markdown(
       padding: 10px 18px !important;
       border-radius: 14px !important;
     }
-    
+
     /* =======================================================
        ✅ DOC ANCHORS: prevent being hidden under sticky header+tabs
     ======================================================= */
@@ -614,6 +616,78 @@ def load_icons():
 
 
 SYSTEM_ICONS = load_icons()
+
+
+# -----------------------------------------------------------
+# ✅ NEW: DOC ICONS (only used in Documentation tab)
+# Files you added on GitHub:
+# adv, global, cons1, tissue1, structure, hsa, fam, rep, barplot, reset,
+# adv2, cons2, tissue2, database, export, scimmiaBrain, mouseCuore
+# -----------------------------------------------------------
+@st.cache_resource
+def load_doc_icons_b64():
+    base_dir = Path(__file__).resolve().parent
+
+    def to_b64_png(filename: str):
+        p = base_dir / filename
+        try:
+            img = Image.open(p).convert("RGBA")
+            buf = BytesIO()
+            img.save(buf, format="PNG")
+            return base64.b64encode(buf.getvalue()).decode("utf-8")
+        except Exception:
+            return None
+
+    # keys == your “logical names”; values == filenames in repo
+    icon_files = {
+        "adv": "adv.png",
+        "global": "global.png",
+        "cons1": "cons1.png",
+        "tissue1": "tissue1.png",
+        "structure": "structure.png",
+        "hsa": "hsa.png",
+        "fam": "fam.png",
+        "rep": "rep.png",
+        "barplot": "barplot.png",
+        "reset": "reset.png",
+        "adv2": "adv2.png",
+        "cons2": "cons2.png",
+        "tissue2": "tissue2.png",
+        "database": "database.png",
+        "export": "export.png",
+        "scimmiaBrain": "scimmiaBrain.png",
+        "mouseCuore": "mouseCuore.png",
+    }
+
+    out = {}
+    for k, fn in icon_files.items():
+        out[k] = to_b64_png(fn)
+    return out
+
+
+DOC_ICONS_B64 = load_doc_icons_b64()
+
+
+def doc_icon_html(key: str, size_em: float = 1.05, dy_em: float = -0.14, mr_em: float = 0.35) -> str:
+    """
+    Returns an <img> tag with base64 PNG for inline use in Markdown headings.
+    Used ONLY in Documentation.
+    """
+    b64 = DOC_ICONS_B64.get(key)
+    if not b64:
+        return ""
+    return (
+        f"<img src='data:image/png;base64,{b64}' "
+        f"style='height:{size_em}em; width:auto; vertical-align:{dy_em}em; margin-right:{mr_em}em;'/>"
+    )
+
+
+def doc_heading(level: int, icon_keys, text: str):
+    if isinstance(icon_keys, str):
+        icon_keys = [icon_keys]
+    icons = "".join(doc_icon_html(k) for k in icon_keys if k)
+    hashes = "#" * max(1, min(level, 6))
+    st.markdown(f"{hashes} {icons}{text}", unsafe_allow_html=True)
 
 
 # -----------------------------------------------------------
@@ -945,7 +1019,7 @@ with st.sidebar.expander("Documentation", expanded=False):
     st.markdown("- " + doc_jump_link("doc_advanced", "Advanced options"), unsafe_allow_html=True)
     st.markdown("- " + doc_jump_link("doc_export", "Data export"), unsafe_allow_html=True)
     st.markdown("- " + doc_jump_link("doc_use_cases", "Example use cases"), unsafe_allow_html=True)
-    
+
 
 # ===========================================================
 # TAB 1 — APP (DEFAULT)
@@ -1393,7 +1467,6 @@ with tab_app:
         mask = filtered.astype(str).apply(lambda col: col.str.contains(search_term, case=False, na=False)).any(axis=1)
         filtered = filtered[mask]
 
-
     # -----------------------------------------------------------
     # MCGPT: Stable order + manual pagination (50 rows/page)
     # - avoids huge internal table scroll
@@ -1692,7 +1765,7 @@ with tab_app:
     # -----------------------------------------------------------
     custom_css = r"""
     <style>
-    
+
     /* ✅ IMPORTANT: assicurati che nessun parent tagli l’overflow orizzontale
        (così lo scroll orizzontale lo fa SOLO il browser) */
     div[data-testid="stAppViewContainer"],
@@ -1701,7 +1774,7 @@ with tab_app:
     div.block-container{
       overflow: visible !important;
     }
-    
+
     /* =======================================================
        TABLE WRAPPER: NO INTERNAL SCROLL — browser scroll only
        + bordo che si adatta alla larghezza reale della tabella
@@ -1711,53 +1784,53 @@ with tab_app:
       overflow: visible !important;          /* ✅ niente scroll interno */
       border: 2px solid var(--table-border);
       margin-bottom: 14px;
-    
+
       display: inline-block !important;      /* ✅ shrink-to-fit */
       width: max-content !important;         /* ✅ segue la tabella */
       max-width: none !important;            /* ✅ non forzare 100% */
       -webkit-overflow-scrolling: touch;
     }
-    
+
     .table-inner{
       display: inline-block !important;
       width: max-content !important;
     }
-    
+
     /* la tabella: larga quanto serve, ma almeno quanto la pagina */
     .table-inner table{
       border-collapse: separate !important;
       border-spacing: 0 !important;
-    
+
       table-layout: fixed !important;
       width: max-content !important;         /* ✅ cresce con le colonne */
       min-width: 100% !important;            /* ✅ almeno piena pagina */
     }
-    
+
     /* celle */
     .table-inner th,
     .table-inner td{
       border: 1px solid var(--table-border) !important;
       border-radius: 7px !important;
-    
+
       line-height: 1 !important;
       min-height: 36px !important;
       padding: 7px 7px !important;
-    
+
       font-size: clamp(10px, 0.9vw + 5px, 16px) !important;
-    
+
       width: clamp(110px, 8vw, 150px) !important;
       min-width: clamp(110px, 8vw, 150px) !important;
       max-width: clamp(150px, 10vw, 180px) !important;
-    
+
       white-space: nowrap !important;
       overflow: hidden !important;
-    
+
       text-align: center !important;
       font-weight: 700 !important;
       color: black !important;
       vertical-align: middle !important;
     }
-    
+
     /* header sticky */
     .table-inner th{
       position: sticky;
@@ -1766,42 +1839,42 @@ with tab_app:
       background-color: var(--table-th-bg) !important;
       color: color-mix(in srgb, var(--text) 95%, transparent) !important;
       font-weight: 800 !important;
-    
+
       white-space: normal !important;
       overflow: visible !important;
       text-overflow: clip !important;
     }
-    
+
     /* prima colonna sticky */
     .table-inner th:first-child{
       position: sticky !important;
       left: 0;
       z-index: 30 !important;
-    
+
       width: clamp(160px, 12vw, 210px) !important;
       min-width: clamp(160px, 12vw, 210px) !important;
       max-width: clamp(210px, 16vw, 260px) !important;
-    
+
       background-color: var(--table-first-th-bg) !important;
       color: color-mix(in srgb, var(--text) 95%, transparent) !important;
       background-clip: padding-box;
     }
-    
+
     .table-inner td:first-child{
       position: sticky !important;
       left: 0;
       z-index: 25 !important;
-    
+
       width: clamp(160px, 12vw, 210px) !important;
       min-width: clamp(160px, 12vw, 210px) !important;
       max-width: clamp(210px, 16vw, 260px) !important;
-    
+
       background-color: var(--table-first-td-bg) !important;
       color: color-mix(in srgb, var(--text) 95%, transparent) !important;
       font-weight: 800 !important;
       background-clip: padding-box;
     }
-    
+
     /* =======================================================
        LEGEND
     ======================================================= */
@@ -1813,7 +1886,7 @@ with tab_app:
       margin-top: 8px;
       margin-bottom: 10px;
     }
-    
+
     .legend-card{
       flex: 1 1 240px;
       min-width: 240px;
@@ -1821,26 +1894,26 @@ with tab_app:
       font-weight: 400;
       line-height: 1.35;
     }
-    
+
     .legend-title{
       font-size: 16px;
       font-weight: 600;
       margin-bottom: 6px;
     }
-    
+
     .legend-row{
       display: flex;
       flex-wrap: wrap;
       gap: 8px 12px;
       align-items: center;
     }
-    
+
     .legend-item{
       display: inline-flex;
       align-items: center;
       gap: 8px;
     }
-    
+
     .swatch{
       width: 16px;
       height: 16px;
@@ -1850,21 +1923,21 @@ with tab_app:
       border: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
       box-sizing: border-box;
     }
-    
+
     @media (max-width: 900px){
       .table-inner table{
         table-layout: auto !important;
       }
-    
+
       .table-inner th,
       .table-inner td{
         padding: 6px 6px !important;
         border-radius: 6px !important;
-    
+
         white-space: normal !important;
         word-break: break-word !important;
       }
-    
+
       .legend-card{
         min-width: 210px;
         font-size: 12px;
@@ -1873,10 +1946,9 @@ with tab_app:
         font-size: 14px;
       }
     }
-    
+
     </style>
     """
-
 
     # -----------------------------------------------------------
     # ROW COUNT
@@ -2113,6 +2185,7 @@ with tab_app:
 
 # ===========================================================
 # TAB 2 — DOCUMENTATION (split into sections + granular anchors)
+# ✅ CHANGED: replaced emojis with your new PNG icons
 # ===========================================================
 with tab_docs:
 
@@ -2128,7 +2201,7 @@ An interactive Streamlit web application to explore, filter, and export the pre-
 
 The application enables interactive inspection of human pre-miRNAs evaluated through an integrative framework combining **structural stability**, **evolutionary conservation**, and **tissue expression**, and supports flexible, user-defined filtering strategies tailored to different biological questions.
 
-### 📊 Table visualization
+### Table visualization
 Results are displayed in a responsive table with:
 
 - Sticky header and sticky first column  
@@ -2149,10 +2222,10 @@ Results are displayed in a responsive table with:
     # Key features
     # -----------------------------
     st.markdown('<div id="doc_key_features" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## ✨ Key features")
+    doc_heading(2, "adv", "Key features")
 
     st.markdown('<div id="doc_filter_search_any" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🔎 Search any column")
+    doc_heading(3, "global", "Search any column")
     st.markdown(
         """
 Search for one or more miRNAs across **all columns** of the table.
@@ -2164,7 +2237,7 @@ Search for one or more miRNAs across **all columns** of the table.
     )
 
     st.markdown('<div id="doc_filter_conservation_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🐖 Conservation")
+    doc_heading(3, "cons1", "Conservation")
     st.markdown(
         """
 Retain or exclude human pre-miRNAs based on their **evolutionary conservation status** across the selected species.
@@ -2176,7 +2249,7 @@ Retain or exclude human pre-miRNAs based on their **evolutionary conservation st
     )
 
     st.markdown('<div id="doc_filter_expression_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🫁 Expression")
+    doc_heading(3, "tissue1", "Expression")
     st.markdown(
         """
 Retain or exclude human pre-miRNAs based on evidence of **tissue expression**.
@@ -2188,7 +2261,7 @@ Retain or exclude human pre-miRNAs based on evidence of **tissue expression**.
     )
 
     st.markdown('<div id="doc_filter_structure_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🧬 Structural stability")
+    doc_heading(3, "structure", "Structural stability")
     st.markdown(
         """
 Retain or exclude human pre-miRNAs according to their **structural classification** in miRBase / MirGeneDB.
@@ -2200,7 +2273,7 @@ Retain or exclude human pre-miRNAs according to their **structural classificatio
     )
 
     st.markdown('<div id="doc_filter_hsa" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🧍🏼‍♀️ hsa specificity")
+    doc_heading(3, "hsa", "hsa specificity")
     st.markdown(
         """
 Filter pre-miRNAs based on **human specificity** (hsa).
@@ -2212,7 +2285,7 @@ Filter pre-miRNAs based on **human specificity** (hsa).
     )
 
     st.markdown('<div id="doc_filter_family" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🧩 Family")
+    doc_heading(3, "fam", "Family")
     st.markdown(
         """
 Filter between **single miRNAs** and **miRNAs belonging to a family**, using annotations from **miRBase** and/or **MirGeneDB**.
@@ -2223,7 +2296,7 @@ Filter between **single miRNAs** and **miRNAs belonging to a family**, using ann
     )
 
     st.markdown('<div id="doc_filter_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🧮 Repeat class")
+    doc_heading(3, "rep", "Repeat class")
     st.markdown(
         """
 Filter miRNAs based on the presence and type of **overlapping repeat elements**.
@@ -2234,7 +2307,7 @@ Filter miRNAs based on the presence and type of **overlapping repeat elements**.
     )
 
     st.markdown('<div id="doc_filter_plot_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 📈 Show repeat class distribution")
+    doc_heading(3, "barplot", "Show repeat class distribution")
     st.markdown(
         """
 Enable **“Show repeat class distribution”** to visualize the repeat composition of the **current filtered subset**.
@@ -2245,7 +2318,7 @@ Enable **“Show repeat class distribution”** to visualize the repeat composit
     )
 
     st.markdown('<div id="doc_filter_reset" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### ♻️ Reset all filters")
+    doc_heading(3, "reset", "Reset all filters")
     st.markdown(
         """
 Use **Reset all filters** to clear selections and restore default settings.
@@ -2261,13 +2334,16 @@ Use **Reset all filters** to clear selections and restore default settings.
     # Advanced options
     # -----------------------------
     st.markdown('<div id="doc_advanced" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## ⚙️ Advanced options")
+    doc_heading(2, "adv2", "Advanced options")
 
     st.markdown('<div id="doc_advanced_options" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("Enable **Advanced options** in the sidebar to unlock additional controls and column display options.")
+    st.markdown(
+        f"{doc_icon_html('adv2')}Enable **Advanced options** in the sidebar to unlock additional controls and column display options.",
+        unsafe_allow_html=True
+    )
 
     st.markdown('<div id="doc_adv_conservation" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🐂 Evolutionary conservation (advanced)")
+    doc_heading(3, "cons2", "Evolutionary conservation (advanced)")
     st.markdown("""
 - **Show species columns**: display per-species conservation cells.  
 - **Filter by**: **Found in** selected species / **Not found in** selected species.  
@@ -2275,7 +2351,7 @@ Use **Reset all filters** to clear selections and restore default settings.
 """)
 
     st.markdown('<div id="doc_adv_tissue" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🦴 Tissue expression (advanced)")
+    doc_heading(3, "tissue2", "Tissue expression (advanced)")
     st.markdown("""
 - **Show tissue columns** by anatomical system (with icons).  
 - **Filter by**:  
@@ -2284,7 +2360,7 @@ Use **Reset all filters** to clear selections and restore default settings.
 """)
 
     st.markdown('<div id="doc_adv_db_class" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🗂️ Database / class (advanced)")
+    doc_heading(3, "database", "Database / class (advanced)")
     st.markdown("""
 - **Show Class columns** (miRBase / MirGeneDB).  
 - **Database filter**: entries present in both DBs or only in miRBase.  
@@ -2297,7 +2373,7 @@ Use **Reset all filters** to clear selections and restore default settings.
     # Data export
     # -----------------------------
     st.markdown('<div id="doc_export" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## ⬇️ Data export")
+    doc_heading(2, "export", "Data export")
     st.markdown(
         """
 The currently filtered dataset can be exported as:
@@ -2316,59 +2392,60 @@ These exports are intended to support downstream analyses and custom pipelines.
     # -----------------------------
     st.markdown('<div id="doc_use_cases" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("## Example use cases")
-    
+
     st.markdown(
-        """
-    **Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters.
-    
-    ### 🫀🐁 Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
-    
-    This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
-    
-    **Conservation support**
-    - In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.  
-      This restricts the table to pre-miRNAs with detectable conservation in mouse.
-    - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
-    
-    **Tissue expression context**
-    - In **Advanced options -> Tissue expression**, select tissues belonging to the **Cardiorespiratory system**
-      (e.g. artery, heart, ventricle, vein, circulating compartments) under **Expressed in (select tissues by system):**  
-      This highlights loci expressed in cardiovascular-relevant contexts.
-    
-    Under these conditions, **99 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
-    - is conserved in mouse;
-    - displays expression across multiple cardiovascular tissues;
-    - is classified as structurally stable (**R** or **D**).
-    
-    ---
-    
-    ### 🧠🦧 Use case 2 — Brain-associated miRNAs conserved in primates
-    
-    This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
-    
-    **Conservation support**
-    - In **Advanced options -> Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
-    - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
-    - In **Advanced options -> Evolutionary conservation**, select *M. mulatta* and *L. catta* under **Not found in**.
-    
-    **Tissue expression context**
-    - In **Advanced options -> Tissue expression**, select tissues belonging to the **Neuro-Endocrine system**
-      (e.g. brain, cortex, cerebellum, hippocampus, neuron-related samples) under **Show tissue columns (by system):**  
-      This option displays the corresponding tissue expression columns but does not filter the results.
-    
-    Under these conditions, **29 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
-    - is conserved in *Pan troglodytes* and *Pan paniscus*;
-    - not conserved in *Macaca mulatta* and *Lemur catta*;
-    - is classified as structurally stable (**R** or **D**);
-    - displays expression across multiple neuro-endocrine tissues.
-    """
+        f"""
+**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters.
+
+### {doc_icon_html('mouseCuore')}{doc_icon_html('mouseCuore', mr_em=0.0)}Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
+
+This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
+
+**Conservation support**
+- In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.  
+  This restricts the table to pre-miRNAs with detectable conservation in mouse.
+- In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
+
+**Tissue expression context**
+- In **Advanced options -> Tissue expression**, select tissues belonging to the **Cardiorespiratory system**
+  (e.g. artery, heart, ventricle, vein, circulating compartments) under **Expressed in (select tissues by system):**  
+  This highlights loci expressed in cardiovascular-relevant contexts.
+
+Under these conditions, **99 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
+- is conserved in mouse;
+- displays expression across multiple cardiovascular tissues;
+- is classified as structurally stable (**R** or **D**).
+
+---
+
+### {doc_icon_html('scimmiaBrain')}{doc_icon_html('scimmiaBrain', mr_em=0.0)}Use case 2 — Brain-associated miRNAs conserved in primates
+
+This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
+
+**Conservation support**
+- In **Advanced options -> Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
+- In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
+- In **Advanced options -> Evolutionary conservation**, select *M. mulatta* and *L. catta* under **Not found in**.
+
+**Tissue expression context**
+- In **Advanced options -> Tissue expression**, select tissues belonging to the **Neuro-Endocrine system**
+  (e.g. brain, cortex, cerebellum, hippocampus, neuron-related samples) under **Show tissue columns (by system):**  
+  This option displays the corresponding tissue expression columns but does not filter the results.
+
+Under these conditions, **29 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
+- is conserved in *Pan troglodytes* and *Pan paniscus*;
+- not conserved in *Macaca mulatta* and *Lemur catta*;
+- is classified as structurally stable (**R** or **D**);
+- displays expression across multiple neuro-endocrine tissues.
+""",
+        unsafe_allow_html=True
     )
-    
+
     st.markdown("---")
     st.markdown(
         f"""
-    **Repository:** {REPO_URL}
-    
-    License: CC BY 4.0
-    """
-)
+**Repository:** {REPO_URL}
+
+License: CC BY 4.0
+"""
+    )
