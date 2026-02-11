@@ -147,36 +147,13 @@ Enable Advanced options in the sidebar to unlock additional controls and column 
 
 ---
 
-## Table visualization
-
-Results are displayed in a responsive, scrollable table with:
-
-* Sticky header and sticky first column
-* Color-coded cells with an integrated legend for:
-  * pass/fail status (structure, conservation, expression)
-  * family membership
-  * hsa-specificity
-  * repeat presence
-  * species-level stability and “not found” status
-  * tissue expression threshold (RPMM ≥ 1.5 vs < 1.5)
-  * miRBase / MirGeneDB structural classes (R/D/I/S), when enabled
-
----
-
-## Data export
+## ⬇️ Data export
 
 The currently filtered dataset can be exported as:
 * **TSV table** (only visible columns; clean formatting)
 * **FASTA file** for the filtered subset (from the `sequence` column)
 
 These exports are intended to support downstream analyses and custom pipelines.
-
----
-
-### Summary plots
-
-A **repeat class distribution** bar plot (Altair) can be displayed **on demand** by enabling
-**“Show repeat class distribution”** in the sidebar. The plot is computed on the currently filtered subset.
 
 ---
 
@@ -218,11 +195,11 @@ Manuscript under peer review.
 
 ---
 
-### Example use cases
+## Example use cases
 
 **Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters. 
 
-### Use case 1 - Cardiovascular-associated miRNAs conserved in mouse
+### 🫀🐁 Use case 1 - Cardiovascular-associated miRNAs conserved in mouse
 
 This use case focuses on human pre-miRNAs conserved in Mus musculus, structurally robust, and expressed in cardiovascular-related tissues or fluids.
 
@@ -242,7 +219,7 @@ Under these conditions, 99 miRNAs are retained in the filtered table. For each e
 
 ---
 
-### Use case 2 - Brain-associated miRNAs conserved in primates
+### 🧠🦧 Use case 2 - Brain-associated miRNAs conserved in primates
 
 This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
 
