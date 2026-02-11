@@ -140,15 +140,39 @@ def sidebar_widget_inline_doc(widget_fn, label: str, doc_id: str, *args, icon_ti
 
 
 # -----------------------------------------------------------
+# ✅ Emoji cross-platform:
+# - On Linux, colored emojis can be missing depending on fonts.
+# - Use simple Unicode symbols / Dingbats that render well everywhere.
+# - Here we keep the visible icon minimal and very compatible.
+# -----------------------------------------------------------
+ICONS = {
+    "overview": "•",
+    "key": "•",
+    "advanced": "•",
+    "export": "•",
+    "use_cases": "•",
+    "search": "•",
+    "conservation": "•",
+    "expression": "•",
+    "structure": "•",
+    "hsa": "•",
+    "family": "•",
+    "repeat": "•",
+    "plot": "•",
+    "reset": "•",
+}
+
+
+# -----------------------------------------------------------
 # GLOBAL THEME + RESPONSIVE CSS (LIGHT/DARK + BREAKPOINTS)
 # + ✅ Sidebar più larga
-# + ✅ Barra pagination più piccola (Prev/Page/Next)
+# + ✅ Barra pagination più piccola + sticky
+# + ✅ Remove margins around table container
 # -----------------------------------------------------------
 st.markdown(
     """
     <style>
     :root{
-      /* keep in sync with UI_SCALE */
       --ui-scale: 0.80;
 
       --bg: #ffffff;
@@ -183,10 +207,13 @@ st.markdown(
 
       --grid-opacity: 0.14;
 
-      --st-header-h: 4rem;
+      --st-header-h: 0px;
 
-      /* ✅ SIDEBAR WIDTH (più comoda su 13/14") */
-      --sidebar-w: 420px;  /* prova 400–460 in base a gusto */
+      /* ✅ SIDEBAR WIDTH */
+      --sidebar-w: 420px;
+
+      /* Tabs height (used for sticky pagination top offset) */
+      --tabs-h: 58px;
     }
 
     @media (prefers-color-scheme: dark){
@@ -223,9 +250,6 @@ st.markdown(
 
         --grid-opacity: 0.10;
 
-        --st-header-h: 3.5rem;
-
-        /* width resta uguale */
         --sidebar-w: 420px;
       }
     }
@@ -240,7 +264,7 @@ st.markdown(
         background: var(--header-bg) !important;
     }
 
-    /* ✅ Sidebar più larga */
+    /* ✅ Sidebar wider */
     section[data-testid="stSidebar"]{
         background: var(--sidebar-bg) !important;
         color: var(--text) !important;
@@ -314,40 +338,6 @@ st.markdown(
 
     a { color: var(--link) !important; }
 
-    /* SIDEBAR TYPOGRAPHY */
-    section[data-testid="stSidebar"] h2{
-      font-size: 20px !important;
-      font-weight: 800 !important;
-      margin-top: 8px !important;
-      margin-bottom: 10px !important;
-    }
-
-    section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-      font-size: 20px !important;
-      font-weight: 800 !important;
-    }
-
-    section[data-testid="stSidebar"] [data-testid="stExpander"] > details > summary{
-      font-size: 16px !important;
-      font-weight: 750 !important;
-    }
-
-    .sidebar-section-title{
-      font-size: 16px;
-      font-weight: 700;
-      margin: 8px 0 6px 0;
-    }
-
-    section[data-testid="stSidebar"] label,
-    section[data-testid="stSidebar"] .stMarkdown p{
-      font-size: 12px !important;
-    }
-
-    .sidebar-icon img{
-      width: 110px !important;
-      height: auto !important;
-    }
-
     /* download buttons */
     [data-testid="stDownloadButton"] button{
         background: var(--btn-bg) !important;
@@ -396,79 +386,16 @@ st.markdown(
         visibility: hidden !important;
     }
 
+    /* --- responsive sidebar width */
     @media (max-width: 900px){
-      section[data-testid="stSidebar"] h2{ font-size: 14px !important; }
-      section[data-testid="stSidebar"] div[data-testid="stToggle"] label{ font-size: 14px !important; }
-      section[data-testid="stSidebar"] label,
-      section[data-testid="stSidebar"] .stMarkdown p{ font-size: 10px !important; }
-      .sidebar-icon img{ width: 82px !important; }
-
-      /* sidebar un filo meno larga su schermi piccoli */
       :root{ --sidebar-w: 360px; }
     }
 
-    section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]{
-      margin-top: 2px !important;
-      margin-bottom: 2px !important;
-      gap: 0.25rem !important;
-    }
-
-    /* nested expanders in sidebar */
-    section[data-testid="stSidebar"]
-    [data-testid="stExpander"]
-    [data-testid="stExpander"]{
-      padding: 0 !important;
-      margin: 4px 0 !important;
-      border-radius: 12px !important;
-    }
-
-    section[data-testid="stSidebar"]
-    [data-testid="stExpander"]
-    [data-testid="stExpander"] > details > summary{
-      width: 100% !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: flex-start !important;
-
-      background: var(--sysbar-bg) !important;
-      border: 1px solid var(--sysbar-border) !important;
-
-      padding: 8px 12px !important;
-      border-radius: 10px !important;
-
-      font-size: 12px !important;
-      font-weight: 750 !important;
-
-      box-shadow: none !important;
-    }
-
-    section[data-testid="stSidebar"]
-    [data-testid="stExpander"]
-    [data-testid="stExpander"] > details > summary:hover{
-      filter: brightness(0.97);
-    }
-
-    section[data-testid="stSidebar"]
-    [data-testid="stExpander"]
-    [data-testid="stExpander"] > details > summary p,
-    section[data-testid="stSidebar"]
-    [data-testid="stExpander"]
-    [data-testid="stExpander"] > details > summary span{
-      margin: 0 !important;
-      line-height: 1.1 !important;
-      font-size: 14px !important;
-    }
-
-    /* Tabs bar sticky */
+    /* --- tabs bar sticky */
     div[data-testid="stAppViewContainer"],
     div[data-testid="stMain"],
     div[data-testid="stTabs"]{
       overflow: visible !important;
-    }
-
-    :root{
-      --st-header-h: 0px;
-      --tabs-h: 58px;
     }
 
     div[data-testid="stTabs"] div[role="tablist"]{
@@ -492,12 +419,7 @@ st.markdown(
       scroll-margin-top: calc(var(--st-header-h) + 90px);
     }
 
-    /* =======================================================
-       ✅ PAGINATION BAR: più piccola/compatta
-       - Riduce padding/altezza dei bottoni Prev/Next e del testo Page
-    ======================================================= */
-
-    /* restringo i bottoni MAIN (non sidebar) */
+    /* --- compact main buttons (not sidebar) */
     div[data-testid="stAppViewContainer"] .stButton > button{
       padding: 6px 10px !important;
       font-size: 12px !important;
@@ -506,7 +428,6 @@ st.markdown(
       min-height: 34px !important;
     }
 
-    /* il testo "Page X/Y" più compatto */
     .pager-text{
       display:flex;
       justify-content:center;
@@ -515,6 +436,36 @@ st.markdown(
       font-weight: 800;
       font-size: 13px;
       line-height: 1;
+    }
+
+    /* =======================================================
+       ✅ STICKY PAGINATION BAR
+    ======================================================= */
+    .pager-sticky{
+      position: sticky;
+      top: calc(var(--st-header-h) + var(--tabs-h));
+      z-index: 10040;
+      background: var(--bg);
+      border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+      padding: 8px 0 8px 0;
+      margin: 0 0 8px 0;
+      backdrop-filter: blur(6px);
+    }
+    .pager-sticky-inner{
+      padding: 0 4px;
+    }
+
+    /* =======================================================
+       ✅ REMOVE MAIN CONTAINER PADDING (helps "no margin" look)
+       - this removes the left/right padding around the whole page
+       - crucial to avoid seeing background margins under wide tables
+    ======================================================= */
+    div.block-container{
+      padding-left: 0.6rem !important;
+      padding-right: 0.6rem !important;
+      padding-top: 0.8rem !important;
+      padding-bottom: 1rem !important;
+      max-width: 100% !important;
     }
 
     </style>
@@ -880,30 +831,22 @@ df["MirGeneDB_family_display"] = df.apply(
 )
 
 
-# -----------------------------------------------------------
-# External repo link (optional)
-# -----------------------------------------------------------
-REPO_URL = "https://github.com/CanevottiAlessia/Streamlit-miR-RF/blob/main/README.md"
-
-
 # ===========================================================
 # TABS BAR (APP / DOCUMENTATION)
 # ===========================================================
 tab_app, tab_docs = st.tabs(["App", "Documentation"])
-
 _inject_doc_nav_js()
 
 
 # -----------------------------------------------------------
-# Sidebar: Documentation
+# Sidebar: Documentation (NO GitHub references)
 # -----------------------------------------------------------
 with st.sidebar.expander("Documentation", expanded=False):
-    st.markdown("- " + doc_jump_link("doc_overview", "Overview"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_key_features", "Key features"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_advanced", "Advanced options"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_export", "Data export"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_use_cases", "Example use cases"), unsafe_allow_html=True)
-    st.markdown(f"- [GitHub README (external)]({REPO_URL})")
+    st.markdown(f"- {doc_jump_link('doc_overview', 'Overview')}", unsafe_allow_html=True)
+    st.markdown(f"- {doc_jump_link('doc_key_features', 'Key features')}", unsafe_allow_html=True)
+    st.markdown(f"- {doc_jump_link('doc_advanced', 'Advanced options')}", unsafe_allow_html=True)
+    st.markdown(f"- {doc_jump_link('doc_export', 'Data export')}", unsafe_allow_html=True)
+    st.markdown(f"- {doc_jump_link('doc_use_cases', 'Example use cases')}", unsafe_allow_html=True)
 
 
 # ===========================================================
@@ -923,10 +866,10 @@ with tab_app:
         with st.popover("Quick Help", use_container_width=True):
             st.markdown("""
 ### How to use the app
-- Use the sidebar on the left to filter the dataset  
-- Enable *Advanced options* for additional controls/filters  
-- Export **TSV** / **FASTA** at the bottom of the table  
-- Try the **Example use cases** presets at the bottom of the scrollable sidebar to quickly apply filter combinations  
+- Use the sidebar on the left to filter the dataset
+- Enable *Advanced options* for additional controls/filters
+- Export **TSV** / **FASTA** at the bottom of the table
+- Try the **Example use cases** presets at the bottom of the sidebar to quickly apply filter combinations
 - Use **Reset all filters** (top or bottom of the sidebar) to clear everything and start over
 """)
 
@@ -935,16 +878,13 @@ with tab_app:
     # -----------------------------------------------------------
     st.sidebar.header("Filters")
 
-    # ✅ RESET (TOP) — mostrato solo se almeno un filtro è attivo
     if any_filter_active():
-        # doc link piccolo vicino (opzionale)
         st.sidebar.markdown(
             f"<div style='margin:-2px 0 8px 0;'>{doc_jump_link('doc_filter_reset', 'Docs (Reset)')}</div>",
             unsafe_allow_html=True
         )
         if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_top"):
             reset_all_filters()
-
         st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
     search_term = sidebar_widget_inline_doc(
@@ -1268,7 +1208,7 @@ with tab_app:
             if st.button("Brain + primates", use_container_width=True):
                 apply_preset("brain_primates")
 
-    # ✅ RESET (BOTTOM) — lasciato anche qui
+    # ✅ RESET (BOTTOM)
     st.sidebar.markdown("---")
     if any_filter_active():
         st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (Reset)"), unsafe_allow_html=True)
@@ -1385,8 +1325,10 @@ with tab_app:
     st.session_state["page"] = max(1, min(st.session_state["page"], total_pages))
 
     # -----------------------------------------------------------
-    # ✅ Pagination controls (più compatti via CSS)
+    # ✅ Sticky pagination bar
     # -----------------------------------------------------------
+    st.markdown("<div class='pager-sticky'><div class='pager-sticky-inner'>", unsafe_allow_html=True)
+
     nav_c1, nav_c2, nav_c3 = st.columns([1.2, 2.4, 1.2], vertical_alignment="center")
     with nav_c1:
         if st.button("← Prev", disabled=st.session_state["page"] == 1, use_container_width=True):
@@ -1398,6 +1340,8 @@ with tab_app:
             st.rerun()
     with nav_c2:
         st.markdown(f"<div class='pager-text'>Page {st.session_state['page']} / {total_pages}</div>", unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
     start = (st.session_state["page"] - 1) * ROWS_PER_PAGE
     end = start + ROWS_PER_PAGE
@@ -1487,7 +1431,7 @@ with tab_app:
     tsv_export_df = prepare_tsv_export(df_display)
 
     # -----------------------------------------------------------
-    # TABLE STYLING (UNCHANGED)
+    # TABLE STYLING
     # -----------------------------------------------------------
     NA_SPECIES_COLOR = "#D9D9D9"
     TRUE_COLOR = "#009E73"
@@ -1646,7 +1590,8 @@ with tab_app:
     html_table = styled_df.hide(axis="index").to_html(escape=False)
 
     # -----------------------------------------------------------
-    # CSS — TABLE + LEGEND (unchanged)
+    # CSS — TABLE + LEGEND
+    # ✅ remove margins around table and make background fully covered
     # -----------------------------------------------------------
     custom_css = r"""
     <style>
@@ -1654,8 +1599,14 @@ with tab_app:
       max-height: none;
       overflow-y: visible !important;
       overflow-x: visible !important;
-      border: 2px solid var(--table-border);
-      margin-bottom: 14px;
+
+      /* ✅ no "outer margin" look */
+      margin: 0 !important;
+      padding: 0 !important;
+
+      /* ✅ remove frame so you don't see border/margins underneath on white bg */
+      border: 0 !important;
+      background: var(--bg) !important;
 
       width: 100% !important;
       max-width: 100% !important;
@@ -1665,6 +1616,9 @@ with tab_app:
     .table-inner{
       display: block !important;
       width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: var(--bg) !important;
     }
 
     .table-inner table{
@@ -1673,6 +1627,10 @@ with tab_app:
       table-layout: fixed !important;
       width: max-content !important;
       min-width: 100% !important;
+
+      /* ✅ ensures no background "gap" around the table */
+      margin: 0 !important;
+      background: var(--bg) !important;
     }
 
     .table-inner th,
@@ -1697,6 +1655,8 @@ with tab_app:
       font-weight: 700 !important;
       color: black !important;
       vertical-align: middle !important;
+
+      background: var(--bg) !important;
     }
 
     .table-inner th{
@@ -2035,7 +1995,8 @@ with tab_app:
 
 # ===========================================================
 # TAB 2 — DOCUMENTATION
-# (uguale al tuo: non ho cambiato contenuti, solo lasciato com'era)
+# ✅ removed all GitHub references
+# ✅ replaced most emojis with Linux-safe symbols (kept as minimal bullets)
 # ===========================================================
 with tab_docs:
     st.markdown('<div id="doc_overview" class="doc-anchor"></div>', unsafe_allow_html=True)
@@ -2047,10 +2008,10 @@ An interactive Streamlit web application to explore, filter, and export the pre-
 
 The application enables interactive inspection of human pre-miRNAs evaluated through an integrative framework combining **structural stability**, **evolutionary conservation**, and **tissue expression**, and supports flexible, user-defined filtering strategies tailored to different biological questions.
 
-### 📊 Table visualization
+### Table visualization
 Results are displayed in a responsive table with:
 
-- Sticky header and sticky first column  
+- Sticky header and sticky first column
 - Color-coded cells with an integrated legend for:
   - pass/fail status (structure, conservation, expression)
   - family membership
@@ -2065,10 +2026,10 @@ Results are displayed in a responsive table with:
     st.markdown("---")
 
     st.markdown('<div id="doc_key_features" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## ✨ Key features")
+    st.markdown("## Key features")
 
     st.markdown('<div id="doc_filter_search_any" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🔎 Search any column")
+    st.markdown("### Search any column")
     st.markdown(
         """
 Search for one or more miRNAs across **all columns** of the table.
@@ -2080,7 +2041,7 @@ Search for one or more miRNAs across **all columns** of the table.
     )
 
     st.markdown('<div id="doc_filter_conservation_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🐖 Conservation")
+    st.markdown("### Conservation")
     st.markdown(
         """
 Retain or exclude human pre-miRNAs based on their **evolutionary conservation status** across the selected species.
@@ -2092,7 +2053,7 @@ Retain or exclude human pre-miRNAs based on their **evolutionary conservation st
     )
 
     st.markdown('<div id="doc_filter_expression_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🫁 Expression")
+    st.markdown("### Expression")
     st.markdown(
         """
 Retain or exclude human pre-miRNAs based on evidence of **tissue expression**.
@@ -2104,7 +2065,7 @@ Retain or exclude human pre-miRNAs based on evidence of **tissue expression**.
     )
 
     st.markdown('<div id="doc_filter_structure_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🧬 Structural stability")
+    st.markdown("### Structural stability")
     st.markdown(
         """
 Retain or exclude human pre-miRNAs according to their **structural classification** in miRBase / MirGeneDB.
@@ -2116,7 +2077,7 @@ Retain or exclude human pre-miRNAs according to their **structural classificatio
     )
 
     st.markdown('<div id="doc_filter_hsa" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🧍🏼‍♀️ hsa specificity")
+    st.markdown("### hsa specificity")
     st.markdown(
         """
 Filter pre-miRNAs based on **human specificity** (hsa).
@@ -2128,7 +2089,7 @@ Filter pre-miRNAs based on **human specificity** (hsa).
     )
 
     st.markdown('<div id="doc_filter_family" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🧩 Family")
+    st.markdown("### Family")
     st.markdown(
         """
 Filter between **single miRNAs** and **miRNAs belonging to a family**, using annotations from **miRBase** and/or **MirGeneDB**.
@@ -2139,7 +2100,7 @@ Filter between **single miRNAs** and **miRNAs belonging to a family**, using ann
     )
 
     st.markdown('<div id="doc_filter_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🧮 Repeat class")
+    st.markdown("### Repeat class")
     st.markdown(
         """
 Filter miRNAs based on the presence and type of **overlapping repeat elements**.
@@ -2150,7 +2111,7 @@ Filter miRNAs based on the presence and type of **overlapping repeat elements**.
     )
 
     st.markdown('<div id="doc_filter_plot_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 📈 Show repeat class distribution")
+    st.markdown("### Show repeat class distribution")
     st.markdown(
         """
 Enable **“Show repeat class distribution”** to visualize the repeat composition of the **current filtered subset**.
@@ -2161,7 +2122,7 @@ Enable **“Show repeat class distribution”** to visualize the repeat composit
     )
 
     st.markdown('<div id="doc_filter_reset" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### ♻️ Reset all filters")
+    st.markdown("### Reset all filters")
     st.markdown(
         """
 Use **Reset all filters** to clear selections and restore default settings.
@@ -2174,45 +2135,45 @@ Use **Reset all filters** to clear selections and restore default settings.
     st.markdown("---")
 
     st.markdown('<div id="doc_advanced" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## ⚙️ Advanced options")
+    st.markdown("## Advanced options")
 
     st.markdown('<div id="doc_advanced_options" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("Enable **Advanced options** in the sidebar to unlock additional controls and column display options.")
 
     st.markdown('<div id="doc_adv_conservation" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🐂 Evolutionary conservation (advanced)")
+    st.markdown("### Evolutionary conservation (advanced)")
     st.markdown("""
-- **Show species columns**: display per-species conservation cells.  
-- **Filter by**: **Found in** selected species / **Not found in** selected species.  
-- Optional: stratify by structural stability when **Found in** is active: **Stable (R/D)** vs **Unstable (S/I)**.  
+- **Show species columns**: display per-species conservation cells.
+- **Filter by**: **Found in** selected species / **Not found in** selected species.
+- Optional: stratify by structural stability when **Found in** is active: **Stable (R/D)** vs **Unstable (S/I)**.
 """)
 
     st.markdown('<div id="doc_adv_tissue" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🦴 Tissue expression (advanced)")
+    st.markdown("### Tissue expression (advanced)")
     st.markdown("""
-- **Show tissue columns** by anatomical system (with icons).  
-- **Filter by**:  
-  - **Expressed in**: selected tissues with **RPMM ≥ 1.5** (all selected must pass)  
-  - **Not expressed in**: selected tissues with **RPMM < 1.5** (all selected must pass)  
+- **Show tissue columns** by anatomical system (with icons).
+- **Filter by**:
+  - **Expressed in**: selected tissues with **RPMM ≥ 1.5** (all selected must pass)
+  - **Not expressed in**: selected tissues with **RPMM < 1.5** (all selected must pass)
 """)
 
     st.markdown('<div id="doc_adv_db_class" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### 🗂️ Database / class (advanced)")
+    st.markdown("### Database / class (advanced)")
     st.markdown("""
-- **Show Class columns** (miRBase / MirGeneDB).  
-- **Database filter**: entries present in both DBs or only in miRBase.  
-- **Class filter**: filter by miRBase / MirGene structural class (R, D, I, S).  
+- **Show Class columns** (miRBase / MirGeneDB).
+- **Database filter**: entries present in both DBs or only in miRBase.
+- **Class filter**: filter by miRBase / MirGene structural class (R, D, I, S).
 """)
 
     st.markdown("---")
 
     st.markdown('<div id="doc_export" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## ⬇️ Data export")
+    st.markdown("## Data export")
     st.markdown(
         """
 The currently filtered dataset can be exported as:
 
-- **TSV table** (only visible columns; clean formatting)  
+- **TSV table** (only visible columns; clean formatting)
 - **FASTA file** for the filtered subset (from the `sequence` column)
 
 These exports are intended to support downstream analyses and custom pipelines.
@@ -2228,12 +2189,10 @@ These exports are intended to support downstream analyses and custom pipelines.
         """
 **Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters.
 
-### 🫀🐁 Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
-
-This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
+### Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
 
 **Conservation support**
-- In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.  
+- In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.
 - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
 
 **Tissue expression context**
@@ -2241,9 +2200,7 @@ This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structura
 
 ---
 
-### 🧠🦧 Use case 2 — Brain-associated miRNAs conserved in primates
-
-This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
+### Use case 2 — Brain-associated miRNAs conserved in primates
 
 **Conservation support**
 - In **Advanced options -> Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
@@ -2252,14 +2209,5 @@ This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pa
 
 **Tissue expression context**
 - In **Advanced options -> Tissue expression**, select tissues belonging to the **Neuro-Endocrine system** under **Show tissue columns**.
-"""
-    )
-
-    st.markdown("---")
-    st.markdown(
-        f"""
-**Repository:** {REPO_URL}
-
-License: CC BY 4.0
 """
     )
