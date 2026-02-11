@@ -2126,62 +2126,118 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
     st.markdown('<div id="doc_key_features" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("## Key features")
 
-    # Anchors: base filters (granular — needed for the ℹ️ next to filters)
     st.markdown('<div id="doc_filter_search_any" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Search any column")
     st.markdown(
-    "Search for one or more miRNAs across **all columns** (case-insensitive). "
-    "The query performs a **partial match**, so it will return rows where the text **contains** your input. "
-    "Advanced users can also use **regular expressions (regex)** to refine the search (e.g., anchors, alternatives)."
+        """
+    Search for one or more miRNAs across **all columns** of the table.
+    
+    - Matching is **case-insensitive**.
+    - The search performs a **partial match**: rows are retained if any cell **contains** the input text.
+    - **Regular expressions (regex)** are supported for advanced queries  
+      (e.g. `^hsa-` to match entries starting with *hsa-*).
+    """
     )
-
+    
     st.markdown('<div id="doc_filter_conservation_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Conservation")
     st.markdown(
-        "Retain or exclude human pre-miRNAs based on their **evolutionary conservation status** across the selected species. "
-        "**Show all** - default - shows all pre-miRNAs, "
-        "**PASSED** indicates presence of conservation evidence under the applied criteria, "
-        "**NOT PASSED** indicates lack of conservation evidence under the applied criteria."
+        """
+    Retain or exclude human pre-miRNAs based on their **evolutionary conservation status** across the selected species.
+    
+    - **Show all** *(default)*: no conservation filter is applied.
+    - **PASSED**: conservation evidence is detected under the defined criteria.
+    - **NOT PASSED**: no conservation support is detected under the applied criteria.
+    """
     )
-
+    
+    
     st.markdown('<div id="doc_filter_expression_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Expression")
     st.markdown(
-        "Retain or exclude human pre-miRNAs based on evidence of **tissue expression**. "
-        "**Show all** - default - shows all pre-miRNAs, "
-        "**PASSED** indicates presence of expression evidence under the defined criteria, "
-        "**NOT PASSED** indicates lack of expression evidence under the applied criteria."
+        """
+    Retain or exclude human pre-miRNAs based on evidence of **tissue expression**.
+    
+    - **Show all** *(default)*: no expression filter is applied.
+    - **PASSED**: expression support is detected according to the defined threshold.
+    - **NOT PASSED**: insufficient or no expression evidence is detected.
+    """
     )
-
+    
     st.markdown('<div id="doc_filter_structure_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("### Structural stability")
     st.markdown(
-        "Retain or exclude human pre-miRNAs according to their **structural classification** in miRBase / MirGeneDB. "
-        "**Show all** - default - shows all pre-miRNAs, "
-        "**PASSED** indicates loci classified as R or D, "
-        "**NOT PASSED** indicates loci classified as I or S."
+        """
+    Retain or exclude human pre-miRNAs according to their **structural classification** in miRBase / MirGeneDB.
+    
+    - **Show all** *(default)*: no structural filter is applied.
+    - **PASSED**: loci classified as **R** or **D** (structurally robust).
+    - **NOT PASSED**: loci classified as **I** or **S** (unstable or weakly supported).
+    """
     )
 
 
+
     st.markdown('<div id="doc_filter_hsa" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Human specificity selector")
-    st.markdown("Restrict results to **Only hsa-specific** miRNAS or exclude them with **Not hsa-specific**.")
+    st.markdown("### hsa specificity")
+    st.markdown(
+        """
+    Filter pre-miRNAs based on **human specificity** (hsa).
+
+    - **Show all**: do not apply any specificity filter.
+    - **Only hsa-specific**: show only loci annotated as human-specific.
+    - **Not hsa-specific**: exclude human-specific loci and keep non-hsa-specific entries.
+    """
+    )
+
 
     st.markdown('<div id="doc_filter_family" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Family context")
-    st.markdown("Distinguish **single miRNAs** vs **miRNAs in a family** (miRBase and/or MirGeneDB).")
+    st.markdown("### Family")
+    st.markdown(
+        """
+    Distinguish between **single miRNAs** and **miRNAs belonging to a family**, using annotations from **miRBase** and/or **MirGeneDB**.
+    
+    - **Single miRNAs**: loci not assigned to any family in the selected database.
+    - **miRNAs in family**: loci annotated as part of a family (family name may be shown when available).
+    """
+    )
+
 
     st.markdown('<div id="doc_filter_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Repeat class selection")
-    st.markdown("Filter miRNAs based on the presence and type of overlapping repeat elements (LINE, SINE, LTR, DNA repeats, etc.).")
+    st.markdown("### Repeat class")
+    st.markdown(
+        """
+    Filter miRNAs based on the presence and type of **overlapping repeat elements**.
+    
+    - Select one or more repeat classes (e.g. **LINE**, **SINE**, **LTR**, **DNA repeats**, **Low complexity repeats**).
+    - If multiple classes are selected, the table will retain miRNAs matching **any** of the chosen categories.
+    """
+    )
+
 
     st.markdown('<div id="doc_filter_plot_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Summary plot — repeat distribution")
-    st.markdown('Enable **“Show repeat class distribution”** to display a bar plot on the filtered subset.')
+    st.markdown("### Show repeat class distribution")
+    st.markdown(
+        """
+    Enable **“Show repeat class distribution”** to visualize the repeat composition of the **current filtered subset**.
+    
+    - The bar plot reports **counts** (and percentages) per repeat class.
+    - Useful to quickly assess whether filtering enriches for specific repeat categories.
+    """
+    )
+
 
     st.markdown('<div id="doc_filter_reset" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Reset filters")
-    st.markdown("Use **Reset all filters** to clear all selections and restore defaults (appears only if a filter is active).")
+    st.markdown("### Reset all filters")
+    st.markdown(
+        """
+    Use **Reset all filters** to clear selections and restore default settings.
+    
+    - The button is shown only when at least one filter is active.
+    - It also resets navigation-dependent state (e.g. pagination) to the first page.
+    """
+    )
+
 
     st.markdown("---")
 
@@ -2318,4 +2374,5 @@ Under these conditions, **29 miRNAs** are retained in the filtered table. For ea
 License: CC BY 4.0
 """
     )
+
 
