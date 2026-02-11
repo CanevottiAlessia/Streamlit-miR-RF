@@ -2226,4 +2226,3 @@ These exports are intended to support downstream analyses and custom pipelines.
 - In **Advanced options -> Tissue expression**, select tissues belonging to the **Neuro-Endocrine system** under **Show tissue columns**.
 """
     )
-```
