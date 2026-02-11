@@ -11,43 +11,78 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
 
 ## Overview
 
+📊 Table visualization
+
+Results are displayed in a responsive table with:
+
+- Sticky header and sticky first column
+- Color-coded cells with an integrated legend for:
+  - pass/fail status (structure, conservation, expression)
+  - family membership
+  - hsa-specificity
+  - repeat presence
+  - species-level stability and “not found” status
+  - tissue expression threshold (RPMM ≥ 1.5 vs < 1.5)
+  - miRBase / MirGeneDB structural classes (R/D/I/S), when enabled
+
+
 The browser integrates:
 
-* miR-RF structural stability classes (R/D/I/S),
-* multi-species conservation profiles and human specificity,
-* tissue expression values (RPMM),
-* miRNA family context (miRBase / MirGeneDB),
+* miR-RF structural stability classes (R/D/I/S)
+* multi-species conservation profiles and human specificity
+* tissue expression values (RPMM)
+* miRNA family context (miRBase / MirGeneDB)
 * repeat annotation.
 
 All results correspond to the analyses reported in the accompanying manuscript and are provided as a reusable resource for downstream studies.
 
 ---
 
-## Key features
+## ✨ Key features
 
 ### Interactive filtering (sidebar)
 
 Filters can be combined arbitrarily:
 
-### **Global search**
-  Across all columns (“Search any column”) -> Search for one or more miRNAs.
+🔎 Search any column
+  Search for one or more miRNAs across all columns of the table
+  - Matching is case-insensitive
+  - The search performs a partial match: rows are retained if any cell contains the input text
+  - Regular expressions (regex) are supported for advanced queries (e.g. ^hsa- to match entries starting with hsa-).
 
-### **Pass and fail selectors**
-(with *Show all* option) for:
-  * Evolutionary conservation (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on conservation status across species.
-  * Expression (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs based on evidence of tissue expression.
-  * Structural stability (PASSED / NOT PASSED) -> Retain or exclude human pre-miRNAs according to their structural stability classification.
+🐖 Conservation
+  Retain or exclude human pre-miRNAs based on their evolutionary conservation status across the selected species.
+  - Show all (default): no conservation filter is applied
+  - PASSED: conservation evidence is detected under the defined criteria
+  - NOT PASSED: no conservation support is detected under the applied criteria
 
-### **Human specificity selector** 
-(with *Show all* option)  
-  * Only hsa-specific / Not hsa-specific -> Restrict results to human-specific miRNAs or exclude them.
+🫁 Expression
+  Retain or exclude human pre-miRNAs based on evidence of tissue expression.
+  - Show all (default): no expression filter is applied
+  - PASSED: expression support is detected according to the defined threshold
+  - NOT PASSED: insufficient or no expression evidence is detected
 
-### **Family context**
-(four possible options)
-  * Single miRNAs vs miRNAs in a family (miRBase and/or MirGeneDB) -> Distinguish isolated miRNAs from those belonging to annotated miRNA families.
+🧬 Structural stability
+  Retain or exclude human pre-miRNAs according to their structural classification in miRBase / MirGeneDB.
+  - Show all (default): no structural filter is applied
+  - PASSED: loci classified as R or D (structurally robust)
+  - NOT PASSED: loci classified as I or S (unstable or weakly supported)
 
-### **Repeat class selection**
-  * LINE, SINE, LTR, DNA, Simple repeats, No repeat, etc. -> Filter miRNAs based on the presence and type of overlapping repeat elements.
+🧍🏼‍♀️ hsa specificity
+  Filter pre-miRNAs based on human specificity (hsa).
+  - Show all: do not apply any specificity filter
+  - Only hsa-specific: show only loci annotated as human-specific
+  - Not hsa-specific: exclude human-specific loci and retain non-hsa-specific entries
+
+🧩 Family
+  Filter between single miRNAs and miRNAs belonging to a family, using annotations from miRBase and/or MirGeneDB.
+  - Single miRNAs: loci not assigned to any family in the selected database
+  - miRNAs in family: loci annotated as part of a family (family name may be shown when available)
+
+🧮 Repeat class
+  Filter miRNAs based on the presence and type of overlapping repeat elements.
+  - Select one or more repeat classes (e.g. LINE, SINE, LTR, DNA repeats, Low complexity repeats)
+  - If multiple classes are selected, the table retains miRNAs matching any of the chosen categories
     
 ---
 
