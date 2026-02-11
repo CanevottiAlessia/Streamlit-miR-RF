@@ -7,6 +7,13 @@ from PIL import Image
 import re
 
 
+
+# -----------------------------------------------------------
+# MCGPT: Global UI scaling (approx. -20% vs original)
+# Adjust this value if you want the whole UI smaller/larger.
+# -----------------------------------------------------------
+UI_SCALE = 0.80
+
 # -----------------------------------------------------------
 # STREAMLIT CONFIG (must be before any other st.* output)
 # -----------------------------------------------------------
@@ -172,6 +179,9 @@ st.markdown(
        AUTO THEME VARIABLES (LIGHT/DARK)
     ======================================================= */
     :root{
+  /* MCGPT: global UI scale */
+  --ui-scale: 0.80; /* MCGPT: keep in sync with UI_SCALE */
+
       --bg: #ffffff;
       --text: #111111;
 
@@ -270,6 +280,9 @@ st.markdown(
         background: var(--sidebar-bg) !important;
         color: var(--text) !important;
         border-right: 1px solid var(--sidebar-border);
+        /* MCGPT: scale sidebar to match main UI */
+        zoom: var(--ui-scale) !important;
+        transform-origin: top left;
     }
     section[data-testid="stSidebar"] *{
         color: var(--text) !important;
@@ -1272,6 +1285,7 @@ with tab_app:
 
             st.session_state["show_tissue_systems"] = ["Neuro-Endocrine"]
 
+        st.session_state["page"] = 1  # MCGPT: reset pagination when applying presets
         st.rerun()
 
     with st.sidebar.expander("Example use cases", expanded=False):
@@ -1301,6 +1315,7 @@ with tab_app:
             for k in FILTER_KEYS:
                 st.session_state.pop(k, None)
             st.session_state["show_adv"] = False
+            st.session_state["page"] = 1  # MCGPT: reset pagination
             st.rerun()
 
     # -----------------------------------------------------------
@@ -1385,6 +1400,59 @@ with tab_app:
         mask = filtered.astype(str).apply(lambda col: col.str.contains(search_term, case=False, na=False)).any(axis=1)
         filtered = filtered[mask]
 
+
+    # -----------------------------------------------------------
+    # MCGPT: Stable order + manual pagination (50 rows/page)
+    # - avoids huge internal table scroll
+    # - keeps page deterministic when filters change
+    # -----------------------------------------------------------
+    ROWS_PER_PAGE = 50  # MCGPT: change to 100 etc. if needed
+
+    # Reset pagination whenever filter state changes (robust, even with list-valued widgets)
+    _filter_sig = tuple((k, repr(st.session_state.get(k, None))) for k in FILTER_KEYS)
+    if st.session_state.get("_filter_sig") != _filter_sig:
+        st.session_state["page"] = 1
+        st.session_state["_filter_sig"] = _filter_sig
+
+    if "page" not in st.session_state:
+        st.session_state["page"] = 1
+
+    # Stable ordering (use padj if present; otherwise miRNA name)
+    _sort_cols = []
+    if "padj" in filtered.columns:
+        _sort_cols.append("padj")
+    if "miRNA" in filtered.columns:
+        _sort_cols.append("miRNA")
+    if _sort_cols:
+        filtered_sorted = filtered.sort_values(_sort_cols, ascending=[True]*len(_sort_cols)).reset_index(drop=True)
+    else:
+        filtered_sorted = filtered.reset_index(drop=True)
+
+    total_rows = len(filtered_sorted)
+    total_pages = max(1, (total_rows - 1) // ROWS_PER_PAGE + 1)
+
+    # Clamp page in range
+    st.session_state["page"] = max(1, min(st.session_state["page"], total_pages))
+
+    # Prev / Next controls (compact)
+    nav_c1, nav_c2, nav_c3 = st.columns([1, 2, 1])
+    with nav_c1:
+        if st.button("← Prev", disabled=st.session_state["page"] == 1, use_container_width=True):
+            st.session_state["page"] -= 1
+            st.rerun()
+    with nav_c3:
+        if st.button("Next →", disabled=st.session_state["page"] == total_pages, use_container_width=True):
+            st.session_state["page"] += 1
+            st.rerun()
+    with nav_c2:
+        st.markdown(f"**Page {st.session_state['page']} / {total_pages}**")
+
+    start = (st.session_state["page"] - 1) * ROWS_PER_PAGE
+    end = start + ROWS_PER_PAGE
+    page_filtered = filtered_sorted.iloc[start:end].copy()
+
+    st.caption(f"Showing rows {start+1}–{min(end, total_rows)} of {total_rows}")
+
     # -----------------------------------------------------------
     # FASTA EXPORT
     # -----------------------------------------------------------
@@ -1399,7 +1467,8 @@ with tab_app:
     # -----------------------------------------------------------
     # PREP TABLE DISPLAY (WEB)
     # -----------------------------------------------------------
-    df_display = filtered.copy()
+    # MCGPT: display only current page (downloads still use full filtered set)
+    df_display = page_filtered.copy()
 
     df_display["Conservation"] = df_display["Conservation_display"]
     df_display["Expression"] = df_display["Expression_display"]
@@ -1631,9 +1700,10 @@ with tab_app:
     custom_css = r"""
     <style>
     .table-container{
-      max-height: 4000px;
-      overflow-y: auto !important;
-      overflow-x: auto !important;
+      /* MCGPT: remove internal scrollbars; rely on browser scroll */
+      max-height: none;
+      overflow-y: visible !important;
+      overflow-x: visible !important;
       border: 2px solid var(--table-border);
       margin-bottom: 14px;
 
@@ -1769,7 +1839,8 @@ with tab_app:
 
     @media (max-width: 900px){
       .table-container{
-        max-height: 70vh;
+        /* MCGPT: no internal max-height on mobile either */
+        max-height: none;
       }
 
       .table-inner table{
@@ -1799,7 +1870,8 @@ with tab_app:
     # -----------------------------------------------------------
     # ROW COUNT
     # -----------------------------------------------------------
-    st.write(f"Rows shown: **{len(filtered)}**")
+    # MCGPT: show total filtered rows (not just page size)
+    st.write(f"Rows shown (filtered total): **{len(filtered_sorted)}**")
 
     # -----------------------------------------------------------
     # LEGEND (ABOVE TABLE)
@@ -1926,12 +1998,19 @@ with tab_app:
 
         st.download_button(
             "Get FASTA",
-            data=generate_fasta(filtered).encode("utf-8"),
+            # MCGPT: export FASTA for full filtered set (not just current page)
+            data=generate_fasta(filtered_sorted).encode("utf-8"),
             file_name="mirna_selected.fasta",
             mime="text/plain",
             key="dl_fasta",
             use_container_width=False,
         )
+
+    # -----------------------------------------------------------
+    # MCGPT: scale chart sizes according to UI_SCALE
+    # -----------------------------------------------------------
+    def _s(px: float) -> float:
+        return float(px) * UI_SCALE
 
     # -----------------------------------------------------------
     # BARPLOT (Repeat distribution) — THEME-AWARE + shown on demand
@@ -1953,8 +2032,9 @@ with tab_app:
         st.subheader("Repeat class distribution")
         st.markdown("<div class='plot-card'>", unsafe_allow_html=True)
 
-        if "Repeat_Class" in filtered.columns and filtered["Repeat_Class"].notna().any():
-            repeat_counts = filtered.groupby("Repeat_Class").size().reset_index(name="Count")
+        # MCGPT: compute distribution on full filtered set (not just current page)
+        if "Repeat_Class" in filtered_sorted.columns and filtered_sorted["Repeat_Class"].notna().any():
+            repeat_counts = filtered_sorted.groupby("Repeat_Class").size().reset_index(name="Count")
             repeat_counts["Percent"] = (repeat_counts["Count"] / repeat_counts["Count"].sum() * 100).round(2)
 
             barplot = (
@@ -1971,17 +2051,17 @@ with tab_app:
                         title="Repeat class",
                         axis=alt.Axis(
                             labelAngle=0,
-                            labelFontSize=10.5,
-                            titleFontSize=14,
-                            titlePadding=34,
+                            labelFontSize=_s(10.5),
+                            titleFontSize=_s(14),
+                            titlePadding=_s(34),
                         )
                     ),
                     y=alt.Y(
                         "Count:Q",
                         title="Count",
                         axis=alt.Axis(
-                            labelFontSize=12,
-                            titleFontSize=14
+                            labelFontSize=_s(12),
+                            titleFontSize=_s(14)
                         )
                     ),
                     color=alt.Color(
@@ -1991,14 +2071,14 @@ with tab_app:
                     ),
                     tooltip=["Repeat_Class", "Count", "Percent"]
                 )
-                .properties(height=560)
+                .properties(height=_s(560))
                 .configure(background="transparent")
                 .configure_view(fill="transparent", strokeOpacity=0)
                 .configure_axis(
                     labelColor="currentColor",
                     titleColor="currentColor",
-                    labelFontSize=12,
-                    titleFontSize=14,
+                    labelFontSize=_s(12),
+                    titleFontSize=_s(14),
                     grid=True,
                     gridColor="currentColor",
                     gridOpacity=0.12,
@@ -2218,8 +2298,3 @@ Under these conditions, **29 miRNAs** are retained in the filtered table. For ea
 License: CC BY 4.0
 """
     )
-
-
-
-
-
