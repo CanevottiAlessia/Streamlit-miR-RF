@@ -1752,21 +1752,30 @@ with tab_app:
          altrimenti uccidi i colori dello Styler */
     }
 
-    /* ✅ ONLY OUTER BORDER TRANSPARENT */
-    .table-inner thead tr:first-child th{ border-top-color: transparent !important; }
-    .table-inner tbody tr:last-child td{ border-bottom-color: transparent !important; }
-    
-    .table-inner tr th:first-child,
-    .table-inner tr td:first-child{ border-left-color: transparent !important; }
-    
-    .table-inner tr th:last-child,
-    .table-inner tr td:last-child{ border-right-color: transparent !important; }
-    
-    /* opzionale: elimina qualsiasi “bordo” del tag table (se mai comparisse) */
-    .table-inner table{
-      border: none !important;
-      outline: none !important;
+    /* ✅ ONLY OUTER BORDER TRANSPARENT (robusto con th/td e colonne dinamiche) */
+    .table-inner thead tr:first-child > *{
+      border-top-color: transparent !important;
     }
+    .table-inner tbody tr:last-child > *{
+      border-bottom-color: transparent !important;
+    }
+    .table-inner tr > *:first-child{
+      border-left-color: transparent !important;
+    }
+    .table-inner tr > *:last-child{
+      border-right-color: transparent !important;
+    }
+    
+    /* ✅ kill qualsiasi bordo/outline sul tag table (anche se lo styler lo reinietta) */
+    .table-inner table{
+      border: 0 !important;
+      outline: 0 !important;
+      box-shadow: none !important;
+    }
+    .table-inner table *{
+      outline: 0 !important;
+    }
+
 
     .table-inner td:first-child{
       position: sticky !important;
@@ -2353,4 +2362,5 @@ These exports are intended to support downstream analyses and custom pipelines.
     License: CC BY 4.0
     """
 )
+
 
