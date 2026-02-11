@@ -171,6 +171,7 @@ def sidebar_widget_with_doc(widget_fn, doc_id: str, *args, icon_title="Docs", pa
 # + ✅ tab bar bigger + sticky (ROBUST)  <-- FIXED HERE
 # + ✅ anchors scroll-margin to avoid sticky bar overlap
 # + ✅ tabs bar stays above streamlit header overlays
+# + ✅ SIDEBAR WIDTH (NEW)
 # -----------------------------------------------------------
 st.markdown(
     """
@@ -273,6 +274,24 @@ st.markdown(
     /* header / toolbar */
     [data-testid="stHeader"], [data-testid="stToolbar"]{
         background: var(--header-bg) !important;
+    }
+
+    /* =======================================================
+       ✅ SIDEBAR WIDTH (NEW)
+       - default: a bit wider for 14"
+       - optional: even wider on large screens
+    ======================================================= */
+    section[data-testid="stSidebar"]{
+        min-width: 360px !important;
+        width: 360px !important;
+        max-width: 360px !important;
+    }
+    @media (min-width: 1400px){
+      section[data-testid="stSidebar"]{
+        min-width: 400px !important;
+        width: 400px !important;
+        max-width: 400px !important;
+      }
     }
 
     /* sidebar */
@@ -855,6 +874,28 @@ def any_filter_active() -> bool:
     return False
 
 
+# ✅ NEW: single reset function (re-used top + bottom)
+def reset_all_filters():
+    for k in FILTER_KEYS:
+        st.session_state.pop(k, None)
+    st.session_state["show_adv"] = False
+    st.session_state["page"] = 1  # reset pagination
+    st.rerun()
+
+
+# ✅ NEW: render reset block (re-usable)
+def render_reset_block(where_label: str):
+    if any_filter_active():
+        st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (Reset)"), unsafe_allow_html=True)
+        st.sidebar.button(
+            "Reset all filters",
+            use_container_width=True,
+            key=f"reset_btn_{where_label}",
+            on_click=reset_all_filters
+        )
+        st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+
+
 # -----------------------------------------------------------
 # SPECIES MAPPING: True/False/NA robust
 # -----------------------------------------------------------
@@ -981,8 +1022,12 @@ with tab_app:
 
     # -----------------------------------------------------------
     # SIDEBAR: FILTERS + inline doc icons (FIXED: ℹ️ next to label)
+    # + ✅ RESET ALSO ON TOP
     # -----------------------------------------------------------
     st.sidebar.header("Filters")
+
+    # ✅ NEW: reset block above filters
+    render_reset_block("top")
 
     search_term = sidebar_widget_inline_doc(
         st.sidebar.text_input,
@@ -1308,15 +1353,9 @@ with tab_app:
                 apply_preset("brain_primates")
 
     st.sidebar.markdown("---")
-    if any_filter_active():
-        # (Reset is a main doc anchor; icon could be made inline too, but left like this)
-        st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (Reset)"), unsafe_allow_html=True)
-        if st.sidebar.button("Reset all filters", use_container_width=True):
-            for k in FILTER_KEYS:
-                st.session_state.pop(k, None)
-            st.session_state["show_adv"] = False
-            st.session_state["page"] = 1  # MCGPT: reset pagination
-            st.rerun()
+
+    # ✅ NEW: reset block also at bottom (as you had before)
+    render_reset_block("bottom")
 
     # -----------------------------------------------------------
     # APPLY FILTERS
@@ -1983,7 +2022,7 @@ with tab_app:
     # -----------------------------------------------------------
     # DOWNLOAD BUTTONS (TSV + FASTA)
     # -----------------------------------------------------------
-    tsv_bytes = tsv_export_df.to_csv(index=False, sep="\t").encode("utf-8")
+    tsv_bytes = tsv_export_df.to_csv(index=False, sep="\\t").encode("utf-8")
 
     dl_col, _ = st.columns([2, 10])
     with dl_col:
@@ -2361,5 +2400,4 @@ These exports are intended to support downstream analyses and custom pipelines.
     
     License: CC BY 4.0
     """
-)
-
+    )
