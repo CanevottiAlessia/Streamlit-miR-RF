@@ -9,9 +9,9 @@ The application enables interactive inspection of human pre-miRNAs evaluated thr
 
 ---
 
-## Overview
+## 📊 Overview
 
-📊 Table visualization
+Table visualization
 
 Results are displayed in a responsive table with:
 
@@ -120,22 +120,22 @@ Enable Advanced options in the sidebar to unlock additional controls and column 
   - Optional: stratify by structural stability when **Found in** is active: **Stable (R/D)** vs **Unstable (S/I)**
 
 
+### 🦴 Tissue expression (advanced)
 
-#### Tissue expression
+  - Show tissue columns by anatomical system (with icons)
+  - Filter by:
+    - **Expressed in**: selected tissues with RPMM ≥ 1.5 (all selected must pass)
+    - **Not expressed in**: selected tissues with RPMM < 1.5 (all selected must pass)
 
-* Show tissue columns **by anatomical system**.
-* Filter by:
-  * **Expressed in:** selected tissues (RPMM ≥ 1.5)
-  * **Not expressed in:** selected tissues (RPMM < 1.5)
-* Tissues are organized by anatomical systems and visual icons to support navigation.
 
-#### Database / class
+### 🗂️ Database / class (advanced)
 
-* Optional display of miRBase / MirGeneDB class columns
-* Filter entries:
-  * present in both databases
-  * annotated only in miRBase
-* Filter by miRBase structural class (R, D, I, S)
+  - Show Class columns (miRBase / MirGeneDB)
+  - Database filter:
+    - Entries present in both databases
+    - Entries only in miRBase
+  - Class filter:
+    - Filter by structural class (R, D, I, S)
 
 ---
 
