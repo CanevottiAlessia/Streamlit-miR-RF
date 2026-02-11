@@ -44,12 +44,14 @@ All results correspond to the analyses reported in the accompanying manuscript a
 
 Filters can be combined arbitrarily:
 
+
 ### 🔎 Search any column
 
   Search for one or more miRNAs across all columns of the table
   - Matching is case-insensitive
   - The search performs a partial match: rows are retained if any cell contains the input text
   - Regular expressions (regex) are supported for advanced queries (e.g. ^hsa- to match entries starting with hsa-).
+
 
 ### 🐖 Conservation
 
@@ -58,12 +60,14 @@ Filters can be combined arbitrarily:
   - PASSED: conservation evidence is detected under the defined criteria
   - NOT PASSED: no conservation support is detected under the applied criteria
 
+
 ### 🫁 Expression
 
   Retain or exclude human pre-miRNAs based on evidence of tissue expression.
   - Show all (default): no expression filter is applied
   - PASSED: expression support is detected according to the defined threshold
   - NOT PASSED: insufficient or no expression evidence is detected
+
 
 ### 🧬 Structural stability
 
@@ -72,39 +76,50 @@ Filters can be combined arbitrarily:
   - PASSED: loci classified as R or D (structurally robust)
   - NOT PASSED: loci classified as I or S (unstable or weakly supported)
 
-###🧍🏼‍♀️ hsa specificity
+
+### 🧍🏼‍♀️ hsa specificity
 
   Filter pre-miRNAs based on human specificity (hsa).
   - Show all: do not apply any specificity filter
   - Only hsa-specific: show only loci annotated as human-specific
   - Not hsa-specific: exclude human-specific loci and retain non-hsa-specific entries
 
-###🧩 Family
+
+### 🧩 Family
 
   Filter between single miRNAs and miRNAs belonging to a family, using annotations from miRBase and/or MirGeneDB.
   - Single miRNAs: loci not assigned to any family in the selected database
   - miRNAs in family: loci annotated as part of a family (family name may be shown when available)
 
-### 🧮 Repeat class
+
+###  🧮 Repeat class
 
   Filter miRNAs based on the presence and type of overlapping repeat elements.
   - Select one or more repeat classes (e.g. LINE, SINE, LTR, DNA repeats, Low complexity repeats)
   - If multiple classes are selected, the table retains miRNAs matching any of the chosen categories
+
+
+### 📈 Show repeat class distribution
+
+  Enable “Show repeat class distribution” to visualize the repeat composition of the current filtered subset.
+  - The bar plot reports counts and percentages per repeat class
+  - Useful to assess whether filtering enriches for specific repeat categories
     
 ---
 
-### Advanced options
+## ⚙️ Advanced options
 
-Advanced filters and column display can be enabled through the **Advanced options** toggle.
+Enable Advanced options in the sidebar to unlock additional controls and column display options.
 
-#### Evolutionary conservation
+### 🐂 Evolutionary conservation (advanced)
 
-* Show species-specific columns (optional)
-* Filter by:
-  * **Found in:** selected species.
-  * **Not found in:** selected species.
-* Optional stratification by structural stability when “Found in” is active:
-  * Stable (R/D) vs Unstable (S/I)
+  - Show species columns: display per-species conservation cells
+  - Filter by:
+    - **Found in** selected species
+    - **Not found in** selected species
+  - Optional: stratify by structural stability when **Found in** is active: **Stable (R/D)** vs **Unstable (S/I)**
+
+
 
 #### Tissue expression
 
@@ -124,11 +139,11 @@ Advanced filters and column display can be enabled through the **Advanced option
 
 ---
 
-### Filter reset and state management
+### ♻️ Reset all filters
 
-- For exploratory analyses, the app includes a **Reset all filters** button at the bottom of the sidebar.
-* The button appears **only when at least one filter is active**
-* One click clears all filters, restores defaults, collapses advanced options, and reloads the full table.
+  - Use Reset all filters to clear selections and restore default settings.
+  - The button appears only when at least one filter is active
+  - It also resets navigation-dependent state (e.g. pagination)
 
 ---
 
