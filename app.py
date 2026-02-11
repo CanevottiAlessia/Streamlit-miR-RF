@@ -2305,7 +2305,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 # Example use cases
 # -----------------------------
 st.markdown('<div id="doc_use_cases" class="doc-anchor"></div>', unsafe_allow_html=True)
-st.markdown("## 🫀🐁 / 🧠🦧 Example use cases")
+st.markdown("## Example use cases")
 
 st.markdown(
     """
@@ -2362,4 +2362,3 @@ st.markdown(
 License: CC BY 4.0
 """
 )
-
