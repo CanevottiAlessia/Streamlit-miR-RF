@@ -2148,8 +2148,7 @@ Search for one or more miRNAs across **all columns** of the table.
 
 - Matching is **case-insensitive**.
 - The search performs a **partial match**: rows are retained if any cell **contains** the input text.
-- **Regular expressions (regex)** are supported for advanced queries  
-  (e.g. `^hsa-` to match entries starting with *hsa-let*).
+- **Regular expressions (regex)** are supported for advanced queries (e.g. `^hsa-` to match entries starting with *hsa-let*).
 """
     )
 
