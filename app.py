@@ -2306,3 +2306,54 @@ These exports are intended to support downstream analyses and custom pipelines.
     # -----------------------------
     st.markdown('<div id="doc_use_cases" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("## 🫀🐁 / 🧠🦧 Example use cases")
+**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters. 
+
+### Use case 1 - Cardiovascular-associated miRNAs conserved in mouse
+
+This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
+
+**Conservation support**
+- In **Advanced options → Evolutionary conservation**, select *M. musculus* under **Found in**.  
+  This restricts the table to pre-miRNAs with detectable conservation in mouse.
+- In **Advanced options → Evolutionary conservation**, select *Stable (R/D)* under **Structure**.
+
+**Tissue expression context**
+- In **Advanced options → Tissue expression**, select tissues belonging to the **Cardiorespiratory system** (e.g. artery, heart, ventricle, vein, circulating compartments), under **Expressed in (select tissues by system):**  
+  This highlights loci expressed in cardiovascular-relevant contexts.
+
+Under these conditions, **99 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
+- is conserved in mouse;
+- displays expression across multiple cardiovascular tissues;
+- is classified as structurally stable (R or D).
+
+---
+
+### Use case 2 - Brain-associated miRNAs conserved in primates
+
+This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
+
+**Conservation support**
+- In **Advanced options → Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
+- In **Advanced options → Evolutionary conservation**, select *Stable (R/D)* under **Structure**.
+- In **Advanced options → Evolutionary conservation**, select *M. mulatta* and *L. catta* under **Not found in**.  
+
+**Tissue expression context**
+- In **Advanced options → Tissue expression**, select tissues belonging to the **Neuro-Endocrine system** (e.g. brain, cortex, cerebellum, hippocampus, neuron-related samples), under **Show tissue columns (by system):**  
+  This option displays the corresponding tissue expression columns but does not filter the results.
+
+Under these conditions, **29 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
+- is conserved in *Pan troglodytes* and *Pan paniscus*;
+- not conserved in *Macaca mulatta* and *Lemur catta*;
+- is classified as structurally stable (R or D);
+- displays expression across multiple neuro-endocrine tissues.
+"""
+    )
+
+    st.markdown("---")
+    st.markdown(
+        f"""
+**Repository:** {REPO_URL}
+
+License: CC BY 4.0
+"""
+    )
