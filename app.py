@@ -1699,32 +1699,48 @@ with tab_app:
     # -----------------------------------------------------------
     custom_css = r"""
     <style>
+    
+    /* ✅ IMPORTANT: assicurati che nessun parent tagli l’overflow orizzontale
+       (così lo scroll orizzontale lo fa SOLO il browser) */
+    div[data-testid="stAppViewContainer"],
+    div[data-testid="stMain"],
+    section.main,
+    div.block-container{
+      overflow: visible !important;
+    }
+    
+    /* =======================================================
+       TABLE WRAPPER: NO INTERNAL SCROLL — browser scroll only
+       + bordo che si adatta alla larghezza reale della tabella
+    ======================================================= */
     .table-container{
-      /* MCGPT: remove internal scrollbars; rely on browser scroll */
       max-height: none;
-      overflow-y: visible !important;
-      overflow-x: visible !important;
-      border: 2px solid transparent !important;
+      overflow: visible !important;          /* ✅ niente scroll interno */
+      border: 2px solid var(--table-border);
       margin-bottom: 14px;
-
-      width: 100% !important;
-      max-width: 100% !important;
+    
+      display: inline-block !important;      /* ✅ shrink-to-fit */
+      width: max-content !important;         /* ✅ segue la tabella */
+      max-width: none !important;            /* ✅ non forzare 100% */
       -webkit-overflow-scrolling: touch;
     }
-
+    
     .table-inner{
-      display: block !important;
-      width: 100% !important;
+      display: inline-block !important;
+      width: max-content !important;
     }
-
+    
+    /* la tabella: larga quanto serve, ma almeno quanto la pagina */
     .table-inner table{
       border-collapse: separate !important;
       border-spacing: 0 !important;
+    
       table-layout: fixed !important;
-      width: max-content !important;
-      min-width: 100% !important;
+      width: max-content !important;         /* ✅ cresce con le colonne */
+      min-width: 100% !important;            /* ✅ almeno piena pagina */
     }
-
+    
+    /* celle */
     .table-inner th,
     .table-inner td{
       border: 1px solid var(--table-border) !important;
@@ -1747,51 +1763,55 @@ with tab_app:
       font-weight: 700 !important;
       color: black !important;
       vertical-align: middle !important;
-    
-      /* ✅ IMPORTANT: NON forzare background qui,
-         altrimenti uccidi i colori dello Styler */
-    }
-
-    /* ✅ ONLY OUTER BORDER TRANSPARENT (robusto con th/td e colonne dinamiche) */
-    .table-inner thead tr:first-child > *{
-      border-top-color: transparent !important;
-    }
-    .table-inner tbody tr:last-child > *{
-      border-bottom-color: transparent !important;
-    }
-    .table-inner tr > *:first-child{
-      border-left-color: transparent !important;
-    }
-    .table-inner tr > *:last-child{
-      border-right-color: transparent !important;
     }
     
-    /* ✅ kill qualsiasi bordo/outline sul tag table (anche se lo styler lo reinietta) */
-    .table-inner table{
-      border: 0 !important;
-      outline: 0 !important;
-      box-shadow: none !important;
+    /* header sticky */
+    .table-inner th{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background-color: var(--table-th-bg) !important;
+      color: color-mix(in srgb, var(--text) 95%, transparent) !important;
+      font-weight: 800 !important;
+    
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
     }
-    .table-inner table *{
-      outline: 0 !important;
+    
+    /* prima colonna sticky */
+    .table-inner th:first-child{
+      position: sticky !important;
+      left: 0;
+      z-index: 30 !important;
+    
+      width: clamp(160px, 12vw, 210px) !important;
+      min-width: clamp(160px, 12vw, 210px) !important;
+      max-width: clamp(210px, 16vw, 260px) !important;
+    
+      background-color: var(--table-first-th-bg) !important;
+      color: color-mix(in srgb, var(--text) 95%, transparent) !important;
+      background-clip: padding-box;
     }
-
-
+    
     .table-inner td:first-child{
       position: sticky !important;
       left: 0;
       z-index: 25 !important;
-
+    
       width: clamp(160px, 12vw, 210px) !important;
       min-width: clamp(160px, 12vw, 210px) !important;
       max-width: clamp(210px, 16vw, 260px) !important;
-
+    
       background-color: var(--table-first-td-bg) !important;
       color: color-mix(in srgb, var(--text) 95%, transparent) !important;
       font-weight: 800 !important;
       background-clip: padding-box;
     }
-
+    
+    /* =======================================================
+       LEGEND
+    ======================================================= */
     .legend-wrap{
       display: flex;
       flex-wrap: wrap;
@@ -1800,7 +1820,7 @@ with tab_app:
       margin-top: 8px;
       margin-bottom: 10px;
     }
-
+    
     .legend-card{
       flex: 1 1 240px;
       min-width: 240px;
@@ -1808,26 +1828,26 @@ with tab_app:
       font-weight: 400;
       line-height: 1.35;
     }
-
+    
     .legend-title{
       font-size: 16px;
       font-weight: 600;
       margin-bottom: 6px;
     }
-
+    
     .legend-row{
       display: flex;
       flex-wrap: wrap;
       gap: 8px 12px;
       align-items: center;
     }
-
+    
     .legend-item{
       display: inline-flex;
       align-items: center;
       gap: 8px;
     }
-
+    
     .swatch{
       width: 16px;
       height: 16px;
@@ -1837,26 +1857,21 @@ with tab_app:
       border: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
       box-sizing: border-box;
     }
-
+    
     @media (max-width: 900px){
-      .table-container{
-        /* MCGPT: no internal max-height on mobile either */
-        max-height: none;
-      }
-
       .table-inner table{
         table-layout: auto !important;
       }
-
+    
       .table-inner th,
       .table-inner td{
         padding: 6px 6px !important;
         border-radius: 6px !important;
-
+    
         white-space: normal !important;
         word-break: break-word !important;
       }
-
+    
       .legend-card{
         min-width: 210px;
         font-size: 12px;
@@ -1865,8 +1880,10 @@ with tab_app:
         font-size: 14px;
       }
     }
+    
     </style>
     """
+
 
     # -----------------------------------------------------------
     # ROW COUNT
@@ -2362,6 +2379,3 @@ These exports are intended to support downstream analyses and custom pipelines.
     License: CC BY 4.0
     """
 )
-
-
-
