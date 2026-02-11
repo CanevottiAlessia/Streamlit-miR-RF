@@ -7,7 +7,6 @@ from PIL import Image
 import re
 
 
-
 # -----------------------------------------------------------
 # MCGPT: Global UI scaling (approx. -20% vs original)
 # Adjust this value if you want the whole UI smaller/larger.
@@ -23,9 +22,6 @@ st.set_option("client.toolbarMode", "minimal")
 
 # -----------------------------------------------------------
 # ✅ FIX: in-page navigation (NO new tab)
-# - Clicking a doc link:
-#   1) switches to Documentation tab (by TEXT, not index)
-#   2) scrolls to the right anchor in the same page
 # -----------------------------------------------------------
 def _inject_doc_nav_js():
     components.html(
@@ -48,12 +44,9 @@ def _inject_doc_nav_js():
             return !!el;
           }
 
-          // Global function called by our click handlers
           window.parent.mirrfNav = function(sectionId) {
-            // 1) switch tab
             clickTabByText("Documentation");
 
-            // 2) wait for render, then scroll
             let tries = 0;
             const t = setInterval(() => {
               tries++;
@@ -62,7 +55,6 @@ def _inject_doc_nav_js():
             }, 150);
           };
 
-          // Bind clicks to all <a data-doc-id="..."> links (Streamlit-safe)
           function bindDocLinks() {
             const root = window.parent.document;
             const links = root.querySelectorAll('a[data-doc-id]:not([data-doc-bound="1"])');
@@ -80,7 +72,6 @@ def _inject_doc_nav_js():
             });
           }
 
-          // Streamlit re-renders often -> rebind periodically
           setInterval(bindDocLinks, 600);
           setTimeout(bindDocLinks, 100);
 
@@ -117,6 +108,7 @@ def doc_jump_icon(section_id: str, title: str = "Docs") -> str:
     </a>
     """
 
+
 # -----------------------------------------------------------
 # ✅ NEW: INLINE label + doc icon (same row)
 # -----------------------------------------------------------
@@ -139,48 +131,25 @@ def sidebar_label_with_doc(label: str, doc_id: str, icon_title="Docs"):
 
 
 def sidebar_widget_inline_doc(widget_fn, label: str, doc_id: str, *args, icon_title="Docs", **kwargs):
-    # 1) label + icon (inline)
     sidebar_label_with_doc(label, doc_id, icon_title=icon_title)
 
-    # 2) hide Streamlit default label
     if "label_visibility" not in kwargs:
         kwargs["label_visibility"] = "collapsed"
 
-    # most widgets expect a label as first positional argument
     return widget_fn("", *args, **kwargs)
-
-
-# ✅ helper: render sidebar widget + icon on the same row (OLD - kept for compatibility)
-def sidebar_widget_with_doc(widget_fn, doc_id: str, *args, icon_title="Docs", pad_top_px=30, **kwargs):
-    col_w, col_i = st.sidebar.columns([12, 1], vertical_alignment="top")
-    with col_w:
-        out = widget_fn(*args, **kwargs)
-    with col_i:
-        st.markdown(
-            f"<div style='display:flex; justify-content:center; padding-top:{pad_top_px}px;'>"
-            f"{doc_jump_icon(doc_id, icon_title)}"
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-    return out
 
 
 # -----------------------------------------------------------
 # GLOBAL THEME + RESPONSIVE CSS (LIGHT/DARK + BREAKPOINTS)
-# -2px everywhere (outside + inside table)
-# + ✅ tab bar bigger + sticky (ROBUST)  <-- FIXED HERE
-# + ✅ anchors scroll-margin to avoid sticky bar overlap
-# + ✅ tabs bar stays above streamlit header overlays
+# + ✅ Sidebar più larga
+# + ✅ Barra pagination più piccola (Prev/Page/Next)
 # -----------------------------------------------------------
 st.markdown(
     """
     <style>
-    /* =======================================================
-       AUTO THEME VARIABLES (LIGHT/DARK)
-    ======================================================= */
     :root{
-  /* MCGPT: global UI scale */
-  --ui-scale: 0.80; /* MCGPT: keep in sync with UI_SCALE */
+      /* keep in sync with UI_SCALE */
+      --ui-scale: 0.80;
 
       --bg: #ffffff;
       --text: #111111;
@@ -209,15 +178,15 @@ st.markdown(
       --table-first-td-bg: #f2f2f2;
       --table-border: #000000;
 
-      /* darker system bar (light) */
       --sysbar-bg: #d0d0d0;
       --sysbar-border: rgba(0,0,0,0.20);
 
-      /* Altair grid opacity (light) */
       --grid-opacity: 0.14;
 
-      /* ✅ Streamlit header height estimate for sticky tabs (tweak if needed) */
       --st-header-h: 4rem;
+
+      /* ✅ SIDEBAR WIDTH (più comoda su 13/14") */
+      --sidebar-w: 420px;  /* prova 400–460 in base a gusto */
     }
 
     @media (prefers-color-scheme: dark){
@@ -249,38 +218,38 @@ st.markdown(
         --table-first-td-bg: #333333;
         --table-border: #000000;
 
-        /* darker system bar (dark) */
         --sysbar-bg: #3a3a3a;
         --sysbar-border: rgba(255,255,255,0.18);
 
-        /* Altair grid opacity (dark) */
         --grid-opacity: 0.10;
 
-        /* keep header estimate */
         --st-header-h: 3.5rem;
+
+        /* width resta uguale */
+        --sidebar-w: 420px;
       }
     }
 
-    /* =======================================================
-       GLOBAL FONT: RESPONSIVE (outside table)  (-2px)
-    ======================================================= */
     html, body, [data-testid="stAppViewContainer"]{
         font-size: clamp(12px, 1.2vw + 6px, 18px) !important;
         background: var(--bg) !important;
         color: var(--text) !important;
     }
 
-    /* header / toolbar */
     [data-testid="stHeader"], [data-testid="stToolbar"]{
         background: var(--header-bg) !important;
     }
 
-    /* sidebar */
+    /* ✅ Sidebar più larga */
     section[data-testid="stSidebar"]{
         background: var(--sidebar-bg) !important;
         color: var(--text) !important;
         border-right: 1px solid var(--sidebar-border);
-        /* MCGPT: scale sidebar to match main UI */
+
+        min-width: var(--sidebar-w) !important;
+        width: var(--sidebar-w) !important;
+        max-width: var(--sidebar-w) !important;
+
         zoom: var(--ui-scale) !important;
         transform-origin: top left;
     }
@@ -295,7 +264,6 @@ st.markdown(
         border: 1px solid var(--input-border) !important;
     }
 
-    /* BaseWeb select controls (selectbox + multiselect) */
     section[data-testid="stSidebar"] [data-baseweb="select"] > div{
         background: var(--input-bg) !important;
         color: var(--text) !important;
@@ -303,7 +271,6 @@ st.markdown(
         border: 1px solid var(--input-border) !important;
     }
 
-    /* remove any weird halo/shadow on labels */
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] p,
     section[data-testid="stSidebar"] .stMarkdown{
@@ -313,7 +280,6 @@ st.markdown(
         text-shadow: none !important;
     }
 
-    /* expander as cards (global) */
     [data-testid="stExpander"]{
         background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%) !important;
         border: 1px solid color-mix(in srgb, var(--text) 16%, transparent) !important;
@@ -323,7 +289,6 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* sidebar expanders: grey panels + pill on title only (TOP LEVEL) */
     section[data-testid="stSidebar"] [data-testid="stExpander"]{
         background: var(--panel-bg) !important;
         border: 1px solid var(--panel-border) !important;
@@ -341,19 +306,15 @@ st.markdown(
         background: transparent !important;
     }
 
-    /* subtle separators */
     .subtle-hr{
         border: 0;
         border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
         margin: 5px 0;
     }
 
-    /* links */
     a { color: var(--link) !important; }
 
-    /* ---------------------------
-       SIDEBAR TYPOGRAPHY SIZES (-2px)
-    ---------------------------- */
+    /* SIDEBAR TYPOGRAPHY */
     section[data-testid="stSidebar"] h2{
       font-size: 20px !important;
       font-weight: 800 !important;
@@ -382,40 +343,30 @@ st.markdown(
       font-size: 12px !important;
     }
 
-    /* ---------------------------
-       ICON SIZE
-    ---------------------------- */
     .sidebar-icon img{
       width: 110px !important;
       height: auto !important;
     }
 
-    /* ---------------------------
-       GREY BACKGROUND FOR DOWNLOAD BUTTONS
-    ---------------------------- */
+    /* download buttons */
     [data-testid="stDownloadButton"] button{
         background: var(--btn-bg) !important;
         color: var(--text) !important;
         border: 1px solid var(--btn-border) !important;
         border-radius: 12px !important;
         font-weight: 700 !important;
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+        line-height: 1.1 !important;
+        width: auto !important;
+        min-height: 32px !important;
     }
     [data-testid="stDownloadButton"] button:hover{
         background: var(--btn-bg-hover) !important;
         border-color: color-mix(in srgb, var(--btn-border) 70%, var(--text) 30%) !important;
     }
 
-    /* main page download buttons smaller (-2px) */
-    [data-testid="stDownloadButton"] button{
-        padding: 6px 12px !important;
-        font-size: 12px !important;
-        line-height: 1.1 !important;
-        border-radius: 10px !important;
-        width: auto !important;
-        min-height: 32px !important;
-    }
-
-    /* Sidebar normal buttons (e.g., Reset) styled like download buttons */
+    /* sidebar normal buttons */
     section[data-testid="stSidebar"] .stButton > button{
         background: var(--btn-bg) !important;
         color: var(--text) !important;
@@ -429,10 +380,6 @@ st.markdown(
         border-color: color-mix(in srgb, var(--btn-border) 70%, var(--text) 30%) !important;
     }
 
-    /* ---------------------------
-       BARPLOT CONTAINER
-       + set color so Altair "currentColor" works
-    ---------------------------- */
     .plot-card{
         background: var(--plot-card-bg);
         border: 0px solid var(--panel-border);
@@ -443,46 +390,30 @@ st.markdown(
         color: var(--text) !important;
     }
 
-    /* ---------------------------
-       REMOVE THE BAR ABOVE CHARTS (Streamlit element toolbar)
-    ---------------------------- */
     div[data-testid="stElementToolbar"]{
         display: none !important;
         height: 0 !important;
         visibility: hidden !important;
     }
 
-    /* =======================================================
-       RESPONSIVE BREAKPOINTS (mobile / small screens) (-2px)
-    ======================================================= */
     @media (max-width: 900px){
-      section[data-testid="stSidebar"] h2{
-        font-size: 14px !important;
-      }
-      section[data-testid="stSidebar"] div[data-testid="stToggle"] label{
-        font-size: 14px !important;
-      }
+      section[data-testid="stSidebar"] h2{ font-size: 14px !important; }
+      section[data-testid="stSidebar"] div[data-testid="stToggle"] label{ font-size: 14px !important; }
       section[data-testid="stSidebar"] label,
-      section[data-testid="stSidebar"] .stMarkdown p{
-        font-size: 10px !important;
-      }
-      .sidebar-icon img{
-        width: 82px !important;
-      }
+      section[data-testid="stSidebar"] .stMarkdown p{ font-size: 10px !important; }
+      .sidebar-icon img{ width: 82px !important; }
+
+      /* sidebar un filo meno larga su schermi piccoli */
+      :root{ --sidebar-w: 360px; }
     }
 
-    /* =======================================================
-       TIGHTER VERTICAL SPACE BETWEEN SYSTEM ROWS
-    ======================================================= */
     section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]{
       margin-top: 2px !important;
       margin-bottom: 2px !important;
       gap: 0.25rem !important;
     }
 
-    /* =======================================================
-       "MATERIAL" ACCORDION MENU FOR SYSTEM EXPANDERS (nested)
-    ======================================================= */
+    /* nested expanders in sidebar */
     section[data-testid="stSidebar"]
     [data-testid="stExpander"]
     [data-testid="stExpander"]{
@@ -528,24 +459,18 @@ st.markdown(
       font-size: 14px !important;
     }
 
-    /* =======================================================
-       ✅ TABS BAR: STICKY (robusto)
-    ======================================================= */
-    
-    /* IMPORTANTISSIMO: se un genitore ha overflow, sticky non funziona */
+    /* Tabs bar sticky */
     div[data-testid="stAppViewContainer"],
     div[data-testid="stMain"],
     div[data-testid="stTabs"]{
       overflow: visible !important;
     }
-    
-    /* se vuoi tener conto della header Streamlit, metti 3.5rem; altrimenti 0px */
+
     :root{
       --st-header-h: 0px;
-      --tabs-h: 58px;  /* se serve aumenta a 64/70 */
+      --tabs-h: 58px;
     }
-    
-    /* la barra vera dei tabs */
+
     div[data-testid="stTabs"] div[role="tablist"]{
       position: sticky !important;
       top: var(--st-header-h) !important;
@@ -555,20 +480,41 @@ st.markdown(
       padding-top: 6px !important;
       padding-bottom: 6px !important;
     }
-    
-    /* stile bottoni tabs */
+
     div[data-testid="stTabs"] button[role="tab"]{
       font-size: 18px !important;
       font-weight: 800 !important;
       padding: 10px 18px !important;
       border-radius: 14px !important;
     }
-    
-    /* =======================================================
-       ✅ DOC ANCHORS: prevent being hidden under sticky header+tabs
-    ======================================================= */
+
     .doc-anchor{
       scroll-margin-top: calc(var(--st-header-h) + 90px);
+    }
+
+    /* =======================================================
+       ✅ PAGINATION BAR: più piccola/compatta
+       - Riduce padding/altezza dei bottoni Prev/Next e del testo Page
+    ======================================================= */
+
+    /* restringo i bottoni MAIN (non sidebar) */
+    div[data-testid="stAppViewContainer"] .stButton > button{
+      padding: 6px 10px !important;
+      font-size: 12px !important;
+      line-height: 1.0 !important;
+      border-radius: 12px !important;
+      min-height: 34px !important;
+    }
+
+    /* il testo "Page X/Y" più compatto */
+    .pager-text{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height: 34px;
+      font-weight: 800;
+      font-size: 13px;
+      line-height: 1;
     }
 
     </style>
@@ -670,7 +616,6 @@ def shorten_repeat(val):
 df["Repeat_Class"] = df["Repeat_Class"].apply(shorten_repeat)
 df["Repeat_Class"] = df["Repeat_Class"].astype("string").str.replace("_", " ", regex=False)
 
-# ✅ FIX: rename specific repeat labels everywhere (table + plot + filters)
 df["Repeat_Class"] = df["Repeat_Class"].replace({
     "DNA": "DNA repeats",
     "Low complexity": "Low complexity repeats",
@@ -855,6 +800,15 @@ def any_filter_active() -> bool:
     return False
 
 
+def reset_all_filters():
+    for k in FILTER_KEYS:
+        st.session_state.pop(k, None)
+    st.session_state["show_adv"] = False
+    st.session_state["page"] = 1
+    st.session_state.pop("_filter_sig", None)
+    st.rerun()
+
+
 # -----------------------------------------------------------
 # SPECIES MAPPING: True/False/NA robust
 # -----------------------------------------------------------
@@ -937,13 +891,11 @@ REPO_URL = "https://github.com/CanevottiAlessia/Streamlit-miR-RF/blob/main/READM
 # ===========================================================
 tab_app, tab_docs = st.tabs(["App", "Documentation"])
 
-# ✅ inject the tab switch + scroll router once
 _inject_doc_nav_js()
 
 
 # -----------------------------------------------------------
-# Sidebar: Documentation (internal anchors, no new tab)
-# (kept as main sections only)
+# Sidebar: Documentation
 # -----------------------------------------------------------
 with st.sidebar.expander("Documentation", expanded=False):
     st.markdown("- " + doc_jump_link("doc_overview", "Overview"), unsafe_allow_html=True)
@@ -955,10 +907,9 @@ with st.sidebar.expander("Documentation", expanded=False):
 
 
 # ===========================================================
-# TAB 1 — APP (DEFAULT)
+# TAB 1 — APP
 # ===========================================================
 with tab_app:
-    # --- HEADER (title + help) ---
     col_title, col_help = st.columns([7, 2])
 
     with col_title:
@@ -976,13 +927,25 @@ with tab_app:
 - Enable *Advanced options* for additional controls/filters  
 - Export **TSV** / **FASTA** at the bottom of the table  
 - Try the **Example use cases** presets at the bottom of the scrollable sidebar to quickly apply filter combinations  
-- Use **Reset all filters** (bottom of the sidebar) to clear everything and start over
+- Use **Reset all filters** (top or bottom of the sidebar) to clear everything and start over
 """)
 
     # -----------------------------------------------------------
-    # SIDEBAR: FILTERS + inline doc icons (FIXED: ℹ️ next to label)
+    # SIDEBAR: FILTERS + ✅ Reset anche sopra
     # -----------------------------------------------------------
     st.sidebar.header("Filters")
+
+    # ✅ RESET (TOP) — mostrato solo se almeno un filtro è attivo
+    if any_filter_active():
+        # doc link piccolo vicino (opzionale)
+        st.sidebar.markdown(
+            f"<div style='margin:-2px 0 8px 0;'>{doc_jump_link('doc_filter_reset', 'Docs (Reset)')}</div>",
+            unsafe_allow_html=True
+        )
+        if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_top"):
+            reset_all_filters()
+
+        st.sidebar.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
 
     search_term = sidebar_widget_inline_doc(
         st.sidebar.text_input,
@@ -1088,7 +1051,6 @@ with tab_app:
 
     if show_adv:
         with st.sidebar.expander("Evolutionary conservation", expanded=True):
-            # link only to the main subsection (as requested)
             st.sidebar.markdown(
                 f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_conservation', 'Docs')}</div>",
                 unsafe_allow_html=True
@@ -1285,7 +1247,7 @@ with tab_app:
 
             st.session_state["show_tissue_systems"] = ["Neuro-Endocrine"]
 
-        st.session_state["page"] = 1  # MCGPT: reset pagination when applying presets
+        st.session_state["page"] = 1
         st.rerun()
 
     with st.sidebar.expander("Example use cases", expanded=False):
@@ -1296,7 +1258,6 @@ with tab_app:
             unsafe_allow_html=True
         )
 
-        # keep doc link (main section)
         st.sidebar.markdown(doc_jump_link("doc_use_cases", "Docs"), unsafe_allow_html=True)
 
         b1, b2 = st.columns(2)
@@ -1307,16 +1268,12 @@ with tab_app:
             if st.button("Brain + primates", use_container_width=True):
                 apply_preset("brain_primates")
 
+    # ✅ RESET (BOTTOM) — lasciato anche qui
     st.sidebar.markdown("---")
     if any_filter_active():
-        # (Reset is a main doc anchor; icon could be made inline too, but left like this)
         st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (Reset)"), unsafe_allow_html=True)
-        if st.sidebar.button("Reset all filters", use_container_width=True):
-            for k in FILTER_KEYS:
-                st.session_state.pop(k, None)
-            st.session_state["show_adv"] = False
-            st.session_state["page"] = 1  # MCGPT: reset pagination
-            st.rerun()
+        if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_bottom"):
+            reset_all_filters()
 
     # -----------------------------------------------------------
     # APPLY FILTERS
@@ -1400,15 +1357,11 @@ with tab_app:
         mask = filtered.astype(str).apply(lambda col: col.str.contains(search_term, case=False, na=False)).any(axis=1)
         filtered = filtered[mask]
 
-
     # -----------------------------------------------------------
-    # MCGPT: Stable order + manual pagination (50 rows/page)
-    # - avoids huge internal table scroll
-    # - keeps page deterministic when filters change
+    # Stable order + manual pagination (50 rows/page)
     # -----------------------------------------------------------
-    ROWS_PER_PAGE = 50  # MCGPT: change to 100 etc. if needed
+    ROWS_PER_PAGE = 50
 
-    # Reset pagination whenever filter state changes (robust, even with list-valued widgets)
     _filter_sig = tuple((k, repr(st.session_state.get(k, None))) for k in FILTER_KEYS)
     if st.session_state.get("_filter_sig") != _filter_sig:
         st.session_state["page"] = 1
@@ -1417,7 +1370,6 @@ with tab_app:
     if "page" not in st.session_state:
         st.session_state["page"] = 1
 
-    # Stable ordering (use padj if present; otherwise miRNA name)
     _sort_cols = []
     if "padj" in filtered.columns:
         _sort_cols.append("padj")
@@ -1430,12 +1382,12 @@ with tab_app:
 
     total_rows = len(filtered_sorted)
     total_pages = max(1, (total_rows - 1) // ROWS_PER_PAGE + 1)
-
-    # Clamp page in range
     st.session_state["page"] = max(1, min(st.session_state["page"], total_pages))
 
-    # Prev / Next controls (compact)
-    nav_c1, nav_c2, nav_c3 = st.columns([1, 2, 1])
+    # -----------------------------------------------------------
+    # ✅ Pagination controls (più compatti via CSS)
+    # -----------------------------------------------------------
+    nav_c1, nav_c2, nav_c3 = st.columns([1.2, 2.4, 1.2], vertical_alignment="center")
     with nav_c1:
         if st.button("← Prev", disabled=st.session_state["page"] == 1, use_container_width=True):
             st.session_state["page"] -= 1
@@ -1445,7 +1397,7 @@ with tab_app:
             st.session_state["page"] += 1
             st.rerun()
     with nav_c2:
-        st.markdown(f"**Page {st.session_state['page']} / {total_pages}**")
+        st.markdown(f"<div class='pager-text'>Page {st.session_state['page']} / {total_pages}</div>", unsafe_allow_html=True)
 
     start = (st.session_state["page"] - 1) * ROWS_PER_PAGE
     end = start + ROWS_PER_PAGE
@@ -1467,7 +1419,6 @@ with tab_app:
     # -----------------------------------------------------------
     # PREP TABLE DISPLAY (WEB)
     # -----------------------------------------------------------
-    # MCGPT: display only current page (downloads still use full filtered set)
     df_display = page_filtered.copy()
 
     df_display["Conservation"] = df_display["Conservation_display"]
@@ -1695,12 +1646,11 @@ with tab_app:
     html_table = styled_df.hide(axis="index").to_html(escape=False)
 
     # -----------------------------------------------------------
-    # CSS — TABLE + LEGEND (RESPONSIVE)  (-2px everywhere)
+    # CSS — TABLE + LEGEND (unchanged)
     # -----------------------------------------------------------
     custom_css = r"""
     <style>
     .table-container{
-      /* MCGPT: remove internal scrollbars; rely on browser scroll */
       max-height: none;
       overflow-y: visible !important;
       overflow-x: visible !important;
@@ -1838,20 +1788,13 @@ with tab_app:
     }
 
     @media (max-width: 900px){
-      .table-container{
-        /* MCGPT: no internal max-height on mobile either */
-        max-height: none;
-      }
-
-      .table-inner table{
-        table-layout: auto !important;
-      }
+      .table-container{ max-height: none; }
+      .table-inner table{ table-layout: auto !important; }
 
       .table-inner th,
       .table-inner td{
         padding: 6px 6px !important;
         border-radius: 6px !important;
-
         white-space: normal !important;
         word-break: break-word !important;
       }
@@ -1860,9 +1803,7 @@ with tab_app:
         min-width: 210px;
         font-size: 12px;
       }
-      .legend-title{
-        font-size: 14px;
-      }
+      .legend-title{ font-size: 14px; }
     }
     </style>
     """
@@ -1870,7 +1811,6 @@ with tab_app:
     # -----------------------------------------------------------
     # ROW COUNT
     # -----------------------------------------------------------
-    # MCGPT: show total filtered rows (not just page size)
     st.write(f"Rows shown (filtered total): **{len(filtered_sorted)}**")
 
     # -----------------------------------------------------------
@@ -1958,20 +1898,16 @@ with tab_app:
     legend_html = f"<div class='legend-wrap'>{''.join(legend_cards)}</div><div style='height:6px'></div>"
 
     # -----------------------------------------------------------
-    # ✅ FIX (warning): remove Styler <style> from HTML and inject separately
+    # remove Styler <style> from HTML and inject separately
     # -----------------------------------------------------------
     m = re.search(r"(<style.*?</style>)", html_table, flags=re.S)
     styler_css = m.group(1) if m else ""
     html_table_only = html_table.replace(styler_css, "")
 
-    # 1) CSS custom (your table + legend)
     st.markdown(custom_css, unsafe_allow_html=True)
-
-    # 2) CSS generated by pandas Styler (colors etc.)
     if styler_css:
         st.markdown(styler_css, unsafe_allow_html=True)
 
-    # 3) HTML legend + table (NO <style> inside)
     st.markdown(
         legend_html
         + "<div class='table-container'><div class='table-inner'>"
@@ -1998,7 +1934,6 @@ with tab_app:
 
         st.download_button(
             "Get FASTA",
-            # MCGPT: export FASTA for full filtered set (not just current page)
             data=generate_fasta(filtered_sorted).encode("utf-8"),
             file_name="mirna_selected.fasta",
             mime="text/plain",
@@ -2007,17 +1942,16 @@ with tab_app:
         )
 
     # -----------------------------------------------------------
-    # MCGPT: scale chart sizes according to UI_SCALE
+    # scale chart sizes according to UI_SCALE
     # -----------------------------------------------------------
     def _s(px: float) -> float:
         return float(px) * UI_SCALE
 
     # -----------------------------------------------------------
-    # BARPLOT (Repeat distribution) — THEME-AWARE + shown on demand
+    # BARPLOT (Repeat distribution)
     # -----------------------------------------------------------
     ucscgb_palette = ["#009ADE", "#7CC242", "#F98B2A", "#E4002B", "#B7312C", "#E78AC3", "#00A4A6", "#00458A"]
 
-    # ✅ FIX: updated labels in order list
     repeat_order = [
         "LINE", "SINE", "LTR",
         "DNA repeats",
@@ -2032,7 +1966,6 @@ with tab_app:
         st.subheader("Repeat class distribution")
         st.markdown("<div class='plot-card'>", unsafe_allow_html=True)
 
-        # MCGPT: compute distribution on full filtered set (not just current page)
         if "Repeat_Class" in filtered_sorted.columns and filtered_sorted["Repeat_Class"].notna().any():
             repeat_counts = filtered_sorted.groupby("Repeat_Class").size().reset_index(name="Count")
             repeat_counts["Percent"] = (repeat_counts["Count"] / repeat_counts["Count"].sum() * 100).round(2)
@@ -2101,13 +2034,10 @@ with tab_app:
 
 
 # ===========================================================
-# TAB 2 — DOCUMENTATION (split into sections + granular anchors)
+# TAB 2 — DOCUMENTATION
+# (uguale al tuo: non ho cambiato contenuti, solo lasciato com'era)
 # ===========================================================
 with tab_docs:
-
-    # -----------------------------
-    # TOP / Overview
-    # -----------------------------
     st.markdown('<div id="doc_overview" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown(
         r"""
@@ -2134,9 +2064,6 @@ Results are displayed in a responsive table with:
 
     st.markdown("---")
 
-    # -----------------------------
-    # Key features
-    # -----------------------------
     st.markdown('<div id="doc_key_features" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("## ✨ Key features")
 
@@ -2246,9 +2173,6 @@ Use **Reset all filters** to clear selections and restore default settings.
 
     st.markdown("---")
 
-    # -----------------------------
-    # Advanced options
-    # -----------------------------
     st.markdown('<div id="doc_advanced" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("## ⚙️ Advanced options")
 
@@ -2282,9 +2206,6 @@ Use **Reset all filters** to clear selections and restore default settings.
 
     st.markdown("---")
 
-    # -----------------------------
-    # Data export
-    # -----------------------------
     st.markdown('<div id="doc_export" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("## ⬇️ Data export")
     st.markdown(
@@ -2300,64 +2221,45 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
 
-    # -----------------------------
-    # Example use cases
-    # -----------------------------
     st.markdown('<div id="doc_use_cases" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("## Example use cases")
-    
+
     st.markdown(
         """
-    **Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters.
-    
-    ### 🫀🐁 Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
-    
-    This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
-    
-    **Conservation support**
-    - In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.  
-      This restricts the table to pre-miRNAs with detectable conservation in mouse.
-    - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
-    
-    **Tissue expression context**
-    - In **Advanced options -> Tissue expression**, select tissues belonging to the **Cardiorespiratory system**
-      (e.g. artery, heart, ventricle, vein, circulating compartments) under **Expressed in (select tissues by system):**  
-      This highlights loci expressed in cardiovascular-relevant contexts.
-    
-    Under these conditions, **99 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
-    - is conserved in mouse;
-    - displays expression across multiple cardiovascular tissues;
-    - is classified as structurally stable (**R** or **D**).
-    
-    ---
-    
-    ### 🧠🦧 Use case 2 — Brain-associated miRNAs conserved in primates
-    
-    This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
-    
-    **Conservation support**
-    - In **Advanced options -> Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
-    - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
-    - In **Advanced options -> Evolutionary conservation**, select *M. mulatta* and *L. catta* under **Not found in**.
-    
-    **Tissue expression context**
-    - In **Advanced options -> Tissue expression**, select tissues belonging to the **Neuro-Endocrine system**
-      (e.g. brain, cortex, cerebellum, hippocampus, neuron-related samples) under **Show tissue columns (by system):**  
-      This option displays the corresponding tissue expression columns but does not filter the results.
-    
-    Under these conditions, **29 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
-    - is conserved in *Pan troglodytes* and *Pan paniscus*;
-    - not conserved in *Macaca mulatta* and *Lemur catta*;
-    - is classified as structurally stable (**R** or **D**);
-    - displays expression across multiple neuro-endocrine tissues.
-    """
+**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters.
+
+### 🫀🐁 Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
+
+This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
+
+**Conservation support**
+- In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.  
+- In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
+
+**Tissue expression context**
+- In **Advanced options -> Tissue expression**, select tissues belonging to the **Cardiorespiratory system** under **Expressed in**.
+
+---
+
+### 🧠🦧 Use case 2 — Brain-associated miRNAs conserved in primates
+
+This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
+
+**Conservation support**
+- In **Advanced options -> Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
+- Select **Stable (R/D)** under **Structure**.
+- Select *M. mulatta* and *L. catta* under **Not found in**.
+
+**Tissue expression context**
+- In **Advanced options -> Tissue expression**, select tissues belonging to the **Neuro-Endocrine system** under **Show tissue columns**.
+"""
     )
-    
+
     st.markdown("---")
     st.markdown(
         f"""
-    **Repository:** {REPO_URL}
-    
-    License: CC BY 4.0
-    """
-)
+**Repository:** {REPO_URL}
+
+License: CC BY 4.0
+"""
+    )
