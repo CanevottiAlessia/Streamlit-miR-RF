@@ -139,7 +139,7 @@ Enable Advanced options in the sidebar to unlock additional controls and column 
 
 ---
 
-### ♻️ Reset all filters
+## ♻️ Reset all filters
 
   - Use Reset all filters to clear selections and restore default settings.
   - The button appears only when at least one filter is active
@@ -166,7 +166,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
 ---
 
-License
+## 🪪 License
 This work is licensed under a Creative Commons Attribution 4.0 International License (CC BY 4.0).
 
 You are free to:
@@ -180,7 +180,7 @@ For details, see: https://creativecommons.org/licenses/by/4.0/
 
 ---
 
-## Citation
+## 😊 Citation
 
 If you use this resource, please cite the accompanying manuscript:
 > Canevotti et al., *"An operational workflow for the systematic annotation of human miRNAs"*, 
@@ -188,7 +188,7 @@ Manuscript under peer review.
 
 ---
 
-## Notes
+## 🧷 Notes
 
 * The application is intended as a **companion resource** to the manuscript and reflects the same thresholds and classification criteria.
 * Users are encouraged to apply filtering strategies appropriate to their research goals (e.g., prioritizing structural robustness for functional studies vs. relaxing constraints for exploratory expression surveys).
