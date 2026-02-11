@@ -2104,19 +2104,20 @@ with tab_app:
 # TAB 2 — DOCUMENTATION (split into sections + granular anchors)
 # ===========================================================
 with tab_docs:
+
     # -----------------------------
     # TOP / Overview
     # -----------------------------
     st.markdown('<div id="doc_overview" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown(
         r"""
-# miR-RF Browser
+# 📘 miR-RF Browser
 
 An interactive Streamlit web application to explore, filter, and export the pre-miRNA annotations generated in **miR-RF**, as described in *"An operational workflow for the systematic annotation of human miRNAs"*.
 
 The application enables interactive inspection of human pre-miRNAs evaluated through an integrative framework combining **structural stability**, **evolutionary conservation**, and **tissue expression**, and supports flexible, user-defined filtering strategies tailored to different biological questions.
 
-### Table visualization
+### 📊 Table visualization
 Results are displayed in a responsive table with:
 
 - Sticky header and sticky first column  
@@ -2132,134 +2133,131 @@ Results are displayed in a responsive table with:
     )
 
     st.markdown("---")
-    
 
     # -----------------------------
     # Key features
     # -----------------------------
     st.markdown('<div id="doc_key_features" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## Key features")
+    st.markdown("## ✨ Key features")
 
     st.markdown('<div id="doc_filter_search_any" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Search any column")
+    st.markdown("### 🔎 Search any column")
     st.markdown(
         """
-    Search for one or more miRNAs across **all columns** of the table.
-    
-    - Matching is **case-insensitive**.
-    - The search performs a **partial match**: rows are retained if any cell **contains** the input text.
-    - **Regular expressions (regex)** are supported for advanced queries  
-      (e.g. `^hsa-` to match entries starting with *hsa-let*).
-    """
+Search for one or more miRNAs across **all columns** of the table.
+
+- Matching is **case-insensitive**.
+- The search performs a **partial match**: rows are retained if any cell **contains** the input text.
+- **Regular expressions (regex)** are supported for advanced queries  
+  (e.g. `^hsa-` to match entries starting with *hsa-let*).
+"""
     )
-    
+
     st.markdown('<div id="doc_filter_conservation_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Conservation")
+    st.markdown("### 🐖 Conservation")
     st.markdown(
         """
-    Retain or exclude human pre-miRNAs based on their **evolutionary conservation status** across the selected species.
-    
-    - **Show all** *(default)*: no conservation filter is applied.
-    - **PASSED**: conservation evidence is detected under the defined criteria.
-    - **NOT PASSED**: no conservation support is detected under the applied criteria.
-    """
+Retain or exclude human pre-miRNAs based on their **evolutionary conservation status** across the selected species.
+
+- **Show all** *(default)*: no conservation filter is applied.
+- **PASSED**: conservation evidence is detected under the defined criteria.
+- **NOT PASSED**: no conservation support is detected under the applied criteria.
+"""
     )
-    
-    
+
     st.markdown('<div id="doc_filter_expression_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Expression")
+    st.markdown("### 🫁 Expression")
     st.markdown(
         """
-    Retain or exclude human pre-miRNAs based on evidence of **tissue expression**.
-    
-    - **Show all** *(default)*: no expression filter is applied.
-    - **PASSED**: expression support is detected according to the defined threshold.
-    - **NOT PASSED**: insufficient or no expression evidence is detected.
-    """
+Retain or exclude human pre-miRNAs based on evidence of **tissue expression**.
+
+- **Show all** *(default)*: no expression filter is applied.
+- **PASSED**: expression support is detected according to the defined threshold.
+- **NOT PASSED**: insufficient or no expression evidence is detected.
+"""
     )
-    
+
     st.markdown('<div id="doc_filter_structure_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Structural stability")
+    st.markdown("### 🧬 Structural stability")
     st.markdown(
         """
-    Retain or exclude human pre-miRNAs according to their **structural classification** in miRBase / MirGeneDB.
-    
-    - **Show all** *(default)*: no structural filter is applied.
-    - **PASSED**: loci classified as **R** or **D** (structurally robust).
-    - **NOT PASSED**: loci classified as **I** or **S** (unstable or weakly supported).
-    """
+Retain or exclude human pre-miRNAs according to their **structural classification** in miRBase / MirGeneDB.
+
+- **Show all** *(default)*: no structural filter is applied.
+- **PASSED**: loci classified as **R** or **D** (structurally robust).
+- **NOT PASSED**: loci classified as **I** or **S** (unstable or weakly supported).
+"""
     )
 
     st.markdown('<div id="doc_filter_hsa" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### hsa specificity")
+    st.markdown("### 🧍🏼‍♀️ hsa specificity")
     st.markdown(
         """
-    Filter pre-miRNAs based on **human specificity** (hsa).
+Filter pre-miRNAs based on **human specificity** (hsa).
 
-    - **Show all**: do not apply any specificity filter.
-    - **Only hsa-specific**: show only loci annotated as human-specific.
-    - **Not hsa-specific**: exclude human-specific loci and keep non-hsa-specific entries.
-    """
+- **Show all**: do not apply any specificity filter.
+- **Only hsa-specific**: show only loci annotated as human-specific.
+- **Not hsa-specific**: exclude human-specific loci and keep non-hsa-specific entries.
+"""
     )
 
     st.markdown('<div id="doc_filter_family" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Family")
+    st.markdown("### 🧩 Family")
     st.markdown(
         """
-    Filter between **single miRNAs** and **miRNAs belonging to a family**, using annotations from **miRBase** and/or **MirGeneDB**.
-    
-    - **Single miRNAs**: loci not assigned to any family in the selected database.
-    - **miRNAs in family**: loci annotated as part of a family (family name may be shown when available).
-    """
+Filter between **single miRNAs** and **miRNAs belonging to a family**, using annotations from **miRBase** and/or **MirGeneDB**.
+
+- **Single miRNAs**: loci not assigned to any family in the selected database.
+- **miRNAs in family**: loci annotated as part of a family (family name may be shown when available).
+"""
     )
 
     st.markdown('<div id="doc_filter_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Repeat class")
+    st.markdown("### 🧮 Repeat class")
     st.markdown(
         """
-    Filter miRNAs based on the presence and type of **overlapping repeat elements**.
-    
-    - Select one or more repeat classes (e.g. **LINE**, **SINE**, **LTR**, **DNA repeats**, **Low complexity repeats**).
-    - If multiple classes are selected, the table will retain miRNAs matching **any** of the chosen categories.
-    """
+Filter miRNAs based on the presence and type of **overlapping repeat elements**.
+
+- Select one or more repeat classes (e.g. **LINE**, **SINE**, **LTR**, **DNA repeats**, **Low complexity repeats**).
+- If multiple classes are selected, the table will retain miRNAs matching **any** of the chosen categories.
+"""
     )
 
     st.markdown('<div id="doc_filter_plot_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Show repeat class distribution")
+    st.markdown("### 📈 Show repeat class distribution")
     st.markdown(
         """
-    Enable **“Show repeat class distribution”** to visualize the repeat composition of the **current filtered subset**.
-    
-    - The bar plot reports **counts** (and percentages) per repeat class.
-    - Useful to quickly assess whether filtering enriches for specific repeat categories.
-    """
+Enable **“Show repeat class distribution”** to visualize the repeat composition of the **current filtered subset**.
+
+- The bar plot reports **counts** (and percentages) per repeat class.
+- Useful to quickly assess whether filtering enriches for specific repeat categories.
+"""
     )
 
     st.markdown('<div id="doc_filter_reset" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Reset all filters")
+    st.markdown("### ♻️ Reset all filters")
     st.markdown(
         """
-    Use **Reset all filters** to clear selections and restore default settings.
-    
-    - The button is shown only when at least one filter is active.
-    - It also resets navigation-dependent state (e.g. pagination) to the first page.
-    """
-    )
+Use **Reset all filters** to clear selections and restore default settings.
 
+- The button is shown only when at least one filter is active.
+- It also resets navigation-dependent state (e.g. pagination) to the first page.
+"""
+    )
 
     st.markdown("---")
 
     # -----------------------------
-    # Advanced options (ONLY main subsections)
+    # Advanced options
     # -----------------------------
     st.markdown('<div id="doc_advanced" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Advanced options")
+    st.markdown("## ⚙️ Advanced options")
 
     st.markdown('<div id="doc_advanced_options" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("Enable **Advanced options** in the sidebar to unlock additional controls and column display options.")
 
     st.markdown('<div id="doc_adv_conservation" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Evolutionary conservation (advanced)")
+    st.markdown("### 🐂 Evolutionary conservation (advanced)")
     st.markdown("""
 - **Show species columns**: display per-species conservation cells.  
 - **Filter by**: **Found in** selected species / **Not found in** selected species.  
@@ -2267,14 +2265,16 @@ Results are displayed in a responsive table with:
 """)
 
     st.markdown('<div id="doc_adv_tissue" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Tissue expression (advanced)")
+    st.markdown("### 🦴 Tissue expression (advanced)")
     st.markdown("""
 - **Show tissue columns** by anatomical system (with icons).  
-- **Filter by**: **Expressed in**: selected tissues with **RPMM ≥ 1.5** (all selected must pass) / **Not expressed in**: selected tissues with **RPMM < 1.5** (all selected must pass).  
+- **Filter by**:  
+  - **Expressed in**: selected tissues with **RPMM ≥ 1.5** (all selected must pass)  
+  - **Not expressed in**: selected tissues with **RPMM < 1.5** (all selected must pass)  
 """)
 
     st.markdown('<div id="doc_adv_db_class" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("### Database / class (advanced)")
+    st.markdown("### 🗂️ Database / class (advanced)")
     st.markdown("""
 - **Show Class columns** (miRBase / MirGeneDB).  
 - **Database filter**: entries present in both DBs or only in miRBase.  
@@ -2283,12 +2283,11 @@ Results are displayed in a responsive table with:
 
     st.markdown("---")
 
-
     # -----------------------------
     # Data export
     # -----------------------------
     st.markdown('<div id="doc_export" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## Data export")
+    st.markdown("## ⬇️ Data export")
     st.markdown(
         """
 The currently filtered dataset can be exported as:
@@ -2303,60 +2302,7 @@ These exports are intended to support downstream analyses and custom pipelines.
     st.markdown("---")
 
     # -----------------------------
-    # Example use cases (FULL TEXT)
+    # Example use cases
     # -----------------------------
     st.markdown('<div id="doc_use_cases" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## Example use cases")
-    st.markdown(
-        """
-**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters. 
-
-### Use case 1 - Cardiovascular-associated miRNAs conserved in mouse
-
-This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
-
-**Conservation support**
-- In **Advanced options → Evolutionary conservation**, select *M. musculus* under **Found in**.  
-  This restricts the table to pre-miRNAs with detectable conservation in mouse.
-- In **Advanced options → Evolutionary conservation**, select *Stable (R/D)* under **Structure**.
-
-**Tissue expression context**
-- In **Advanced options → Tissue expression**, select tissues belonging to the **Cardiorespiratory system** (e.g. artery, heart, ventricle, vein, circulating compartments), under **Expressed in (select tissues by system):**  
-  This highlights loci expressed in cardiovascular-relevant contexts.
-
-Under these conditions, **99 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
-- is conserved in mouse;
-- displays expression across multiple cardiovascular tissues;
-- is classified as structurally stable (R or D).
-
----
-
-### Use case 2 - Brain-associated miRNAs conserved in primates
-
-This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
-
-**Conservation support**
-- In **Advanced options → Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
-- In **Advanced options → Evolutionary conservation**, select *Stable (R/D)* under **Structure**.
-- In **Advanced options → Evolutionary conservation**, select *M. mulatta* and *L. catta* under **Not found in**.  
-
-**Tissue expression context**
-- In **Advanced options → Tissue expression**, select tissues belonging to the **Neuro-Endocrine system** (e.g. brain, cortex, cerebellum, hippocampus, neuron-related samples), under **Show tissue columns (by system):**  
-  This option displays the corresponding tissue expression columns but does not filter the results.
-
-Under these conditions, **29 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
-- is conserved in *Pan troglodytes* and *Pan paniscus*;
-- not conserved in *Macaca mulatta* and *Lemur catta*;
-- is classified as structurally stable (R or D);
-- displays expression across multiple neuro-endocrine tissues.
-"""
-    )
-
-    st.markdown("---")
-    st.markdown(
-        f"""
-**Repository:** {REPO_URL}
-
-License: CC BY 4.0
-"""
-    )
+    st.markdown("## 🫀🐁 / 🧠🦧 Example use cases")
