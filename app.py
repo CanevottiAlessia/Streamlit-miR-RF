@@ -1704,7 +1704,7 @@ with tab_app:
       max-height: none;
       overflow-y: visible !important;
       overflow-x: visible !important;
-      border: 2px solid var(--table-border);
+      border: 2px solid transparent !important;
       margin-bottom: 14px;
 
       width: 100% !important;
@@ -2362,5 +2362,6 @@ These exports are intended to support downstream analyses and custom pipelines.
     License: CC BY 4.0
     """
 )
+
 
 
