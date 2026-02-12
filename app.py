@@ -668,7 +668,7 @@ def load_doc_icons_b64():
 DOC_ICONS_B64 = load_doc_icons_b64()
 
 
-def doc_icon_html(key: str, size_em: float = 1.05, dy_em: float = -0.14, mr_em: float = 0.35) -> str:
+def doc_icon_html(key: str, size_em: float = 1.35, dy_em: float = -0.14, mr_em: float = 0.35) -> str:
     """
     Returns an <img> tag with base64 PNG for inline use in Markdown headings.
     Used ONLY in Documentation.
@@ -2498,3 +2498,4 @@ These exports are intended to support downstream analyses and custom pipelines.
     
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
