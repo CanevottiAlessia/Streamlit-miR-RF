@@ -2397,7 +2397,7 @@ These exports are intended to support downstream analyses and custom pipelines.
         f"""
 **Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters.
 
-### {doc_icon_html('mouseCuore')}{doc_icon_html('mouseCuore', mr_em=0.0)}Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
+st.markdown(f"### {doc_icon_html('mouseCuore')}Use case 1 — Cardiovascular-associated miRNAs conserved in mouse", unsafe_allow_html=True)
 
 This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
 
@@ -2418,7 +2418,7 @@ Under these conditions, **99 miRNAs** are retained in the filtered table. For ea
 
 ---
 
-### {doc_icon_html('scimmiaBrain')}{doc_icon_html('scimmiaBrain', mr_em=0.0)}Use case 2 — Brain-associated miRNAs conserved in primates
+st.markdown(f"### {doc_icon_html('scimmiaBrain')}Use case 2 — Brain-associated miRNAs conserved in primates", unsafe_allow_html=True)
 
 This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
 
@@ -2443,9 +2443,7 @@ Under these conditions, **29 miRNAs** are retained in the filtered table. For ea
 
     st.markdown("---")
     st.markdown(
-        f"""
-**Repository:** {REPO_URL}
-
-License: CC BY 4.0
-"""
+        """
+    License: CC BY 4.0
+    """
     )
