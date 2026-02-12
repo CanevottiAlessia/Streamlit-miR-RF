@@ -2368,7 +2368,7 @@ Filter human-specific or non human-specific pre-miRNAs.
     )
 
     st.markdown('<div id="doc_filter_family" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "fam", "Family")
+    doc_heading(3, "fam", "miRNA Family Membership")
     st.markdown(
         """
 Filter pre-miRNAs based on family annotations from **miRBase** and/or **MirGeneDB**.
@@ -2429,7 +2429,9 @@ Use **Reset all filters** to clear selections and restore default settings.
     doc_heading(3, "cons2", "Evolutionary conservation (advanced)")
     st.markdown("""
 - **Show species columns**: display per-species conservation.  
-- **Filter by**: **Found in** selected species / **Not found in** selected species.  
+- **Filter by**: 
+    - **Found in** selected species 
+    - **Not found in** selected species.  
 - Optional: stratify by structural stability when **Found in** is active: **Stable (R/D)** vs **Unstable (S/I)**.  
 """)
 
@@ -2446,8 +2448,10 @@ Use **Reset all filters** to clear selections and restore default settings.
     doc_heading(3, "database", "Database / class (advanced)")
     st.markdown("""
 - **Show Class columns** (miRBase / MirGeneDB).  
-- **Database filter**: entries present in both DBs or only in miRBase.  
-- **Class filter**: filter by miRBase / MirGene structural class (R, D, I, S).  
+- **Database filter**: 
+    - entries present in both databases 
+    - entries present in miRBase.  
+- **Class filter**: filter by structural class (R, D, I, S).  
 """)
 
     st.markdown("---")
@@ -2544,4 +2548,3 @@ These exports are intended to support downstream analyses and custom pipelines.
     
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
-
