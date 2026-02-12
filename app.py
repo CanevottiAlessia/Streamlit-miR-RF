@@ -1026,7 +1026,7 @@ with st.sidebar.expander("Documentation", expanded=False):
 # ===========================================================
 with tab_app:
     # --- HEADER (title + help) ---
-    col_title, col_help = st.columns([7, 2])
+    col_title, col_help = st.columns([12, 1])
 
     with col_title:
         st.title("miR-RF human pre-miRNA Explorer")
@@ -2548,4 +2548,5 @@ These exports are intended to support downstream analyses and custom pipelines.
     
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
