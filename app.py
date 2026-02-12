@@ -1063,7 +1063,7 @@ with tab_app:
 
     search_term = sidebar_widget_inline_doc(
         st.sidebar.text_input,
-        "Search any column:",
+        "Search by name:",
         "doc_filter_search_any",
         key="search_any",
     )
@@ -2255,6 +2255,8 @@ This application enables dynamic interrogation and subsetting of human pre-miRNA
 Users can define flexible, multi-parameter filtering strategies tailored to specific biological questions, and export selected subsets for downstream analyses.
 The app is designed to support both exploratory data analysis and hypothesis-driven investigation of human pre-miRNA candidates, along with their sequence.
 
+---
+
 ## Overview
 
 Human pre-miRNAs are displayed in an interactive table featuring:
@@ -2273,9 +2275,9 @@ Human pre-miRNAs are displayed in an interactive table featuring:
 
 ### Integrated Annotation 
 
-The browser combines annotations described in
+The browser combines annotations described in:
 
-> *"An operational workflow for the systematic annotation of human miRNAs"*:
+> *"An operational workflow for the systematic annotation of human miRNAs"*
 
 - **miR-RF structural stability classes** (R/D/I/S)
 - **Multi-species conservation profiles**, including human specificity
@@ -2306,7 +2308,7 @@ Results update automatically whenever filter settings are modified.
     )
 
     st.markdown('<div id="doc_filter_search_any" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "global", "Search any column")
+    doc_heading(3, "global", "Search by name")
     st.markdown(
         """
 Search for one or more miRNAs across **all rows** of the table.
