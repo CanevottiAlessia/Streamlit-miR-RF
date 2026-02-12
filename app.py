@@ -1036,7 +1036,7 @@ with tab_app:
         )
 
     with col_help:
-        with st.popover("?", use_container_width=True):
+        with st.popover("❓", use_container_width=True):
             st.markdown("""
 ### How to use the app
 - Use the sidebar on the left to filter the dataset  
@@ -2548,6 +2548,7 @@ These exports are intended to support downstream analyses and custom pipelines.
     
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
 
 
