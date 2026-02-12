@@ -1051,6 +1051,16 @@ with tab_app:
     # -----------------------------------------------------------
     st.sidebar.header("Filters")
 
+    # ✅ FIX 1: Reset all filters ALSO above the filters in the sidebar
+    if any_filter_active():
+        st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (Reset)"), unsafe_allow_html=True)
+        if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_top"):
+            for k in FILTER_KEYS:
+                st.session_state.pop(k, None)
+            st.session_state["show_adv"] = False
+            st.session_state["page"] = 1  # MCGPT: reset pagination
+            st.rerun()
+
     search_term = sidebar_widget_inline_doc(
         st.sidebar.text_input,
         "Search any column:",
@@ -1378,7 +1388,7 @@ with tab_app:
     if any_filter_active():
         # (Reset is a main doc anchor; icon could be made inline too, but left like this)
         st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (Reset)"), unsafe_allow_html=True)
-        if st.sidebar.button("Reset all filters", use_container_width=True):
+        if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_bottom"):
             for k in FILTER_KEYS:
                 st.session_state.pop(k, None)
             st.session_state["show_adv"] = False
@@ -1593,13 +1603,40 @@ with tab_app:
     # -----------------------------------------------------------
     # PREP TABLE EXPORT (TSV CLEAN)
     # -----------------------------------------------------------
-    def prepare_tsv_export(df_disp):
+    def prepare_tsv_export(df_disp, helper_cols_present_local):
         export_df = df_disp.copy()
-        export_df = export_df.drop(columns=helper_cols_present, errors="ignore")
+        export_df = export_df.drop(columns=helper_cols_present_local, errors="ignore")
         export_df.columns = export_df.columns.str.replace(r"<.*?>", "", regex=True)
         return export_df
 
-    tsv_export_df = prepare_tsv_export(df_display)
+    # ✅ FIX 2: prepare TSV export from FULL filtered set (not just the current page)
+    df_export_full = filtered_sorted.copy()
+
+    df_export_full["Conservation"] = df_export_full["Conservation_display"]
+    df_export_full["Expression"] = df_export_full["Expression_display"]
+    df_export_full["Structure"] = df_export_full["Structure_display"]
+
+    df_export_full["miRBase family"] = df_export_full["miRBase_family_display"]
+    df_export_full["MirGeneDB family"] = df_export_full["MirGeneDB_family_display"]
+
+    df_export_full = df_export_full.rename(columns=animal_display_names)
+
+    if "sequence" in df_export_full.columns:
+        df_export_full = df_export_full.drop(columns=["sequence"])
+
+    df_export_full = df_export_full.rename(columns={
+        "Repeat_Class": "Repeat Class",
+        "Class_miRBase": "Class miRBase",
+        "Class_MirGeneDB": "Class MirGeneDB",
+    })
+
+    tissues_to_show_display_full = [c for c in tissues_to_show if c in df_export_full.columns]
+
+    helper_cols_present_full = [c for c in helper_cols if c in df_export_full.columns]
+
+    df_export_full = df_export_full[visible_cols + helper_cols_present_full]
+
+    tsv_export_df = prepare_tsv_export(df_export_full, helper_cols_present_full)
 
     # -----------------------------------------------------------
     # TABLE STYLING (UNCHANGED)
@@ -2423,7 +2460,7 @@ These exports are intended to support downstream analyses and custom pipelines.
     Under these conditions, **99 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
     - is conserved in mouse;
     - displays expression across multiple cardiovascular tissues;
-    - is classified as structurally stable (**R** or **D**.
+    - is classified as structurally stable (**R** or **D**).
     
     ---
     """,
