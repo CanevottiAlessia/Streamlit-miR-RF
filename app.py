@@ -1521,7 +1521,15 @@ with tab_app:
             st.session_state["page"] += 1
             st.rerun()
     with nav_c2:
-        st.markdown(f"**Page {st.session_state['page']} / {total_pages}**")
+        st.markdown(
+            f"""
+            <div style="display:flex; justify-content:center; align-items:center; height:100%;">
+              <div style="font-weight:800;">Page {st.session_state['page']} / {total_pages}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
 
     start = (st.session_state["page"] - 1) * ROWS_PER_PAGE
     end = start + ROWS_PER_PAGE
@@ -2498,4 +2506,5 @@ These exports are intended to support downstream analyses and custom pipelines.
     
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
