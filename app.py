@@ -1108,8 +1108,8 @@ with tab_app:
     )
 
     family_options = [
-        "Single miRNAs – miRBase",
-        "Single miRNAs – MirGeneDB",
+        "no family – miRBase",
+        "no family – MirGeneDB",
         "miRNAs in family – miRBase",
         "miRNAs in family – MirGeneDB",
     ]
@@ -1433,12 +1433,12 @@ with tab_app:
         mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
         mirgenedb_flag = filtered["MirGeneDB family"].astype(str).str.strip().str.upper()
 
-        if "Single miRNAs – miRBase" in family_selected:
+        if "no family – miRBase" in family_selected:
             fam_mask |= (mirbase_flag == "NO")
         if "miRNAs in family – miRBase" in family_selected:
             fam_mask |= (mirbase_flag == "YES")
 
-        if "Single miRNAs – MirGeneDB" in family_selected:
+        if "no family – MirGeneDB" in family_selected:
             fam_mask |= (mirgenedb_flag == "NO")
         if "miRNAs in family – MirGeneDB" in family_selected:
             fam_mask |= (mirgenedb_flag == "YES")
@@ -2344,7 +2344,7 @@ Keep or exclude human pre-miRNAs based on evidence of **expression**.
     )
 
     st.markdown('<div id="doc_filter_structure_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "structure", "Structural stability")
+    doc_heading(3, "structure", "Structural Classification Filter (miRBase / MirGeneDB)")
     st.markdown(
         """
 Keep or exclude human pre-miRNAs according to their **structural classification** in miRBase or MirGeneDB.
@@ -2361,7 +2361,7 @@ Keep or exclude human pre-miRNAs according to their **structural classification*
         """
 Filter human-specific or non human-specific pre-miRNAs.
 
-- **Show all**: no filtering is applied.
+- **Show all**: no filter applied.
 - **Only hsa-specific**: retain only pre-miRNAs annotated as human-specific.
 - **Not hsa-specific**: exclude human-specific premiRNAs and retain all other entries.
 """
@@ -2544,3 +2544,4 @@ These exports are intended to support downstream analyses and custom pipelines.
     
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
