@@ -1386,9 +1386,7 @@ with tab_app:
 
             # ✅ Show only the tissues you want as columns (individual, not whole system)
             st.session_state[showcols_key("1. Cardiorespiratory system")] = [
-                "heart", "ventricle", "artery", "vein",
-                "blood", "plasma", "serum", "platelet",
-                "lung", "bronchus", "pleurae", "larynx", "pharynx"
+                "heart", "lung",
             ]
 
             # Filter: expressed in the same tissues (as before)
@@ -1404,13 +1402,17 @@ with tab_app:
             st.session_state["cons_species_na"] = ["M. mulatta", "L. catta"]
             st.session_state["cons_stability_choice"] = "Stable (R/D)"
 
+            # ✅ Show extra columns -> Show species columns:
+            st.session_state["show_species_cols"] = [
+                "P. troglodytes",
+                "P. paniscus",
+                "M. mulatta",
+                "L. catta",
+            ]
+
             # ✅ Show (columns) a reasonable neuro subset (edit as you like)
             st.session_state[showcols_key("3. Neuro-Endocrine system")] = [
-                "brain", "cortex", "cerebellum", "hippocampus",
-                "spinal_cord", "grey_matter", "meninges",
-                "choroid_plexus", "csf", "retina",
-                "neuron", "astrocyte",
-                "adrenal_gland", "thyroid", "pituitary_gland",
+                "brain", "cerebellum",
             ]
 
         st.session_state["page"] = 1  # MCGPT: reset pagination when applying presets
@@ -2595,3 +2597,4 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
