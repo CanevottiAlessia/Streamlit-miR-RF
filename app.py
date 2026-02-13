@@ -9,7 +9,6 @@ import base64
 from io import BytesIO
 
 
-
 # -----------------------------------------------------------
 # MCGPT: Global UI scaling (approx. -20% vs original)
 # Adjust this value if you want the whole UI smaller/larger.
@@ -118,6 +117,7 @@ def doc_jump_icon(section_id: str, title: str = "Docs") -> str:
        ℹ️
     </a>
     """
+
 
 # -----------------------------------------------------------
 # ✅ NEW: INLINE label + doc icon (same row)
@@ -857,6 +857,16 @@ def system_display_name(system_key: str) -> str:
 
 
 # -----------------------------------------------------------
+# ✅ NEW: keys for "Show extra tissue columns" (per-system)
+# -----------------------------------------------------------
+def showcols_key(system_name: str) -> str:
+    return f"show_cols_{system_name}"
+
+
+SHOWCOL_KEYS = [showcols_key(sys_name) for sys_name in SYSTEM_TISSUES.keys()]
+
+
+# -----------------------------------------------------------
 # RESET FILTERS
 # -----------------------------------------------------------
 FILTER_KEYS = [
@@ -867,7 +877,9 @@ FILTER_KEYS = [
     "show_adv",
     "show_species_cols",
     "cons_species_found", "cons_species_na", "cons_stability_choice",
-    "show_tissue_systems",
+    # removed: "show_tissue_systems",
+    # new: per-system tissue column selections
+    *SHOWCOL_KEYS,
     "show_class_cols",
     "db_filter",
     "class_filter",
@@ -910,8 +922,10 @@ def any_filter_active() -> bool:
     if st.session_state.get("cons_stability_choice", "All") != "All":
         return True
 
-    if st.session_state.get("show_tissue_systems", []):
-        return True
+    # ✅ NEW: any selected tissue columns to show (per-system)
+    for k in SHOWCOL_KEYS:
+        if st.session_state.get(k, []):
+            return True
 
     for sys_name in SYSTEM_TISSUES.keys():
         if st.session_state.get(f"tree_pos_{sys_name}", []):
@@ -1218,19 +1232,36 @@ with tab_app:
 
             st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
-            system_disp_list = [system_display_name(k) for k in SYSTEM_TISSUES.keys()]
-            chosen_systems_disp = st.multiselect(
-                "Show tissue columns (by system):",
-                system_disp_list,
-                default=[],
-                key="show_tissue_systems",
-            )
+            # ✅ CHANGED: user selects individual tissues (grouped by system), not full systems
+            with st.expander("Show tissue columns (select tissues by system):", expanded=False):
+                tissues_to_show_set = set()
 
-            chosen_sys_keys = [k for k in SYSTEM_TISSUES.keys() if system_display_name(k) in set(chosen_systems_disp)]
-            tissues_to_show_set = set()
-            for k in chosen_sys_keys:
-                tissues_to_show_set.update([t for t in SYSTEM_TISSUES[k] if t in tissue_sidebar_names])
-            tissues_to_show = sorted(tissues_to_show_set)
+                for system_name, sys_tissues in SYSTEM_TISSUES.items():
+                    available = [t for t in sys_tissues if t in tissue_sidebar_names]
+                    if not available:
+                        continue
+
+                    icon = SYSTEM_ICONS.get(system_name)
+                    col_icon, col_exp = st.columns([1.6, 10], gap="small")
+
+                    with col_icon:
+                        if icon is not None:
+                            st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                            st.image(icon, width=110)
+                            st.markdown("</div>", unsafe_allow_html=True)
+
+                    with col_exp:
+                        display_system = system_display_name(system_name)
+                        with st.expander(display_system, expanded=False):
+                            picked_show = st.multiselect(
+                                "Select tissues",
+                                available,
+                                default=[],
+                                key=showcols_key(system_name),
+                            )
+                            tissues_to_show_set.update(picked_show)
+
+                tissues_to_show = sorted(tissues_to_show_set)
 
             st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
             st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
@@ -1342,12 +1373,25 @@ with tab_app:
         st.session_state["class_filter"] = []
         st.session_state["show_class_cols"] = False
 
+        # clear show-cols selections explicitly (optional but clearer)
+        for sys_name in SYSTEM_TISSUES.keys():
+            st.session_state[showcols_key(sys_name)] = []
+            st.session_state[f"tree_pos_{sys_name}"] = []
+            st.session_state[f"tree_neg_{sys_name}"] = []
+
         if preset_name == "cardio_mouse":
             st.session_state["cons_species_found"] = ["M. musculus"]
             st.session_state["cons_species_na"] = []
             st.session_state["cons_stability_choice"] = "Stable (R/D)"
 
-            st.session_state["show_tissue_systems"] = ["Cardiorespiratory"]
+            # ✅ Show only the tissues you want as columns (individual, not whole system)
+            st.session_state[showcols_key("1. Cardiorespiratory system")] = [
+                "heart", "ventricle", "artery", "vein",
+                "blood", "plasma", "serum", "platelet",
+                "lung", "bronchus", "pleurae", "larynx", "pharynx"
+            ]
+
+            # Filter: expressed in the same tissues (as before)
             st.session_state["tree_pos_1. Cardiorespiratory system"] = [
                 "heart", "ventricle", "artery", "vein",
                 "blood", "plasma", "serum", "platelet",
@@ -1360,7 +1404,14 @@ with tab_app:
             st.session_state["cons_species_na"] = ["M. mulatta", "L. catta"]
             st.session_state["cons_stability_choice"] = "Stable (R/D)"
 
-            st.session_state["show_tissue_systems"] = ["Neuro-Endocrine"]
+            # ✅ Show (columns) a reasonable neuro subset (edit as you like)
+            st.session_state[showcols_key("3. Neuro-Endocrine system")] = [
+                "brain", "cortex", "cerebellum", "hippocampus",
+                "spinal_cord", "grey_matter", "meninges",
+                "choroid_plexus", "csf", "retina",
+                "neuron", "astrocyte",
+                "adrenal_gland", "thyroid", "pituitary_gland",
+            ]
 
         st.session_state["page"] = 1  # MCGPT: reset pagination when applying presets
         st.rerun()
@@ -1478,6 +1529,18 @@ with tab_app:
         filtered = filtered[mask]
 
     # -----------------------------------------------------------
+    # ✅ NEW: compute tissues_to_show from per-system show-cols keys
+    # (works even if Advanced is closed, because session_state persists)
+    # -----------------------------------------------------------
+    tissues_to_show_set = set()
+    for sys_name, sys_tissues in SYSTEM_TISSUES.items():
+        picked = st.session_state.get(showcols_key(sys_name), []) or []
+        for t in picked:
+            if t in tissue_sidebar_names:
+                tissues_to_show_set.add(t)
+    tissues_to_show = sorted(tissues_to_show_set)
+
+    # -----------------------------------------------------------
     # MCGPT: Stable order + manual pagination (50 rows/page)
     # - avoids huge internal table scroll
     # - keeps page deterministic when filters change
@@ -1529,7 +1592,6 @@ with tab_app:
             """,
             unsafe_allow_html=True
         )
-
 
     start = (st.session_state["page"] - 1) * ROWS_PER_PAGE
     end = start + ROWS_PER_PAGE
@@ -1638,12 +1700,8 @@ with tab_app:
         "Class_MirGeneDB": "Class MirGeneDB",
     })
 
-    tissues_to_show_display_full = [c for c in tissues_to_show if c in df_export_full.columns]
-
     helper_cols_present_full = [c for c in helper_cols if c in df_export_full.columns]
-
     df_export_full = df_export_full[visible_cols + helper_cols_present_full]
-
     tsv_export_df = prepare_tsv_export(df_export_full, helper_cols_present_full)
 
     # -----------------------------------------------------------
@@ -2230,7 +2288,7 @@ with tab_app:
 
 # ===========================================================
 # TAB 2 — DOCUMENTATION (split into sections + granular anchors)
-# ✅ CHANGED: replaced emojis with your new PNG icons
+# ✅ CHANGED: updated tissue “Show columns” description (individual tissues)
 # ===========================================================
 with tab_docs:
 
@@ -2438,7 +2496,7 @@ Use **Reset all filters** to clear selections and restore default settings.
     st.markdown('<div id="doc_adv_tissue" class="doc-anchor"></div>', unsafe_allow_html=True)
     doc_heading(3, "tissue2", "Tissue expression (advanced)")
     st.markdown("""
-- **Show tissue columns** by anatomical system (with icons).  
+- **Show tissue columns** by selecting **individual tissues** (grouped by anatomical system, with icons).  
 - **Filter by**:  
   - **Expressed in**: selected tissues with **RPMM ≥ 1.5** (all selected must pass)  
   - **Not expressed in**: selected tissues with **RPMM < 1.5** (all selected must pass)  
@@ -2479,76 +2537,61 @@ These exports are intended to support downstream analyses and custom pipelines.
     # -----------------------------
     st.markdown('<div id="doc_use_cases" class="doc-anchor"></div>', unsafe_allow_html=True)
     st.markdown("## Example use cases")
-    
+
     st.markdown(
         """
     **Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters.
     """,
         unsafe_allow_html=True
     )
-    
+
     # ---- Use case 1 (TITLE WITH ICON) ----
     st.markdown(
         f"### {doc_icon_html('mouseCuore')}Use case 1 — Cardiovascular-associated miRNAs conserved in mouse",
         unsafe_allow_html=True
     )
-    
+
     st.markdown(
         """
     This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
-    
+
     **Conservation support**
     - In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.  
       This restricts the table to pre-miRNAs with detectable conservation in mouse.
     - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
-    
+
     **Tissue expression context**
-    - In **Advanced options -> Tissue expression**, select tissues belonging to the **Cardiorespiratory system**
-      (e.g. artery, heart, ventricle, vein, circulating compartments) under **Expressed in (select tissues by system):**  
-      This highlights loci expressed in cardiovascular-relevant contexts.
-    
-    Under these conditions, **99 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
-    - is conserved in mouse;
-    - displays expression across multiple cardiovascular tissues;
-    - is classified as structurally stable (**R** or **D**).
-    
+    - In **Advanced options -> Tissue expression**, select specific tissues under  
+      **Show tissue columns (select tissues by system)** (e.g. heart, artery, blood...) to display their columns.
+    - In **Advanced options -> Tissue expression**, select tissues under **Expressed in (select tissues by system)** to filter by RPMM≥1.5.
+
     ---
     """,
         unsafe_allow_html=True
     )
-    
+
     # ---- Use case 2 (TITLE WITH ICON) ----
     st.markdown(
         f"### {doc_icon_html('scimmiaBrain')}Use case 2 — Brain-associated miRNAs conserved in primates",
         unsafe_allow_html=True
     )
-    
+
     st.markdown(
         """
     This use case focuses on human pre-miRNAs conserved in *Pan troglodytes* and *Pan paniscus* and showing evidence of expression in neural tissues.
-    
+
     **Conservation support**
     - In **Advanced options -> Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
     - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
     - In **Advanced options -> Evolutionary conservation**, select *M. mulatta* and *L. catta* under **Not found in**.
-    
+
     **Tissue expression context**
-    - In **Advanced options -> Tissue expression**, select tissues belonging to the **Neuro-Endocrine system**
-      (e.g. brain, cortex, cerebellum, hippocampus, neuron-related samples) under **Show tissue columns (by system):**  
+    - In **Advanced options -> Tissue expression**, select individual tissues under  
+      **Show tissue columns (select tissues by system)** (e.g. brain, cortex, cerebellum, hippocampus, neuron...).  
       This option displays the corresponding tissue expression columns but does not filter the results.
-    
-    Under these conditions, **29 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
-    - is conserved in *Pan troglodytes* and *Pan paniscus*;
-    - not conserved in *Macaca mulatta* and *Lemur catta*;
-    - is classified as structurally stable (**R** or **D**);
-    - displays expression across multiple neuro-endocrine tissues.
     """,
         unsafe_allow_html=True
     )
-    
+
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
-
-
-
-
