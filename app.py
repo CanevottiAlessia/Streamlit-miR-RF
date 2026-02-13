@@ -1434,7 +1434,7 @@ with tab_app:
             if st.button("Cardio + mouse", use_container_width=True):
                 apply_preset("cardio_mouse")
         with b2:
-            if st.button("Brain + great apes", use_container_width=True):
+            if st.button("Neuro + great apes", use_container_width=True):
                 apply_preset("brain_primates")
 
     st.sidebar.markdown("---")
@@ -2597,4 +2597,5 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
