@@ -1432,7 +1432,7 @@ with tab_app:
             if st.button("Cardio + mouse", use_container_width=True):
                 apply_preset("cardio_mouse")
         with b2:
-            if st.button("Brain + primates", use_container_width=True):
+            if st.button("Brain + great apes", use_container_width=True):
                 apply_preset("brain_primates")
 
     st.sidebar.markdown("---")
@@ -2557,12 +2557,12 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     **Conservation support**
     - In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.  
-      This restricts the table to pre-miRNAs with detectable conservation in mouse.
+    - This restricts the table to pre-miRNAs with detectable conservation in mouse.
     - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
 
     **Tissue expression context**
     - In **Advanced options -> Tissue expression**, select specific tissues under  
-      **Show tissue columns (select tissues by system)** (e.g. heart, artery, blood...) to display their columns.
+    - **Show tissue columns (select tissues by system)** (e.g. heart, artery, blood...) to display their columns.
     - In **Advanced options -> Tissue expression**, select tissues under **Expressed in (select tissues by system)** to filter by RPMM≥1.5.
 
     ---
