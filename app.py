@@ -2555,18 +2555,21 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown(
         """
-    This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues or fluids.
+    This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues and fluids.
 
     **Conservation support**
     - In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.  
-    - This restricts the table to pre-miRNAs with detectable conservation in mouse.
+        This restricts the table to pre-miRNAs with detectable conservation in mouse.
     - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
 
     **Tissue expression context**
-    - In **Advanced options -> Tissue expression**, select specific tissues under  
-    - **Show tissue columns (select tissues by system)** (e.g. heart, artery, blood...) to display their columns.
-    - In **Advanced options -> Tissue expression**, select tissues under **Expressed in (select tissues by system)** to filter by RPMM≥1.5.
+    - In **Advanced options -> Tissue expression**, select tissues belonging to the **Cardiorespiratory** system (heart and lung), under "Show extra columns". 
+    - In **Advanced options -> Tissue expression**, select tissues under **Expressed in (select tissues by system):** all cardiovascular-related tissues and fluids. 
 
+    Under these conditions, 99 miRNAs are retained. For each entry, the app enables inspection of whether the locus:
+        - is conserved in mouse;
+        - displays expression across multiple cardiovascular tissues;
+        - is classified as structurally stable (R or D).
     ---
     """,
         unsafe_allow_html=True
@@ -2597,5 +2600,6 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
 
