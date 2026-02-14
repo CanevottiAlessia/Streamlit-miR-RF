@@ -2568,9 +2568,10 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     Under these conditions, **99 miRNAs** are retained. For each entry, the app enables inspection of whether the locus:
     
-        - is conserved in mouse;
-        - displays expression across multiple cardiovascular tissues;
-        - is classified as structurally stable (R or D).
+    - is conserved in mouse;
+    - displays expression across multiple cardiovascular tissues;
+    - is classified as structurally stable (R or D).
+    
     """,
         unsafe_allow_html=True
     )
@@ -2600,4 +2601,5 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
