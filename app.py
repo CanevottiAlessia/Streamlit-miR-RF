@@ -2595,7 +2595,7 @@ These exports are intended to support downstream analyses and custom pipelines.
     - In **Advanced options → Tissue expression**, select tissues belonging to the **Neuro-Endocrine system** (brain and cerebellum), under "Show extra columns".  
       This option displays the corresponding tissue expression columns but does not filter the results.
 
-    Under these conditions, **29 miRNAs** are retained in the filtered table. For each entry, the app enables inspection of whether the locus:
+    Under these conditions, **29 miRNAs** are retained. For each entry, the app enables inspection of whether the locus:
     - is conserved in *Pan troglodytes* and *Pan paniscus*;
     - not conserved in *Macaca mulatta* and *Lemur catta*;
     - is classified as structurally stable (R or D);
@@ -2607,6 +2607,3 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
-
-
-
