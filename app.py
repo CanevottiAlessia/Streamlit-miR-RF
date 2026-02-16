@@ -2488,7 +2488,7 @@ Use **Reset all filters** to clear selections and restore default settings.
     - **Show columns** only determines which columns are visible in the table. It does *not* filter the dataset.  
     - **Filter** options instead restrict the rows of the dataset based on the selected criteria.
     
-    Users should apply row filters appropriately to ensure that the displayed columns correspond to the biological context of interest.
+    Users should apply row filters appropriately to ensure that the displayed columns correspond to the context of interest.
     """,
         unsafe_allow_html=True
     )
@@ -2615,4 +2615,5 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
