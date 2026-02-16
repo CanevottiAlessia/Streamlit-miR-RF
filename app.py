@@ -2484,7 +2484,7 @@ Use **Reset all filters** to clear selections and restore default settings.
     """
     Enable **Advanced options** in the sidebar to unlock additional controls and column display options.
     
-    **Important distinction:**
+    **Important:**
     - **Show columns** only determines which columns are visible in the table. It does *not* filter the dataset.  
     - **Filter** options instead restrict the rows of the dataset based on the selected criteria.
     
@@ -2615,5 +2615,6 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
 
