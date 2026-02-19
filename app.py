@@ -92,7 +92,7 @@ def _inject_doc_nav_js():
     )
 
 
-def doc_jump_link(section_id: str, label: str = "Docs - conservation") -> str:
+def doc_jump_link(section_id: str, label: str = "Docs") -> str:
     return f"""
     <a href="#" data-doc-id="{section_id}"
        style="text-decoration:none; font-weight:700;">
@@ -101,7 +101,7 @@ def doc_jump_link(section_id: str, label: str = "Docs - conservation") -> str:
     """
 
 
-def doc_jump_icon(section_id: str, title: str = "Docs - expression") -> str:
+def doc_jump_icon(section_id: str, title: str = "Docs") -> str:
     return f"""
     <a href="#" data-doc-id="{section_id}"
        title="{title}"
@@ -122,7 +122,7 @@ def doc_jump_icon(section_id: str, title: str = "Docs - expression") -> str:
 # -----------------------------------------------------------
 # ✅ NEW: INLINE label + doc icon (same row)
 # -----------------------------------------------------------
-def sidebar_label_with_doc(label: str, doc_id: str, icon_title="Docs"):
+def sidebar_label_with_doc(label: str, doc_id: str, icon_title="Docs - conservation"):
     st.sidebar.markdown(
         f"""
         <div style="
@@ -2615,6 +2615,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
 
 
