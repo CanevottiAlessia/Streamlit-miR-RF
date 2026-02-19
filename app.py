@@ -1067,7 +1067,7 @@ with tab_app:
 
     # ✅ FIX 1: Reset all filters ALSO above the filters in the sidebar
     if any_filter_active():
-        st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (Reset)"), unsafe_allow_html=True)
+        st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (reset)"), unsafe_allow_html=True)
         if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_top"):
             for k in FILTER_KEYS:
                 st.session_state.pop(k, None)
@@ -1427,7 +1427,7 @@ with tab_app:
         )
 
         # keep doc link (main section)
-        st.sidebar.markdown(doc_jump_link("doc_use_cases", "Docs"), unsafe_allow_html=True)
+        st.sidebar.markdown(doc_jump_link("doc_use_cases", "Docs (use cases)"), unsafe_allow_html=True)
 
         b1, b2 = st.columns(2)
         with b1:
@@ -2615,6 +2615,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
 
 
