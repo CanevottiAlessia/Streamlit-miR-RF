@@ -1226,7 +1226,7 @@ with tab_app:
 
         with st.sidebar.expander("Tissue expression", expanded=True):
             st.sidebar.markdown(
-                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_tissue', 'Docs (expression')}</div>",
+                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_tissue', 'Docs (expression)')}</div>",
                 unsafe_allow_html=True
             )
 
@@ -1326,7 +1326,7 @@ with tab_app:
 
         with st.sidebar.expander("Database / Class", expanded=True):
             st.sidebar.markdown(
-                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_db_class', 'Docs')}</div>",
+                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_db_class', 'Docs (database/class)')}</div>",
                 unsafe_allow_html=True
             )
 
@@ -2615,6 +2615,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
 
 
