@@ -122,7 +122,7 @@ def doc_jump_icon(section_id: str, title: str = "Docs") -> str:
 # -----------------------------------------------------------
 # ✅ NEW: INLINE label + doc icon (same row)
 # -----------------------------------------------------------
-def sidebar_label_with_doc(label: str, doc_id: str, icon_title="Docs - conservation"):
+def sidebar_label_with_doc(label: str, doc_id: str, icon_title="Docs"):
     st.sidebar.markdown(
         f"""
         <div style="
@@ -1181,7 +1181,7 @@ with tab_app:
         with st.sidebar.expander("Evolutionary conservation", expanded=True):
             # link only to the main subsection (as requested)
             st.sidebar.markdown(
-                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_conservation', 'Docs')}</div>",
+                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_conservation', 'Docs (conservation)')}</div>",
                 unsafe_allow_html=True
             )
 
@@ -1226,7 +1226,7 @@ with tab_app:
 
         with st.sidebar.expander("Tissue expression", expanded=True):
             st.sidebar.markdown(
-                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_tissue', 'Docs')}</div>",
+                f"<div style='margin-top:-2px; margin-bottom:6px;'>{doc_jump_link('doc_adv_tissue', 'Docs (expression')}</div>",
                 unsafe_allow_html=True
             )
 
@@ -2615,6 +2615,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
 
 
