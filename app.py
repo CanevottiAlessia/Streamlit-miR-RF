@@ -1428,12 +1428,13 @@ with tab_app:
 
         st.sidebar.markdown(
             f"""
-            <div style="font-size:14px; font-weight:600;">
+            <div style="font-size:20px; font-weight:bold; margin-top:6px;">
                 {doc_jump_link("doc_use_cases", "Docs (use cases)")}
             </div>
             """,
             unsafe_allow_html=True
         )
+
 
         b1, b2 = st.columns(2)
         with b1:
@@ -2621,6 +2622,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
 
 
