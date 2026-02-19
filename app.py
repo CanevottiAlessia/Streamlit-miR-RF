@@ -92,7 +92,7 @@ def _inject_doc_nav_js():
     )
 
 
-def doc_jump_link(section_id: str, label: str = "Docs") -> str:
+def doc_jump_link(section_id: str, label: str = "Docs - conservation") -> str:
     return f"""
     <a href="#" data-doc-id="{section_id}"
        style="text-decoration:none; font-weight:700;">
@@ -101,7 +101,7 @@ def doc_jump_link(section_id: str, label: str = "Docs") -> str:
     """
 
 
-def doc_jump_icon(section_id: str, title: str = "Docs") -> str:
+def doc_jump_icon(section_id: str, title: str = "Docs - expression") -> str:
     return f"""
     <a href="#" data-doc-id="{section_id}"
        title="{title}"
@@ -2615,6 +2615,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
+
 
 
 
