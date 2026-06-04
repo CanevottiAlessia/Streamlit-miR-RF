@@ -23,6 +23,244 @@ st.set_option("client.toolbarMode", "minimal")
 
 
 # -----------------------------------------------------------
+# README / DOCUMENTATION LOADER
+# -----------------------------------------------------------
+README_PATH = Path(__file__).parent / "README.md"
+
+# Single source of truth for documentation links and README anchors.
+# If a README section title changes, update the corresponding "heading" value here.
+DOC_SECTIONS = {
+    "overview": {
+        "title": "Overview",
+        "anchor": "doc_overview",
+        "heading": "# miR-RF human pre-miRNA Explorer",
+    },
+    "filtering_criteria": {
+        "title": "Filtering criteria page",
+        "anchor": "doc_filtering_criteria",
+        "heading": "## 💻\u200b Filtering criteria page",
+    },
+    "filtering_presets": {
+        "title": "Filtering setup presets",
+        "anchor": "doc_filtering_presets",
+        "heading": "### Filtering setup presets",
+    },
+    "custom_filtering": {
+        "title": "Custom filtering criteria",
+        "anchor": "doc_custom_filtering",
+        "heading": "### Custom filtering criteria",
+    },
+    "filtering_counts": {
+        "title": "Filtering criteria counts",
+        "anchor": "doc_filtering_counts",
+        "heading": "### Counts shown on the Filtering criteria page",
+    },
+    "benchmark": {
+        "title": "Experimental-evidence benchmark",
+        "anchor": "doc_benchmark",
+        "heading": "### Experimental-evidence benchmark",
+    },
+    "precision_recall": {
+        "title": "Precision/recall plots",
+        "anchor": "doc_precision_recall",
+        "heading": "### Precision/recall plots",
+    },
+    "overview_table": {
+        "title": "Table overview",
+        "anchor": "doc_table_overview",
+        "heading": "## 📊 Overview",
+    },
+    "integrated_annotation": {
+        "title": "Integrated annotation",
+        "anchor": "doc_integrated_annotation",
+        "heading": "## 🔍 Integrated annotation",
+    },
+    "interface": {
+        "title": "About the interface",
+        "anchor": "doc_interface",
+        "heading": "## ℹ️ About the interface",
+    },
+    "key_features": {
+        "title": "Main filters",
+        "anchor": "doc_key_features",
+        "heading": "## ✨ Key features",
+    },
+    "search_by_name": {
+        "title": "Search by name",
+        "anchor": "doc_filter_search_any",
+        "heading": "### 🔎 Search by name",
+    },
+    "database_filter": {
+        "title": "Database filter",
+        "anchor": "doc_filter_database",
+        "heading": "## 🗂️ Database filter",
+    },
+    "human_specificity": {
+        "title": "Human specificity",
+        "anchor": "doc_filter_hsa",
+        "heading": "## 🧍 Human specificity",
+    },
+    "experimental_evidence": {
+        "title": "Experimental evidence",
+        "anchor": "doc_adv_confidence_evidence",
+        "heading": "## 🧪 Experimental evidence",
+    },
+    "repeat_class": {
+        "title": "Repeat class",
+        "anchor": "doc_filter_repeat",
+        "heading": "## 🧮 Repeat class",
+    },
+    "repeat_distribution": {
+        "title": "Repeat class distribution",
+        "anchor": "doc_repeat_distribution",
+        "heading": "## 📈 Repeat class distribution",
+    },
+    "advanced_options": {
+        "title": "Advanced options",
+        "anchor": "doc_advanced",
+        "heading": "## ⚙️ Advanced options",
+    },
+    "conservation": {
+        "title": "Conservation details",
+        "anchor": "doc_adv_conservation",
+        "heading": "### 🐂 Evolutionary conservation",
+    },
+    "tissue_expression": {
+        "title": "Expression details",
+        "anchor": "doc_adv_tissue",
+        "heading": "### 🦴 Tissue expression",
+    },
+    "structural_class": {
+        "title": "Structural class",
+        "anchor": "doc_adv_db_class",
+        "heading": "### 🧬 Structural class",
+    },
+    "reset": {
+        "title": "Reset all filters",
+        "anchor": "doc_reset",
+        "heading": "## ♻️ Reset all filters",
+    },
+    "data_export": {
+        "title": "Data export",
+        "anchor": "doc_export",
+        "heading": "## ⬇️ Data export",
+    },
+    "repository_contents": {
+        "title": "Repository contents",
+        "anchor": "doc_repository_contents",
+        "heading": "## Repository contents",
+    },
+    "license": {
+        "title": "License",
+        "anchor": "doc_license",
+        "heading": "## 🪪 License",
+    },
+    "citation": {
+        "title": "Citation",
+        "anchor": "doc_citation",
+        "heading": "## 😊 Citation",
+    },
+    "notes": {
+        "title": "Notes",
+        "anchor": "doc_notes",
+        "heading": "## 🧷 Notes",
+    },
+    "example_use_cases": {
+        "title": "Example use cases",
+        "anchor": "doc_use_cases",
+        "heading": "## Example use cases",
+    },
+}
+
+# Sections shown in the sidebar Documentation menu.
+DOC_SIDEBAR_ORDER = [
+    "overview",
+    "filtering_criteria",
+    "filtering_presets",
+    "custom_filtering",
+    "filtering_counts",
+    "benchmark",
+    "precision_recall",
+    "key_features",
+    "search_by_name",
+    "database_filter",
+    "human_specificity",
+    "experimental_evidence",
+    "repeat_class",
+    "advanced_options",
+    "conservation",
+    "tissue_expression",
+    "structural_class",
+    "reset",
+    "data_export",
+    "example_use_cases",
+]
+
+
+def normalize_markdown_heading(text: str) -> str:
+    """
+    Normalize Markdown headings to make anchor matching robust to invisible
+    Unicode characters such as zero-width spaces.
+    """
+    return (
+        text.strip()
+        .replace("\u200b", "")
+        .replace("\ufeff", "")
+        .replace("\u00a0", " ")
+    )
+
+
+def add_readme_doc_anchors(markdown_text: str) -> str:
+    """
+    Add stable HTML anchors used by the app sidebar/help links to README headings.
+
+    The README remains normal GitHub Markdown, while Streamlit receives
+    a version with inline anchors used by the app documentation links.
+    """
+    heading_to_anchor = {
+        normalize_markdown_heading(section["heading"]): section["anchor"]
+        for section in DOC_SECTIONS.values()
+    }
+
+    output_lines = []
+
+    for line in markdown_text.splitlines():
+        stripped = line.strip()
+        normalized = normalize_markdown_heading(stripped)
+        section_id = heading_to_anchor.get(normalized)
+
+        if section_id and stripped.startswith("#"):
+            hashes, title = stripped.split(" ", 1)
+            output_lines.append(
+                f'{hashes} <span id="{section_id}" class="doc-anchor"></span>{title}'
+            )
+        else:
+            output_lines.append(line)
+
+    return "\n".join(output_lines)
+
+
+@st.cache_data
+def load_local_readme() -> str:
+    """
+    Load README.md from the same directory as app.py.
+
+    This keeps the app documentation synchronized with the GitHub README
+    without duplicating long Markdown text inside the Streamlit code.
+    """
+    try:
+        markdown_text = README_PATH.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        markdown_text = (
+            "# Documentation not found\n\n"
+            "The file `README.md` was not found in the same directory as `app.py`. "
+            "Please add `README.md` to the GitHub repository root."
+        )
+
+    return add_readme_doc_anchors(markdown_text)
+
+
+# -----------------------------------------------------------
 # ✅ FIX: in-page navigation (NO new tab)
 # - Clicking a doc link:
 #   1) switches to Documentation tab (by TEXT, not index)
@@ -2019,17 +2257,13 @@ _inject_doc_nav_js()
 # (kept as main sections only)
 # -----------------------------------------------------------
 with st.sidebar.expander("Documentation", expanded=False):
-    st.markdown("- " + doc_jump_link("doc_overview", "Overview"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_key_features", "Main filters"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_filter_database", "Database filter"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_filtering_criteria", "Filtering criteria page"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_advanced", "Advanced options"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_adv_conservation", "Conservation details"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_adv_tissue", "Expression details"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_adv_db_class", "Structural class"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_adv_confidence_evidence", "Experimental evidence"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_export", "Data export"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_use_cases", "Example use cases"), unsafe_allow_html=True)
+    for section_key in DOC_SIDEBAR_ORDER:
+        section = DOC_SECTIONS[section_key]
+        st.markdown(
+            "- " + doc_jump_link(section["anchor"], section["title"]),
+            unsafe_allow_html=True,
+        )
+
 
 
 # ===========================================================
@@ -2073,7 +2307,7 @@ with tab_app:
 
     # ✅ FIX 1: Reset all filters ALSO above the filters in the sidebar
     if any_filter_active():
-        st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (reset)"), unsafe_allow_html=True)
+        st.sidebar.markdown(doc_jump_link("doc_reset", "Docs (reset)"), unsafe_allow_html=True)
         if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_top"):
             reset_all_filters()
             st.rerun()
@@ -2153,7 +2387,7 @@ with tab_app:
     with exp_doc_col:
         st.markdown(doc_jump_icon("doc_adv_confidence_evidence"), unsafe_allow_html=True)
 
-    sidebar_label_with_doc("Filter Experimental evidence:", "doc_adv_confidence_evidence")
+    st.sidebar.markdown("**Filter Experimental evidence:**")
     experimental_evidence_filter = st.sidebar.selectbox(
         "Filter Experimental evidence:",
         [
@@ -2193,7 +2427,7 @@ with tab_app:
     show_repeat_plot = sidebar_widget_inline_doc(
         st.sidebar.checkbox,
         "Show repeat class distribution",
-        "doc_filter_plot_repeat",
+        "doc_repeat_distribution",
         value=False,
         key="show_repeat_plot",
     )
@@ -2221,7 +2455,7 @@ with tab_app:
     show_adv = sidebar_widget_inline_doc(
         st.sidebar.toggle,
         "Advanced options",
-        "doc_advanced_options",
+        "doc_advanced",
         value=False,
         key="show_adv",
     )
@@ -4213,397 +4447,19 @@ with tab_sensitivity:
 # ✅ CHANGED: updated tissue “Show columns” description (individual tissues)
 # ===========================================================
 with tab_docs:
-
-    # -----------------------------
-    # TOP / Overview
-    # -----------------------------
-    st.markdown('<div id="doc_overview" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown(
-        r"""
-# miR-RF human pre-miRNA Explorer
-
-An interactive **Streamlit** web application for exploring, filtering, and exporting human pre-miRNA annotations generated by the **miR-RF** workflow, as described in:
-
-> *"miR-RF: a database-independent machine-learning workflow and integrative evidence framework for systematic annotation of human microRNAs"*
-
-This application enables dynamic interrogation and subsetting of human pre-miRNA based on:
-
-- **Predicted structural stability**
-- **Evolutionary conservation**
-- **Tissue expression patterns**
-- **Experimental-evidence validation level** from Kim *et al.* 2021, when enabled
-
-Users can define flexible, multi-parameter filtering strategies tailored to specific biological questions, and export selected subsets for downstream analyses.
-The app is designed to support both exploratory data analysis and hypothesis-driven investigation of human pre-miRNA candidates, along with their sequence.
-
----
-
-### Overview
-
-Human pre-miRNA are displayed in an interactive table featuring:
-
-- **Sticky header** and **sticky first column** for improved navigation
-- **Color-coded cells** with an integrated legend indicating:
-  - Pass/fail status for **structure**, **conservation**, and **expression**
-  - **miRNA family membership**
-  - **Human (hsa) specificity**
-  - **Repeat element presence**
-  - **Species-level structural stability** and “not found” status
-  - **Tissue expression threshold** (RPMM ≥ 1.5 vs < 1.5)
-  - **miRBase / MirGeneDB structural classes** (R/D/I/S), when enabled
-
----
-
-### Integrated Annotation 
-
-The browser combines annotations described in:
-
-> *"miR-RF: a database-independent machine-learning workflow and integrative evidence framework for systematic annotation of human microRNAs"*
-
-- **miR-RF structural stability classes** (R/D/I/S)
-- **Multi-species conservation profiles**, including human specificity
-- **Tissue expression values** (RPMM)
-- **miRNA family context** (miRBase / MirGeneDB)
-- **Repeat annotation**
-- **miRBase high-confidence miRNA annotation**, when used in Filtering criteria
-- **Experimental evidence validation level**, when enabled from the sidebar
-
-All displayed results correspond to the analyses reported in the accompanying manuscript and are provided as a reusable resource to support downstream computational and experimental studies.
-"""
-    )
-
-    st.markdown("---")
-
-    # -----------------------------
-    # Key features
-    # -----------------------------
-    st.markdown('<div id="doc_key_features" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(2, "adv", "Key features")
     st.markdown(
         """
-Filters can be combined freely: **any combination of filters can be applied simultaneously**.
-
-All selected filters are combined using **logical AND**.  
-This means that only pre-miRNA satisfying *all* active criteria will be displayed in the table.
-
-Results update automatically whenever filter settings are modified.
-"""
+        <style>
+        .doc-anchor{
+            display:inline-block;
+            position:relative;
+            top:-90px;
+            width:0;
+            height:0;
+            overflow:hidden;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
     )
-
-    st.markdown('<div id="doc_filter_search_any" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "global", "Search by name")
-    st.markdown(
-        """
-Search for one or more miRNA/s across **all rows** of the table.
-
-- Matching is **case-insensitive**.
-- The search performs a **partial match**: rows are retained if any cell **contains** the input text.
-- **Regular expressions (regex)** are supported for advanced queries (e.g. `^hsa-` to match entries starting with *hsa-let*).
-"""
-    )
-
-    st.markdown('<div id="doc_filter_database" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "database-main", "Database filter")
-    st.markdown(
-        """
-Filter entries according to database/source annotation. The options are not mutually exclusive: selecting multiple sources retains miRNA/s matching **any** selected source.
-
-- **All three selected** *(default)*: retain miRNA/s matching at least one selected source.
-- **No selection**: no database/source is selected, so the table contains 0 rows.
-- **miRBase-full**: retain miRNA/s present in the full miRBase-derived annotation set.
-- **miRBase-HC**: retain miRNA/s with `High confidence miRNA = TRUE`.
-- **MirGeneDB**: retain miRNA/s present in MirGeneDB.
-
-Selections are combined with logical **OR** within this filter.
-"""
-    )
-
-    st.markdown('<div id="doc_filter_conservation_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "cons1", "Conservation")
-    st.markdown(
-        """
-The visible **Conservation** column reports the number of species with `TRUE` conservation support.
-
-- `TRUE` values are counted.
-- `FALSE` and `NA` values are not counted.
-- The current default manuscript threshold is **at least 3 TRUE conserved species**.
-"""
-    )
-
-    st.markdown('<div id="doc_filter_expression_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "tissue1", "Expression")
-    st.markdown(
-        """
-The visible **Expression** column reports the number of tissues with expression above the selected/default RPMM threshold.
-
-- The default expression threshold is **RPMM ≥ 1.5**.
-- The default minimum number of expressed tissues is **1**.
-- Tissue-level values can be shown from **Advanced options → Tissue expression**.
-"""
-    )
-
-    st.markdown('<div id="doc_filter_structure_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "structure", "Structural Classification Filter (miRBase / MirGeneDB)")
-    st.markdown(
-        """
-Keep or exclude human pre-miRNA according to their **structural classification** in miRBase or MirGeneDB.
-
-- **Show all** *(default)*: no filter applied.
-- **PASSED**: pre-miRNA classified as **R** or **D** (structurally robust).
-- **NOT PASSED**: pre-miRNA classified as **I** or **S** (structurally unstable or weakly supported).
-"""
-    )
-
-    st.markdown('<div id="doc_filter_hsa" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "hsa", "hsa specificity")
-    st.markdown(
-        """
-Filter human-specific or non human-specific pre-miRNA.
-
-- **Show all**: no filter applied.
-- **Only hsa-specific**: retain only pre-miRNA annotated as human-specific.
-- **Not hsa-specific**: exclude human-specific premiRNA/s and retain all other entries.
-"""
-    )
-
-    st.markdown('<div id="doc_filter_family" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "fam", "miRNA Family Membership")
-    st.markdown(
-        """
-Filter pre-miRNA based on family annotations from **miRBase** and/or **MirGeneDB**.
-
-- **no family**: pre-miRNA not assigned to any family in the selected databases.
-- **miRNA/s in family**: pre-miRNA annotated as belonging to a family (the family name is displayed when available).
-"""
-    )
-
-    st.markdown('<div id="doc_filter_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "rep", "Repeat class")
-    st.markdown(
-        """
-Filter miRNA/s based on the presence and type of **overlapping repeat elements**.
-
-- Select one or more repeat classes (e.g. **LINE**, **SINE**, **LTR**, **DNA repeats**, **Low complexity repeats**).
-- If multiple classes are selected, miRNA/s overlapping **any** of the chosen categories are retained (logical OR).
-"""
-    )
-
-    st.markdown('<div id="doc_filter_plot_repeat" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "barplot", "Show repeat class distribution")
-    st.markdown(
-        """
-Enable **“Show repeat class distribution”** to visualize the repeat composition of the **current filtered subset**.
-
-- The bar plot reports **counts** and **percentages** per each repeat class.
-- This visualization helps assess whether applied filters enrich for specific repeat categories.
-"""
-    )
-
-    st.markdown('<div id="doc_filter_reset" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "reset", "Reset all filters")
-    st.markdown(
-        """
-Use **Reset all filters** to clear selections and restore the initial app state.
-
-- The button is shown only when at least one filter or display option is active.
-- It resets main filters, advanced options, filtering criteria, pagination, and applied filtering-criteria state.
-"""
-    )
-
-    st.markdown("---")
-
-    # -----------------------------
-    # Sensitivity analysis
-    # -----------------------------
-    st.markdown('<div id="doc_filtering_criteria" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(2, "adv2", "Filtering criteria")
-    st.markdown(
-        """
-The **Filtering criteria** page is an expert page designed to evaluate how the retained catalog size changes under alternative analytical choices.
-
-**What the page uses**
-
-- The main **App** page opens on the default manuscript catalog (`Default = yes`).
-- The **Filtering criteria** page uses the complete candidate table, so it can test rows outside the default catalog.
-
-**Criteria that can be changed**
-
-- **Evolutionary conservation**: minimum number of species with `TRUE` conservation support.
-- **Tissue Expression**: RPMM threshold and minimum number of expressed tissues.
-- **Structural class**: classes considered passing (`R`, `D`, `I`, `S`) and optional miRBase high-confidence restriction.
-
-**Rules that can be compared**
-
-- **At least 2 of 3 criteria**: retained if at least two criteria pass.
-- **All 3 criteria**: retained only if conservation, expression and structural class all pass.
-- **Stable structural class + at least one other criterion**: retained if structural class is stable and at least one other criterion passes.
-
-The page reports the retained count and marks the selected rule in the criteria-combination summary. The main table changes only after selecting **Apply filtering criteria to main table**.
-"""
-    )
-
-    st.markdown("---")
-
-    # -----------------------------
-    # Advanced options
-    # -----------------------------
-    st.markdown('<div id="doc_advanced" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(2, "adv2", "Advanced options")
-
-    st.markdown('<div id="doc_advanced_options" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown(
-    """
-    Enable **Advanced options** in the sidebar to unlock additional controls and column display options.
-    
-    **Important:**
-    - **Show columns** only determines which columns are visible in the table. It does *not* filter the dataset.  
-    - **Filter** options instead restrict the rows of the dataset based on the selected criteria.
-    
-    Users should apply row filters appropriately to ensure that the displayed columns correspond to the context of interest.
-    """,
-        unsafe_allow_html=True
-    )
-
-    st.markdown('<div id="doc_adv_conservation" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "cons2", "Evolutionary conservation (advanced)")
-    st.markdown("""
-- **Show species columns**: display per-species conservation.  
-- **Filter by**: 
-    - **Found in** selected species 
-    - **Not found in** selected species.  
-- Optional: stratify by structural stability when **Found in** is active: **Stable (R/D)** vs **Unstable (S/I)**.  
-""")
-
-    st.markdown('<div id="doc_adv_tissue" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "tissue2", "Tissue expression (advanced)")
-    st.markdown("""
-- **Show tissue columns** by selecting **individual tissues** (grouped by anatomical system, with icons).  
-- **Filter by**:  
-  - **Expressed in**: selected tissues with **RPMM ≥ 1.5** (all selected must pass)  
-  - **Not expressed in**: selected tissues with **RPMM < 1.5** (all selected must pass)  
-""")
-
-    st.markdown('<div id="doc_adv_db_class" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "database", "Structural class (advanced)")
-    st.markdown("""
-- **Show Structural class columns** displays the miRBase and MirGeneDB structural class annotations.  
-- **Structural class filter** retains rows where either miRBase or MirGeneDB has one of the selected classes (`R`, `D`, `I`, `S`).  
-- Missing MirGeneDB class values are displayed as `NA`.  
-""")
-
-    st.markdown('<div id="doc_adv_confidence_evidence" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "adv", "Experimental evidence")
-    st.markdown("""
-- The sidebar control “Show Experimental evidence (Kim et al. 2021)” displays the experimental-evidence validation column in the main table.  
-- The table uses color only for validation levels; missing values are shown as `NA`.  
-- **Experimental evidence filter**: retain miRNA/s by validation level: **Pass stringent filter**, **Pass lenient filter**, or **No pass**.  
-- The `Experimental evidence` annotation was processed from the experimental validation data reported by Kim *et al.* in **A quantitative map of human primary microRNA processing sites** (PMID: **34320405**), using **Supplementary Table S6** as the starting table.  
-""")
-
-    st.markdown("---")
-
-    # -----------------------------
-    # Data export
-    # -----------------------------
-    st.markdown('<div id="doc_export" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(2, "export", "Data export")
-    st.markdown(
-        """
-The currently filtered dataset can be exported as:
-
-- **TSV table** (only visible columns; clean formatting)  
-- **FASTA file** for the filtered subset (from the `sequence` column)
-
-These exports are intended to support downstream analyses and custom pipelines.
-"""
-    )
-
-    st.markdown("---")
-
-    # -----------------------------
-    # Example use cases
-    # -----------------------------
-    st.markdown('<div id="doc_use_cases" class="doc-anchor"></div>', unsafe_allow_html=True)
-    st.markdown("## Example use cases")
-
-    st.markdown(
-        """
-    **Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining a set of complementary filters.
-    """,
-        unsafe_allow_html=True
-    )
-
-    # ---- Use case 1 (TITLE WITH ICON) ----
-    st.markdown(
-        f"### {doc_icon_html('mouseCuore')}Use case 1 - Cardiovascular-associated miRNA/s conserved in mouse",
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        """
-    This use case focuses on human pre-miRNA conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues and fluids.
-
-    **Conservation support**
-    - In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.  
-        This restricts the table to pre-miRNA with detectable conservation in mouse.
-    - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
-
-    **Tissue expression context**
-    - In **Advanced options -> Tissue expression**, select tissues belonging to the **Cardiorespiratory** system (heart and lung), under "Show extra columns". 
-    - In **Advanced options -> Tissue expression**, select tissues under **Expressed in (select tissues by system):** all cardiovascular-related tissues and fluids. 
-
-    Under these conditions, **99 miRNA/s** are retained. For each entry, the app enables inspection of whether the miRNA:
-    - is conserved in mouse;
-    - displays expression across multiple cardiovascular tissues;
-    - is classified as structurally stable (R or D).
-    
-    """,
-        unsafe_allow_html=True
-    )
-
-    # ---- Use case 2 (TITLE WITH ICON) ----
-    st.markdown(
-        f"### {doc_icon_html('scimmiaBrain')}miRNA/s conserved in Great apes (human and Pan) and expressed in brain",
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        """
-    This use case identifies human pre-miRNA that are conserved in *Pan troglodytes* and *Pan paniscus* and show expression in neural tissues.
-
-    **Conservation support**
-    - In **Advanced options -> Evolutionary conservation**, select *P. troglodytes*, *P. paniscus*, *M. mulatta* and *L. catta* under **Show extra columns**.
-    - In **Advanced options -> Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
-    - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
-    - In **Advanced options -> Evolutionary conservation**, select *M. mulatta* and *L. catta* under **Not found in**.
-
-    **Tissue expression context**
-    - In **Advanced options → Tissue expression**, select tissues belonging to the **Neuro-Endocrine system** (brain and cerebellum), under "Show extra columns".  
-      This option displays the corresponding tissue expression columns but does not filter the results.
-
-    Under these conditions, **29 miRNA/s** are retained. For each entry, the app enables inspection of whether the miRNA:
-    - is conserved in *Pan troglodytes* and *Pan paniscus*;
-    - not conserved in *Macaca mulatta* and *Lemur catta*;
-    - is classified as structurally stable (R or D);
-    - displays expression across neuro-endocrine tissues.
-      
-    """,
-        unsafe_allow_html=True
-    )
-
-    st.markdown("---")
-    st.markdown("License: CC BY 4.0")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    st.markdown(load_local_readme(), unsafe_allow_html=True)
