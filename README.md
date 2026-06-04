@@ -229,15 +229,6 @@ If no database/source is selected, no entries are retained by the database filte
 
 ---
 
-## 🧍 Human specificity
-
-Filter human-specific or non-human-specific pre-miRNAs.
-- **Show all**: No human-specificity filtering is applied.                     
-- **Only hsa-specific**: Retain only pre-miRNAs annotated as human-specific.             
-- **Not hsa-specific**: Exclude human-specific pre-miRNAs and retain all other entries. 
-
----
-
 ## 🧪 Experimental evidence
 
 Experimental-evidence information can be displayed and filtered from the sidebar.
@@ -248,6 +239,15 @@ Experimental-evidence information can be displayed and filtered from the sidebar
 - **No pass**: Retain entries not passing the experimental-evidence filters.  
 
 Entries with unavailable experimental-evidence information are reported as `NA` when the column is displayed.
+
+---
+
+## 🧍 Human specificity
+
+Filter human-specific or non-human-specific pre-miRNAs.
+- **Show all**: No human-specificity filtering is applied.                     
+- **Only hsa-specific**: Retain only pre-miRNAs annotated as human-specific.             
+- **Not hsa-specific**: Exclude human-specific pre-miRNAs and retain all other entries. 
 
 ---
 
