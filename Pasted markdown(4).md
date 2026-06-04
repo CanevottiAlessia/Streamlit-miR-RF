@@ -382,7 +382,7 @@ For details, see: https://creativecommons.org/licenses/by/4.0/
 
 If you use this resource, please cite the accompanying manuscript:
 
-> Canevotti et al., *"miR-RF: a database-independent machine-learning workflow and integrative evidence framework for systematic annotation of human microRNAs"*, manuscript under peer review.
+> Canevotti et al., *"An integrative evidence framework and interactive resource for annotating the human pre-miRNA repertoire"*, manuscript under peer review.
 
 ---
 
@@ -402,7 +402,7 @@ If you use this resource, please cite the accompanying manuscript:
 
 ### 🫀🐁 Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
 
-This use case identifies human pre-miRNAs conserved in *Mus musculus*, structurally robust and expressed in cardiovascular-related tissues and fluids.
+This use case identifies 99 human pre-miRNAs conserved in *Mus musculus*, structurally robust and expressed in cardiovascular-related tissues and fluids.
 
 **Conservation support**
 
@@ -424,7 +424,7 @@ The resulting table enables inspection of whether each locus:
 
 ### 🧠🦧 Use case 2 — miRNAs conserved in great apes and expressed in brain
 
-This use case identifies human pre-miRNAs that are conserved in *Pan troglodytes* and *Pan paniscus* and show expression in neural tissues.
+This use case identifies 28 human pre-miRNAs that are conserved in *Pan troglodytes* and *Pan paniscus* and show expression in neural tissues.
 
 **Conservation support**
 
