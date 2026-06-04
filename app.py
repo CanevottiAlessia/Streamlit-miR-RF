@@ -38,37 +38,54 @@ def _inject_doc_nav_js():
             const tabs = window.parent.document.querySelectorAll('button[role="tab"]');
             if (!tabs || tabs.length === 0) return false;
 
-            const target = Array.from(tabs).find(b => (b.innerText || '').trim() === tabText);
+            const wanted = (tabText || '').toLowerCase();
+            const target = Array.from(tabs).find(b => {
+              const txt = (b.innerText || b.textContent || '').trim().toLowerCase();
+              return txt === wanted || txt.includes(wanted);
+            });
+
             if (target) { target.click(); return true; }
             return false;
           }
 
           function scrollToId(id) {
-            const el = window.parent.document.getElementById(id);
-            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-            return !!el;
+            const doc = window.parent.document;
+            const el = doc.getElementById(id);
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "start" });
+              return true;
+            }
+            return false;
           }
 
-          // Global function called by our click handlers
-          window.parent.mirrfNav = function(sectionId) {
-            // 1) switch tab
-            clickTabByText("Documentation");
-
-            // 2) wait for render, then scroll
+          function waitAndScroll(sectionId) {
             let tries = 0;
             const t = setInterval(() => {
               tries++;
               const ok = scrollToId(sectionId);
-              if (ok || tries >= 30) clearInterval(t);
-            }, 150);
+              if (ok || tries >= 50) {
+                clearInterval(t);
+                try { window.parent.sessionStorage.removeItem("mirrf_pending_doc_id"); } catch(e) {}
+              }
+            }, 120);
+          }
+
+          // Global function called by our click handlers
+          window.parent.mirrfNav = function(sectionId) {
+            if (!sectionId) return false;
+            try { window.parent.sessionStorage.setItem("mirrf_pending_doc_id", sectionId); } catch(e) {}
+            clickTabByText("Documentation");
+            waitAndScroll(sectionId);
+            return false;
           };
 
           // Bind clicks to all <a data-doc-id="..."> links (Streamlit-safe)
           function bindDocLinks() {
             const root = window.parent.document;
-            const links = root.querySelectorAll('a[data-doc-id]:not([data-doc-bound="1"])');
+            const links = root.querySelectorAll('a[data-doc-id]');
 
             links.forEach(a => {
+              if (a.getAttribute("data-doc-bound") === "1") return;
               a.setAttribute("data-doc-bound", "1");
               a.style.cursor = "pointer";
 
@@ -77,13 +94,23 @@ def _inject_doc_nav_js():
                 e.stopPropagation();
                 const id = a.getAttribute("data-doc-id");
                 if (id && window.parent.mirrfNav) window.parent.mirrfNav(id);
+                return false;
               }, true);
             });
           }
 
+          function consumePendingDocTarget() {
+            try {
+              const pending = window.parent.sessionStorage.getItem("mirrf_pending_doc_id");
+              if (pending) waitAndScroll(pending);
+            } catch(e) {}
+          }
+
           // Streamlit re-renders often -> rebind periodically
-          setInterval(bindDocLinks, 600);
-          setTimeout(bindDocLinks, 100);
+          setInterval(bindDocLinks, 500);
+          setInterval(consumePendingDocTarget, 500);
+          setTimeout(bindDocLinks, 50);
+          setTimeout(consumePendingDocTarget, 250);
 
         })();
         </script>
@@ -94,7 +121,8 @@ def _inject_doc_nav_js():
 
 def doc_jump_link(section_id: str, label: str = "Docs") -> str:
     return f"""
-    <a href="#" data-doc-id="{section_id}"
+    <a href="#{section_id}" data-doc-id="{section_id}"
+       onclick="if (window.parent && window.parent.mirrfNav) {{ window.parent.mirrfNav('{section_id}'); }} return false;"
        style="text-decoration:none; font-weight:700;">
        ℹ️ {label}
     </a>
@@ -103,7 +131,8 @@ def doc_jump_link(section_id: str, label: str = "Docs") -> str:
 
 def doc_jump_icon(section_id: str, title: str = "Docs") -> str:
     return f"""
-    <a href="#" data-doc-id="{section_id}"
+    <a href="#{section_id}" data-doc-id="{section_id}"
+       onclick="if (window.parent && window.parent.mirrfNav) {{ window.parent.mirrfNav('{section_id}'); }} return false;"
        title="{title}"
        style="
          text-decoration:none;
@@ -584,7 +613,10 @@ st.markdown(
 # -----------------------------------------------------------
 @st.cache_data
 def load_data():
-    return pd.read_csv("sfile2_NEW_plusFam.csv")
+    # Load the complete table.
+    # The main App page will use only Default == yes rows,
+    # while the Sensitivity analysis page can explore all candidate rows.
+    return pd.read_csv("s8_new", sep="\t")
 
 
 df = load_data()
@@ -721,6 +753,11 @@ expected_cols = [
     "hsa-specificity", "Repeat_Class",
     "sequence",
     "family_name_mirbase", "family_name_mirgene",
+    "High confidence miRNA",
+    "miRBase high confidence miRNA",
+    "Experimental evidence",
+    "Overlap",
+    "Default",
 ]
 for c in expected_cols:
     if c not in df.columns:
@@ -730,7 +767,7 @@ df["Class_MirGeneDB"] = df["Class_MirGeneDB"].fillna("—")
 df["Class_MirGeneDB"] = df["Class_MirGeneDB"].replace(["nan", "NaN", "NA", None, pd.NA, ""], "—")
 
 df["miRBase family"] = df["miRBase family"].fillna("NO")
-df["MirGeneDB family"] = df["MirGeneDB family"].fillna("—")
+df["MirGeneDB family"] = df["MirGeneDB family"].replace(["nan", "NaN", "", "<NA>"], pd.NA)
 
 
 def shorten_repeat(val):
@@ -754,6 +791,85 @@ for c in ["Structure", "Conservation", "Expression"]:
     if c in df.columns:
         df[c] = df[c].map(lambda x: "TRUE" if x is True else ("FALSE" if x is False else x))
 
+
+# -----------------------------------------------------------
+# NEW EVIDENCE / CONFIDENCE HELPERS
+# -----------------------------------------------------------
+def normalize_bool_like(x):
+    if pd.isna(x):
+        return pd.NA
+
+    s = str(x).strip().lower()
+
+    if s in ["true", "t", "yes", "y", "si", "sì", "1"]:
+        return "TRUE"
+
+    if s in ["false", "f", "no", "n", "0"]:
+        return "FALSE"
+
+    return pd.NA
+
+
+# Prefer the current column name, but keep compatibility with older files.
+_high_conf_source_col = None
+for _candidate_col in ["High confidence miRNA", "miRBase high confidence miRNA"]:
+    if _candidate_col in df.columns and df[_candidate_col].notna().any():
+        _high_conf_source_col = _candidate_col
+        break
+
+if _high_conf_source_col is not None:
+    df["_High_confidence_tf"] = df[_high_conf_source_col].apply(normalize_bool_like)
+else:
+    df["_High_confidence_tf"] = pd.NA
+
+# Standardize the visible/helper columns used by the rest of the app.
+df["High confidence miRNA"] = df["_High_confidence_tf"].map({
+    "TRUE": "TRUE",
+    "FALSE": "FALSE",
+}).fillna("NA")
+df["miRBase high confidence miRNA"] = df["High confidence miRNA"]
+
+def normalize_experimental_level(x):
+    """
+    Experimental evidence is encoded as a numeric validation level:
+    2 = Stringent filter
+    1 = Lenient filter
+    0 = No pass
+    """
+    if pd.isna(x):
+        return pd.NA
+
+    s = str(x).strip()
+
+    try:
+        val = int(float(s))
+        if val in [0, 1, 2]:
+            return val
+    except Exception:
+        pass
+
+    low = s.lower()
+    if low in ["stringent", "stringent filter", "2"]:
+        return 2
+    if low in ["lenient", "lenient filter", "1"]:
+        return 1
+    if low in ["no pass", "not passed", "not pass", "false", "0"]:
+        return 0
+
+    return pd.NA
+
+
+if "Experimental evidence" in df.columns:
+    df["_Experimental_evidence_level"] = df["Experimental evidence"].map(normalize_experimental_level)
+    # Keep colored evidence cells visually empty, but show NA when the value is missing.
+    df["Experimental evidence"] = df["_Experimental_evidence_level"].map({
+        2: "",
+        1: "",
+        0: "",
+    }).fillna("NA")
+else:
+    df["_Experimental_evidence_level"] = pd.NA
+    df["Experimental evidence"] = "NA"
 
 # -----------------------------------------------------------
 # COLUMN GROUPS
@@ -871,7 +987,7 @@ SHOWCOL_KEYS = [showcols_key(sys_name) for sys_name in SYSTEM_TISSUES.keys()]
 # -----------------------------------------------------------
 FILTER_KEYS = [
     "search_any",
-    "sb_conservation", "sb_expression", "sb_structure", "sb_hsa",
+    "sb_hsa",
     "ms_family", "ms_repeat",
     "show_repeat_plot",
     "show_adv",
@@ -882,23 +998,176 @@ FILTER_KEYS = [
     *SHOWCOL_KEYS,
     "show_class_cols",
     "db_filter",
+    "db_mirbase_full",
+    "db_mirbase_hc",
+    "db_mirgendb",
+    "filtering_preset_db_sources",
     "class_filter",
+    "show_high_conf_col",
+    "show_exp_evidence_col",
+    "show_overlap_col",
+    "high_conf_filter",
+    "experimental_evidence_filter",
+    "apply_ablation_to_main",
+    "sens_expression_cutoff",
+    "sens_min_tissues",
+    "sens_min_species",
+    "sens_conservation_mode",
+    "sens_stable_classes",
+    "sens_high_conf_filter",
+    "show_two_criteria_summary",
+    "show_three_criteria_summary",
+    "show_stable_plus_one_summary",
+    "filtering_rule",
+    "filtering_mode",
+    "custom_use_conservation",
+    "custom_use_expression",
+    "custom_use_structure",
+    "custom_min_criteria",
+    "_last_custom_selected_count",
+    "_last_filtering_mode_rendered",
 ]
 for sys_name in SYSTEM_TISSUES.keys():
     FILTER_KEYS.append(f"tree_pos_{sys_name}")
     FILTER_KEYS.append(f"tree_neg_{sys_name}")
+
+# -----------------------------------------------------------
+# ABLATION DEFAULT SESSION STATE
+# -----------------------------------------------------------
+# These keys are part of FILTER_KEYS, so they must exist before the App
+# page computes the pagination/filter signature. Otherwise, clicking Next/Prev
+# can look like a filter change and reset the table to page 1.
+if st.session_state.get("_filtering_defaults_version") != "v42":
+    st.session_state["sens_expression_cutoff"] = 1.5
+    st.session_state["sens_min_tissues"] = 1
+    st.session_state["sens_min_species"] = 3
+    st.session_state["sens_conservation_mode"] = "Recovered orthologs (TRUE or FALSE)"
+    st.session_state["sens_stable_classes"] = ["R", "D"]
+    st.session_state["sens_high_conf_filter"] = "Show all"
+    st.session_state["show_two_criteria_summary"] = True
+    st.session_state["show_three_criteria_summary"] = True
+    st.session_state["show_stable_plus_one_summary"] = True
+    st.session_state["filtering_rule"] = "At least 2 of 3 criteria"
+    st.session_state["filtering_mode"] = "Default"
+    st.session_state["filtering_preset_db_sources"] = ["miRBase-full", "miRBase-HC", "MirGeneDB"]
+    st.session_state["custom_use_conservation"] = True
+    st.session_state["custom_use_expression"] = True
+    st.session_state["custom_use_structure"] = True
+    st.session_state["custom_min_criteria"] = 2
+    st.session_state["_last_custom_selected_count"] = 3
+    st.session_state["_filtering_defaults_version"] = "v42"
+st.session_state.setdefault("apply_ablation_to_main", False)
+st.session_state.setdefault("show_two_criteria_summary", True)
+st.session_state.setdefault("show_three_criteria_summary", True)
+st.session_state.setdefault("show_stable_plus_one_summary", True)
+st.session_state.setdefault("filtering_rule", "At least 2 of 3 criteria")
+st.session_state.setdefault("filtering_mode", "Default")
+st.session_state.setdefault("custom_use_conservation", True)
+st.session_state.setdefault("custom_use_expression", True)
+st.session_state.setdefault("custom_use_structure", True)
+st.session_state.setdefault("custom_min_criteria", 2)
+
+
+def reset_all_filters():
+    """
+    Reset the app to the true initial state.
+
+    This does not only pop keys: it also writes the expected default values back
+    explicitly, so reset behaves the same whether the button is clicked from the
+    top sidebar, bottom sidebar, or after widgets have already been rendered.
+    """
+    # Clear all known UI/filter keys.
+    for k in FILTER_KEYS:
+        st.session_state.pop(k, None)
+
+    # Clear old/stale keys from previous app versions too.
+    stale_keys = [
+        "sb_conservation", "sb_expression", "sb_structure",
+        "show_cleavage_cols",
+        "main_prev_page", "main_next_page",
+        "reset_top", "reset_bottom",
+        "_filter_sig",
+        "_switch_to_app_after_apply",
+        "_filtering_defaults_version",
+        "_db_defaults_version",
+        "_pending_sidebar_db_sources",
+        "apply_filtering_criteria_button",
+        "reset_filtering_criteria_button",
+    ]
+    for k in stale_keys:
+        st.session_state.pop(k, None)
+
+    # Main sidebar defaults.
+    st.session_state["search_any"] = ""
+    st.session_state["sb_hsa"] = "Show all"
+    st.session_state["ms_family"] = []
+    st.session_state["ms_repeat"] = []
+    st.session_state["show_repeat_plot"] = False
+    st.session_state["show_adv"] = False
+    st.session_state["db_filter"] = ["miRBase-full", "miRBase-HC", "MirGeneDB"]
+    st.session_state["db_mirbase_full"] = True
+    st.session_state["db_mirbase_hc"] = True
+    st.session_state["db_mirgendb"] = True
+    st.session_state["filtering_preset_db_sources"] = ["miRBase-full", "miRBase-HC", "MirGeneDB"]
+    st.session_state["_db_defaults_version"] = "v19"
+
+    # Removed/neutral legacy filters.
+    st.session_state["sb_conservation"] = "Show all"
+    st.session_state["sb_expression"] = "Show all"
+    st.session_state["sb_structure"] = "Show all"
+
+    # Advanced options defaults.
+    st.session_state["show_species_cols"] = []
+    st.session_state["cons_species_found"] = []
+    st.session_state["cons_species_na"] = []
+    st.session_state["cons_stability_choice"] = "All"
+
+    st.session_state["show_class_cols"] = False
+    st.session_state["class_filter"] = []
+
+    st.session_state["show_high_conf_col"] = False
+    st.session_state["show_exp_evidence_col"] = False
+    st.session_state["show_overlap_col"] = False
+    st.session_state["high_conf_filter"] = "Show all"
+    st.session_state["experimental_evidence_filter"] = "Show all"
+
+    # Per-system tissue show/filter controls.
+    for sys_name in SYSTEM_TISSUES.keys():
+        st.session_state[showcols_key(sys_name)] = []
+        st.session_state[f"tree_pos_{sys_name}"] = []
+        st.session_state[f"tree_neg_{sys_name}"] = []
+
+    # Filtering criteria page defaults.
+    st.session_state["apply_ablation_to_main"] = False
+    st.session_state["sens_expression_cutoff"] = 1.5
+    st.session_state["sens_min_tissues"] = 1
+    st.session_state["sens_min_species"] = 3
+    st.session_state["sens_conservation_mode"] = "Recovered orthologs (TRUE or FALSE)"
+    st.session_state["sens_stable_classes"] = ["R", "D"]
+    st.session_state["sens_high_conf_filter"] = "Show all"
+    st.session_state["show_two_criteria_summary"] = True
+    st.session_state["show_three_criteria_summary"] = True
+    st.session_state["show_stable_plus_one_summary"] = True
+    st.session_state["filtering_rule"] = "At least 2 of 3 criteria"
+    st.session_state["filtering_mode"] = "Default"
+    st.session_state["filtering_preset_db_sources"] = ["miRBase-full", "miRBase-HC", "MirGeneDB"]
+    st.session_state["custom_use_conservation"] = True
+    st.session_state["custom_use_expression"] = True
+    st.session_state["custom_use_structure"] = True
+    st.session_state["custom_min_criteria"] = 2
+
+    # Pagination/default version.
+    st.session_state["page"] = 1
+    st.session_state["_filtering_defaults_version"] = "v42"
+
+
+
 
 
 def any_filter_active() -> bool:
     if (st.session_state.get("search_any", "") or "").strip():
         return True
 
-    if st.session_state.get("sb_conservation", "Show all") != "Show all":
-        return True
-    if st.session_state.get("sb_expression", "Show all") != "Show all":
-        return True
-    if st.session_state.get("sb_structure", "Show all") != "Show all":
-        return True
     if st.session_state.get("sb_hsa", "Show all") != "Show all":
         return True
 
@@ -935,9 +1204,22 @@ def any_filter_active() -> bool:
 
     if st.session_state.get("show_class_cols", False):
         return True
-    if st.session_state.get("db_filter", "Show all") != "Show all":
+    current_db = set(st.session_state.get("db_filter", ["miRBase-full", "miRBase-HC", "MirGeneDB"]) or [])
+    default_db = {"miRBase-full", "miRBase-HC", "MirGeneDB"}
+    if current_db != default_db:
         return True
-    if st.session_state.get("class_filter", []):
+    if st.session_state.get("show_high_conf_col", False):
+        return True
+    if st.session_state.get("show_exp_evidence_col", False):
+        return True
+    if st.session_state.get("show_overlap_col", False):
+        return True
+    if st.session_state.get("high_conf_filter", "Show all") != "Show all":
+        return True
+    if st.session_state.get("experimental_evidence_filter", "Show all") != "Show all":
+        return True
+
+    if st.session_state.get("apply_ablation_to_main", False):
         return True
 
     return False
@@ -966,7 +1248,7 @@ df["_miRBase_family_flag"] = df["miRBase family"].astype(str).str.upper()
 df["_MirGeneDB_family_flag"] = df["MirGeneDB family"].astype(str).str.upper()
 
 df["Conservation_display"] = (
-    df[animal_cols].apply(lambda r: r.isin([True, False]).sum(), axis=1) if animal_cols else pd.NA
+    df[animal_cols].apply(lambda r: r.isin([True]).sum(), axis=1) if animal_cols else pd.NA
 )
 
 if tissue_cols:
@@ -987,19 +1269,33 @@ def format_class_pair(row):
 df["Structure_display"] = df.apply(format_class_pair, axis=1)
 
 
-def family_name_or_single(flag_val, name_val, empty_as=None):
-    if str(flag_val).strip().upper() == "YES":
-        if pd.isna(name_val) or str(name_val).strip() == "":
-            return None
+def family_name_or_single(flag_val, name_val, empty_as=""):
+    if pd.isna(flag_val):
+        return "NA"
+
+    flag = str(flag_val).strip().upper()
+
+    if flag in ["", "NAN", "NA", "—", "<NA>"]:
+        return "NA"
+
+    if flag == "YES":
+        if pd.isna(name_val) or str(name_val).strip() in ["", "nan", "NaN", "NA", "<NA>"]:
+            return "NA"
         return str(name_val).strip()
-    return empty_as
+
+    # NO means the annotation exists and the miRNA is single / not in family.
+    # The cell stays blue via the helper flag, but the text is intentionally blank.
+    if flag == "NO":
+        return empty_as
+
+    return "NA"
 
 
 df["miRBase_family_display"] = df.apply(
     lambda r: family_name_or_single(
         r.get("miRBase family", "NO"),
         r.get("family_name_mirbase", pd.NA),
-        empty_as=None
+        empty_as=""
     ),
     axis=1
 )
@@ -1008,16 +1304,711 @@ df["MirGeneDB_family_display"] = df.apply(
     lambda r: family_name_or_single(
         r.get("MirGeneDB family", "—"),
         r.get("family_name_mirgene", pd.NA),
-        empty_as=None
+        empty_as=""
     ),
     axis=1
 )
 
 
+# -----------------------------------------------------------
+# Keep two dataset views:
+# - df_all: complete candidate table, used by Sensitivity analysis
+# - df: default manuscript catalog, used by the main App page
+# -----------------------------------------------------------
+df_all = df.copy()
+
+# The visible default catalog is computed from the current default criteria
+# after the filtering helper functions are defined.
+df = df_all.copy()
+
+
+# -----------------------------------------------------------
+# ABLATION HELPERS
+# -----------------------------------------------------------
+def overlap_missing(data: pd.DataFrame) -> pd.Series:
+    """
+    Keep only rows where Overlap is missing / NA.
+    Numeric 0 is NOT treated as missing here.
+    """
+    if "Overlap" not in data.columns:
+        return pd.Series(True, index=data.index)
+
+    overlap_raw = data["Overlap"]
+    overlap_str = overlap_raw.astype("string").str.strip()
+
+    return (
+        overlap_raw.isna()
+        | overlap_str.isna()
+        | overlap_str.isin(["", "NA", "NaN", "nan", "NAN", "<NA>"])
+    )
+
+
+def filtering_uses_full_input() -> bool:
+    """
+    Database-specific Default presets are defined over the full input table.
+    Other Filtering criteria setups keep the missing/NA Overlap candidate universe.
+    Database-specific Default presets do not apply evidence criteria.
+    """
+    return st.session_state.get("filtering_mode", "Default") in [
+        "miRBase-full",
+        "miRBase-HC",
+        "MirGeneDB",
+    ]
+
+
+def get_filtering_candidate_universe(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Candidate universe for Filtering criteria calculations.
+    - miRBase-full / miRBase-HC / MirGeneDB: all input rows.
+    - Other setups: rows with missing/NA Overlap.
+    """
+    if filtering_uses_full_input():
+        return data.copy()
+    return data[overlap_missing(data)].copy()
+
+
+def ablation_settings_are_default() -> bool:
+    """
+    Return True when the ablation panel is set to the manuscript default criteria.
+    In this case, the ablation catalog should match the Default == yes catalog.
+    """
+    cutoff = float(st.session_state.get("sens_expression_cutoff", 1.5))
+    min_tissues = int(st.session_state.get("sens_min_tissues", 1))
+    min_species = int(st.session_state.get("sens_min_species", 3))
+    mode = st.session_state.get("sens_conservation_mode", "Recovered orthologs (TRUE or FALSE)")
+    stable_classes = {
+        str(x).strip().upper()
+        for x in (st.session_state.get("sens_stable_classes", ["R", "D"]) or [])
+    }
+    high_conf = "Show all"
+    filtering_rule = st.session_state.get("filtering_rule", "At least 2 of 3 criteria")
+    filtering_mode = st.session_state.get("filtering_mode", "Default")
+
+    return (
+        filtering_mode in ["Default", "miRBase-full", "miRBase-HC", "MirGeneDB"]
+        and abs(cutoff - 1.5) < 1e-9
+        and min_tissues == 1
+        and min_species == 3
+        and str(mode).startswith("Recovered")
+        and stable_classes == {"R", "D"}
+        and high_conf == "Show all"
+        and filtering_rule == "At least 2 of 3 criteria"
+    )
+
+
+
+def compute_ablation_catalog(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute the filtering-retained catalog from the complete candidate table.
+    In ablation mode, miRNA/s are retained when they pass at least 2 of the 3
+    selected evidence criteria: expression, conservation and structure.
+    High-confidence status can be applied as an additional optional filter.
+    """
+    sens_base = get_filtering_candidate_universe(data)
+
+    # Database-specific Default presets represent the source/catalog itself.
+    # Therefore criteria are intentionally disabled for these presets:
+    # - miRBase-full: full input universe, then miRBase-full source filter
+    # - miRBase-HC: active candidate universe, then miRBase-HC source filter
+    # - MirGeneDB: active candidate universe, then MirGeneDB source filter
+    if st.session_state.get("filtering_mode", "Default") in [
+        "miRBase-full",
+        "miRBase-HC",
+        "MirGeneDB",
+    ]:
+        return sens_base.copy()
+
+    sens_expression_cutoff = float(st.session_state.get("sens_expression_cutoff", 1.5))
+    sens_min_tissues = int(st.session_state.get("sens_min_tissues", 1))
+    sens_min_species = int(st.session_state.get("sens_min_species", 3))
+    sens_conservation_mode = "Recovered orthologs (TRUE or FALSE)"
+    sens_stable_classes = st.session_state.get("sens_stable_classes", ["R", "D"]) or []
+    sens_high_conf_filter = "Show all"
+
+    # Dynamic expression criterion
+    if tissue_cols:
+        sens_tissue_num = sens_base[tissue_cols].apply(pd.to_numeric, errors="coerce")
+        sens_base["Sensitivity expression count"] = (sens_tissue_num >= sens_expression_cutoff).sum(axis=1)
+        sens_base["Sensitivity expression pass"] = sens_base["Sensitivity expression count"] >= sens_min_tissues
+    else:
+        sens_base["Sensitivity expression count"] = 0
+        sens_base["Sensitivity expression pass"] = False
+
+    # Dynamic conservation criterion
+    # Count only TRUE values, i.e. species in which the ortholog is found
+    # with stable structural support. FALSE values are not counted.
+    if animal_cols:
+        sens_base["Sensitivity conservation count"] = sens_base[animal_cols].apply(
+            lambda r: r.isin([True]).sum(),
+            axis=1,
+        )
+        sens_base["Sensitivity conservation pass"] = sens_base["Sensitivity conservation count"] >= sens_min_species
+    else:
+        sens_base["Sensitivity conservation count"] = 0
+        sens_base["Sensitivity conservation pass"] = False
+
+    # Dynamic structure criterion: pass if either database class is in the selected stable classes
+    stable_set = {str(x).strip().upper() for x in sens_stable_classes}
+    mirbase_class = sens_base["Class_miRBase"].astype(str).str.strip().str.upper()
+    mirgenedb_class = sens_base["Class_MirGeneDB"].astype(str).str.strip().str.upper()
+    sens_base["Sensitivity structure pass"] = mirbase_class.isin(stable_set) | mirgenedb_class.isin(stable_set)
+
+    sens_base["Sensitivity evidence count"] = (
+        sens_base["Sensitivity expression pass"].astype(int)
+        + sens_base["Sensitivity conservation pass"].astype(int)
+        + sens_base["Sensitivity structure pass"].astype(int)
+    )
+
+    filtering_rule = st.session_state.get("filtering_rule", "At least 2 of 3 criteria")
+    filtering_mode = st.session_state.get("filtering_mode", "Default")
+
+    if filtering_mode == "Custom":
+        custom_cols = []
+        if st.session_state.get("custom_use_conservation", True):
+            custom_cols.append("Sensitivity conservation pass")
+        if st.session_state.get("custom_use_expression", True):
+            custom_cols.append("Sensitivity expression pass")
+        if st.session_state.get("custom_use_structure", True):
+            custom_cols.append("Sensitivity structure pass")
+
+        selected_custom_count = len(custom_cols)
+        custom_min = int(st.session_state.get("custom_min_criteria", min(2, selected_custom_count)))
+        custom_min = max(0, min(custom_min, selected_custom_count))
+
+        if selected_custom_count == 0:
+            sens_base["Sensitivity retained"] = custom_min == 0
+        else:
+            sens_base["Sensitivity custom evidence count"] = sum(
+                sens_base[c].astype(int) for c in custom_cols
+            )
+            sens_base["Sensitivity retained"] = sens_base["Sensitivity custom evidence count"] >= custom_min
+    elif filtering_rule == "At least 2 of 3 criteria":
+        sens_base["Sensitivity retained"] = sens_base["Sensitivity evidence count"] >= 2
+    elif filtering_rule == "All 3 criteria":
+        sens_base["Sensitivity retained"] = sens_base["Sensitivity evidence count"] == 3
+    elif filtering_rule in [
+        "Stable structural class + at least one other criterion",
+        "Stable structural class + at least one other criterion",
+    ]:
+        sens_base["Sensitivity retained"] = (
+            sens_base["Sensitivity structure pass"]
+            & (
+                sens_base["Sensitivity conservation pass"]
+                | sens_base["Sensitivity expression pass"]
+            )
+        )
+    else:
+        sens_base["Sensitivity retained"] = sens_base["Sensitivity evidence count"] >= 2
+
+    if sens_high_conf_filter in ["High confidence", "High confidence (TRUE)"]:
+        sens_base = sens_base[sens_base["_High_confidence_tf"] == "TRUE"]
+    elif sens_high_conf_filter in ["Low confidence", "Low confidence (FALSE)"]:
+        sens_base = sens_base[sens_base["_High_confidence_tf"] == "FALSE"]
+
+    return sens_base[sens_base["Sensitivity retained"]].copy()
+
+
+def get_main_catalog() -> pd.DataFrame:
+    """
+    Main table source.
+    Default: manuscript catalog (Default == yes).
+    If enabled by the expert user: filtering-retained catalog, which can include non-default rows.
+    """
+    if st.session_state.get("apply_ablation_to_main", False):
+        return compute_ablation_catalog(df_all)
+    return df.copy()
+
+
+def get_default_overlap_catalog() -> pd.DataFrame:
+    """
+    Current default catalog computed from the default criteria:
+    conservation >= 3 TRUE species, expression RPMM >= 1.5 in at least 1 tissue,
+    structural class R/D, and at least 2 of these 3 evidence criteria.
+    Only rows with missing/NA Overlap are considered.
+    """
+    base = df_all[overlap_missing(df_all)].copy()
+
+    if base.empty:
+        return base
+
+    if tissue_cols:
+        tissue_num = base[tissue_cols].apply(pd.to_numeric, errors="coerce")
+        expression_pass = (tissue_num >= 1.5).sum(axis=1) >= 1
+    else:
+        expression_pass = pd.Series(False, index=base.index)
+
+    if animal_cols:
+        conservation_pass = base[animal_cols].apply(lambda r: r.isin([True]).sum(), axis=1) >= 3
+    else:
+        conservation_pass = pd.Series(False, index=base.index)
+
+    mirbase_class = base["Class_miRBase"].astype(str).str.strip().str.upper()
+    mirgenedb_class = base["Class_MirGeneDB"].astype(str).str.strip().str.upper()
+    structure_pass = mirbase_class.isin(["R", "D"]) | mirgenedb_class.isin(["R", "D"])
+
+    evidence_count = (
+        expression_pass.astype(int)
+        + conservation_pass.astype(int)
+        + structure_pass.astype(int)
+    )
+
+    return base[evidence_count >= 2].copy()
+
+
+# Main App default catalog computed from the current default criteria.
+df = get_default_overlap_catalog().copy()
+
+
+def get_active_filtering_database_sources():
+    """
+    Database sources used by the Filtering criteria page.
+
+    Preset setups are selected after sidebar widgets have already been
+    instantiated, so they cannot safely modify sidebar checkbox widget keys.
+    Instead, presets store an internal override used only for Filtering criteria
+    calculations. Custom mode falls back to the sidebar database checkboxes.
+    """
+    preset_sources = st.session_state.get("filtering_preset_db_sources", None)
+    if preset_sources is not None:
+        return list(preset_sources or [])
+    return list(st.session_state.get(
+        "db_filter",
+        ["miRBase-full", "miRBase-HC", "MirGeneDB"],
+    ) or [])
+
+
+def apply_database_source_filter(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Apply the active Filtering criteria database filter to any dataframe.
+
+    All database sources are selected by default. If no database source is
+    selected, this returns an empty dataframe.
+    """
+    selected = get_active_filtering_database_sources()
+
+    if data is None or data.empty:
+        return data.copy() if data is not None else pd.DataFrame()
+
+    filtered = data.copy()
+    db_mask = pd.Series(False, index=filtered.index)
+
+    mirbase_class = filtered["Class_miRBase"].astype(str).str.strip().str.upper()
+    mirgenedb_class = filtered["Class_MirGeneDB"].astype(str).str.strip().str.upper()
+
+    mirbase_present = filtered["Class_miRBase"].notna() & ~mirbase_class.isin(["", "NA", "NAN", "—", "-", "<NA>"])
+    mirgenedb_present = filtered["Class_MirGeneDB"].notna() & ~mirgenedb_class.isin(["", "NA", "NAN", "—", "-", "<NA>"])
+
+    if "miRBase-full" in selected:
+        # miRBase-full represents the full input source.
+        db_mask |= pd.Series(True, index=filtered.index)
+    if "miRBase-HC" in selected:
+        db_mask |= filtered["_High_confidence_tf"] == "TRUE"
+    if "MirGeneDB" in selected:
+        db_mask |= mirgenedb_present
+
+    return filtered[db_mask].copy()
+
+
+def apply_filtering_page_sidebar_filters(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Apply the visible sidebar filters to a dataframe for the Filtering criteria page.
+
+    This is used for applying visible sidebar filters to benchmark and retained counts.
+    It intentionally mirrors the main visible filters:
+    - Search by name / global search
+    - Database
+    - Filter Experimental evidence
+    - hsa specificity
+    - Repeat class
+
+    The input should already be restricted to rows with missing/NA Overlap when
+    the count is intended to stay inside the Filtering criteria candidate universe.
+    """
+    if data is None or data.empty:
+        return data.copy() if data is not None else pd.DataFrame()
+
+    filtered = data.copy()
+
+    # Search box
+    search_term = st.session_state.get("search_any", "")
+    if search_term:
+        filtered = filtered[
+            filtered.astype(str)
+            .apply(lambda col: col.str.contains(search_term, case=False, na=False))
+            .any(axis=1)
+        ]
+
+    # Database checkboxes
+    filtered = apply_database_source_filter(filtered)
+
+    # Experimental evidence filter
+    experimental_evidence_filter = st.session_state.get("experimental_evidence_filter", "Show all")
+    if experimental_evidence_filter == "Pass stringent filter":
+        filtered = filtered[filtered["_Experimental_evidence_level"] == 2]
+    elif experimental_evidence_filter == "Pass lenient filter":
+        filtered = filtered[filtered["_Experimental_evidence_level"] == 1]
+    elif experimental_evidence_filter == "No pass":
+        filtered = filtered[filtered["_Experimental_evidence_level"] == 0]
+
+    # hsa-specificity
+    hsa_choice = st.session_state.get("sb_hsa", "Show all")
+    if hsa_choice != "Show all" and "hsa-specificity" in filtered.columns:
+        hsa_flag = filtered["hsa-specificity"].astype(str).str.strip().str.upper()
+        hsa_true = hsa_flag.isin(["YES", "TRUE", "1", "Y", "SI", "SÌ"])
+        hsa_false = hsa_flag.isin(["NO", "FALSE", "0", "N"])
+        if hsa_choice == "Only hsa-specific":
+            filtered = filtered[hsa_true]
+        elif hsa_choice == "Not hsa-specific":
+            filtered = filtered[hsa_false]
+
+    # Repeat class
+    repeats_selected = st.session_state.get("ms_repeat", [])
+    if repeats_selected and "Repeat_Class" in filtered.columns:
+        filtered = filtered[filtered["Repeat_Class"].isin(repeats_selected)]
+
+    return filtered.copy()
+
+
+def current_conservation_count(data: pd.DataFrame) -> pd.Series:
+    """
+    Count conservation as the number of TRUE species.
+    FALSE values are not counted.
+    """
+    if not animal_cols:
+        return pd.Series(pd.NA, index=data.index)
+
+    return data[animal_cols].apply(lambda r: r.isin([True]).sum(), axis=1)
+
+
+def current_expression_count(data: pd.DataFrame) -> pd.Series:
+    """
+    Count expressed tissues according to the currently selected ablation RPMM cutoff.
+    Default / non-ablation mode uses RPMM >= 1.5.
+    """
+    if not tissue_cols:
+        return pd.Series(pd.NA, index=data.index)
+
+    cutoff = 1.5
+    if st.session_state.get("apply_ablation_to_main", False):
+        cutoff = float(st.session_state.get("sens_expression_cutoff", 1.5))
+
+    tissue_num = data[tissue_cols].apply(pd.to_numeric, errors="coerce")
+    return (tissue_num >= cutoff).sum(axis=1)
+
+
+def current_structure_pass(data: pd.DataFrame) -> pd.Series:
+    """
+    Evaluate structure pass/fail according to currently selected structural classes.
+    Default / non-ablation mode uses the original Structure TRUE/FALSE flag.
+    """
+    if not st.session_state.get("apply_ablation_to_main", False):
+        return data["_Structure_tf"].astype(str).str.upper().eq("TRUE")
+
+    stable_classes = {
+        str(x).strip().upper()
+        for x in (st.session_state.get("sens_stable_classes", ["R", "D"]) or [])
+    }
+
+    if not stable_classes:
+        return pd.Series(False, index=data.index)
+
+    mirbase_class = data["Class_miRBase"].astype(str).str.strip().str.upper()
+    mirgenedb_class = data["Class_MirGeneDB"].astype(str).str.strip().str.upper()
+
+    return mirbase_class.isin(stable_classes) | mirgenedb_class.isin(stable_classes)
+
+
+
+def compute_filtering_flags(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute expression, conservation and structure pass/fail flags using the
+    current Filtering criteria controls. Used for the combination-count table.
+    """
+    out = data[overlap_missing(data)].copy()
+
+    cutoff = float(st.session_state.get("sens_expression_cutoff", 1.5))
+    min_tissues = int(st.session_state.get("sens_min_tissues", 1))
+    min_species = int(st.session_state.get("sens_min_species", 3))
+    stable_classes = {
+        str(x).strip().upper()
+        for x in (st.session_state.get("sens_stable_classes", ["R", "D"]) or [])
+    }
+    high_conf_filter = "Show all"
+
+    if tissue_cols:
+        tissue_num = out[tissue_cols].apply(pd.to_numeric, errors="coerce")
+        out["_filter_expression_count"] = (tissue_num >= cutoff).sum(axis=1)
+        out["_filter_expression_pass"] = out["_filter_expression_count"] >= min_tissues
+    else:
+        out["_filter_expression_count"] = 0
+        out["_filter_expression_pass"] = False
+
+    if animal_cols:
+        out["_filter_conservation_count"] = out[animal_cols].apply(
+            lambda r: r.isin([True]).sum(),
+            axis=1,
+        )
+        out["_filter_conservation_pass"] = out["_filter_conservation_count"] >= min_species
+    else:
+        out["_filter_conservation_count"] = 0
+        out["_filter_conservation_pass"] = False
+
+    if stable_classes:
+        mirbase_class = out["Class_miRBase"].astype(str).str.strip().str.upper()
+        mirgenedb_class = out["Class_MirGeneDB"].astype(str).str.strip().str.upper()
+        out["_filter_structure_pass"] = mirbase_class.isin(stable_classes) | mirgenedb_class.isin(stable_classes)
+    else:
+        out["_filter_structure_pass"] = False
+
+    if high_conf_filter in ["High confidence", "High confidence (TRUE)"]:
+        out = out[out["_High_confidence_tf"] == "TRUE"]
+    elif high_conf_filter in ["Low confidence", "Low confidence (FALSE)"]:
+        out = out[out["_High_confidence_tf"] == "FALSE"]
+
+    return out
+
+
+def build_filtering_combination_summary(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Report retained counts for the default rules or for the current custom rule.
+    """
+    flags = compute_filtering_flags(data)
+
+    filtering_mode = st.session_state.get("filtering_mode", "Default")
+    selected_rule = st.session_state.get("filtering_rule", "At least 2 of 3 criteria")
+
+    evidence_count = (
+        flags["_filter_conservation_pass"].astype(int)
+        + flags["_filter_expression_pass"].astype(int)
+        + flags["_filter_structure_pass"].astype(int)
+    )
+
+    if filtering_mode == "Custom":
+        selected_labels = []
+        selected_series = []
+
+        if st.session_state.get("custom_use_conservation", True):
+            selected_labels.append("Evolutionary conservation")
+            selected_series.append(flags["_filter_conservation_pass"].astype(int))
+        if st.session_state.get("custom_use_expression", True):
+            selected_labels.append("Tissue Expression")
+            selected_series.append(flags["_filter_expression_pass"].astype(int))
+        if st.session_state.get("custom_use_structure", True):
+            selected_labels.append("Structural class")
+            selected_series.append(flags["_filter_structure_pass"].astype(int))
+
+        selected_count = len(selected_series)
+        custom_min = int(st.session_state.get("custom_min_criteria", min(2, selected_count)))
+        custom_min = max(0, min(custom_min, selected_count))
+
+        if selected_count == 0:
+            retained = len(flags) if custom_min == 0 else 0
+        else:
+            custom_evidence_count = sum(selected_series)
+            retained = int((custom_evidence_count >= custom_min).sum())
+
+        label = " + ".join(selected_labels) if selected_labels else "No criteria selected"
+        return pd.DataFrame([{
+            "Applied": "✓",
+            "Filtering rule": f"Custom: {label}; minimum passing = {custom_min}",
+            "Retained miRNA/s": retained,
+        }])
+
+    rule_masks = {
+        "At least 2 of 3 criteria": evidence_count >= 2,
+        "All 3 criteria": (
+            flags["_filter_conservation_pass"]
+            & flags["_filter_expression_pass"]
+            & flags["_filter_structure_pass"]
+        ),
+        "Stable structural class + at least one other criterion": (
+            flags["_filter_structure_pass"]
+            & (
+                flags["_filter_conservation_pass"]
+                | flags["_filter_expression_pass"]
+            )
+        ),
+    }
+
+    rows = []
+    for rule_name, mask in rule_masks.items():
+        rows.append({
+            "Applied": "✓" if rule_name == selected_rule else "",
+            "Filtering rule": rule_name,
+            "Retained miRNA/s": int(mask.sum()),
+        })
+
+    return pd.DataFrame(rows)
+
+
+
+def make_tsv_download(data: pd.DataFrame) -> bytes:
+    """Convert a dataframe to TSV bytes for Streamlit download buttons."""
+    if data is None:
+        data = pd.DataFrame()
+    return data.to_csv(index=False, sep="\t").encode("utf-8")
+
+
+def safe_filename_label(label: str) -> str:
+    """Make short, safe labels for generated TSV filenames."""
+    return (
+        str(label)
+        .strip()
+        .lower()
+        .replace(" + ", "_plus_")
+        .replace(" ", "_")
+        .replace("/", "_")
+        .replace("-", "_")
+    )
+
+
+def render_compact_html_table(data: pd.DataFrame, decimals: int = 2) -> None:
+    """
+    Render a compact HTML table that fits the page width better than st.dataframe
+    for many narrow benchmark columns.
+    """
+    if data is None or data.empty:
+        st.info("No data to display.")
+        return
+
+    display_df = data.copy()
+
+    for col in display_df.columns:
+        if pd.api.types.is_float_dtype(display_df[col]):
+            if str(col).startswith("%"):
+                display_df[col] = display_df[col].map(lambda x: f"{x:.2f}" if pd.notna(x) else "")
+            else:
+                display_df[col] = display_df[col].map(lambda x: f"{x:.{decimals}f}" if pd.notna(x) else "")
+
+    html = display_df.to_html(index=False, escape=False)
+    st.markdown(
+        f"""
+        <div class="compact-table-wrap">
+            {html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def reorder_benchmark_columns(data: pd.DataFrame, include_selection: bool = True) -> pd.DataFrame:
+    """
+    Put Precision / Recall / F1 first in benchmark tables.
+    Selection is hidden on-page and kept in downloaded TSV files.
+    """
+    if data is None or data.empty:
+        return data.copy() if data is not None else pd.DataFrame()
+
+    priority = ["Validation threshold", "Precision", "Recall", "F1"]
+    if include_selection:
+        priority = ["Selection"] + priority
+
+    remaining = [c for c in data.columns if c not in priority]
+    ordered = [c for c in priority if c in data.columns] + remaining
+    return data[ordered].copy()
+
+
+def build_validation_benchmark_table(catalogs: dict, reference_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build a dynamic benchmark table against Experimental evidence.
+
+    Universe = all candidate rows with missing/NA Overlap.
+
+    NA Experimental evidence rows are never counted in TP, FP, FN,
+    precision, recall, F1 or percentages. They are reported separately
+    as "Experimental evidence NA included".
+
+    Two benchmark thresholds are reported:
+    - Stringent: supported = Experimental evidence level 2.
+      not supported = Experimental evidence level 0 or 1.
+    - Lenient: supported = Experimental evidence >= 1.
+      not supported = Experimental evidence level 0.
+
+    For each selection:
+    - Supported included = selection ∩ supported Kim set
+    - Not supported included = selection ∩ not-supported Kim set
+    - Supported not included = supported Kim set \\ selection
+    - Experimental evidence NA included = selection ∩ NA Kim set
+    """
+    if "miRNA" not in reference_data.columns or "_Experimental_evidence_level" not in reference_data.columns:
+        return pd.DataFrame()
+
+    ref = get_filtering_candidate_universe(reference_data)
+    ref["miRNA"] = ref["miRNA"].astype(str)
+    universe_set = set(ref["miRNA"])
+
+    evidence_num = pd.to_numeric(ref["_Experimental_evidence_level"], errors="coerce")
+    na_set = set(ref.loc[evidence_num.isna(), "miRNA"])
+
+    threshold_definitions = [
+        {
+            "Validation threshold": "Stringent filter",
+            "supported_mask": evidence_num == 2,
+            "not_supported_mask": evidence_num.isin([0, 1]),
+        },
+        {
+            "Validation threshold": "Lenient filter",
+            "supported_mask": evidence_num >= 1,
+            "not_supported_mask": evidence_num == 0,
+        },
+    ]
+
+    rows = []
+
+    def _safe_pct(num, den):
+        if den == 0:
+            return 0.0
+        return (num / den) * 100
+
+    def _safe_ratio(num, den):
+        if den == 0:
+            return 0.0
+        return num / den
+
+    for threshold in threshold_definitions:
+        supported_set = set(ref.loc[threshold["supported_mask"], "miRNA"])
+        not_supported_set = set(ref.loc[threshold["not_supported_mask"], "miRNA"])
+
+        for label, catalog in catalogs.items():
+            if catalog is None or "miRNA" not in catalog.columns:
+                included_set = set()
+            else:
+                included_set = set(catalog["miRNA"].dropna().astype(str))
+
+            included_set = included_set & universe_set
+
+            tp = len(included_set & supported_set)
+            fp = len(included_set & not_supported_set)
+            fn = len(supported_set - included_set)
+            na_included = len(included_set & na_set)
+
+            precision = _safe_ratio(tp, tp + fp)
+            recall = _safe_ratio(tp, tp + fn)
+            f1 = _safe_ratio(2 * precision * recall, precision + recall)
+
+            rows.append({
+                "Selection": label,
+                "Validation threshold": threshold["Validation threshold"],
+                "Supported included": tp,
+                "Not supported included": fp,
+                "Supported not included": fn,
+                "Experimental evidence NA included": na_included,
+                "Supported total + NA included": tp + fn + na_included,
+                "% Supported missed": round(_safe_pct(fn, tp + fn), 3),
+                "% Not supported included": round(_safe_pct(fp, tp + fp), 3),
+                "Precision": round(precision, 4),
+                "Recall": round(recall, 4),
+                "F1": round(f1, 4),
+            })
+
+    return pd.DataFrame(rows)
+
+
+
 # ===========================================================
-# TABS BAR (APP / DOCUMENTATION)
+# TABS BAR (APP / SENSITIVITY / DOCUMENTATION)
 # ===========================================================
-tab_app, tab_docs = st.tabs(["App", "Documentation"])
+tab_app, tab_sensitivity, tab_docs = st.tabs(["App", "Filtering criteria", "Documentation"])
 
 # ✅ inject the tab switch + scroll router once
 _inject_doc_nav_js()
@@ -1029,8 +2020,14 @@ _inject_doc_nav_js()
 # -----------------------------------------------------------
 with st.sidebar.expander("Documentation", expanded=False):
     st.markdown("- " + doc_jump_link("doc_overview", "Overview"), unsafe_allow_html=True)
-    st.markdown("- " + doc_jump_link("doc_key_features", "Key features"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_key_features", "Main filters"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_filter_database", "Database filter"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_filtering_criteria", "Filtering criteria page"), unsafe_allow_html=True)
     st.markdown("- " + doc_jump_link("doc_advanced", "Advanced options"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_adv_conservation", "Conservation details"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_adv_tissue", "Expression details"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_adv_db_class", "Structural class"), unsafe_allow_html=True)
+    st.markdown("- " + doc_jump_link("doc_adv_confidence_evidence", "Experimental evidence"), unsafe_allow_html=True)
     st.markdown("- " + doc_jump_link("doc_export", "Data export"), unsafe_allow_html=True)
     st.markdown("- " + doc_jump_link("doc_use_cases", "Example use cases"), unsafe_allow_html=True)
 
@@ -1055,10 +2052,19 @@ with tab_app:
 ### How to use the app
 - Use the sidebar on the left to filter the dataset  
 - Enable *Advanced options* for additional controls/filters  
+- Use Advanced options for additional column display controls  
 - Export **TSV** / **FASTA** at the bottom of the table  
 - Try the **Example use cases** presets at the bottom of the scrollable sidebar to quickly apply filter combinations  
 - Use **Reset all filters** (bottom and top of the sidebar) to clear everything and start over
 """)
+
+    app_df = get_main_catalog()
+
+    if st.session_state.get("apply_ablation_to_main", False):
+        st.info(
+            "Filtering criteria are currently applied to the main table. "
+            "Conservation, Expression and Structure colors are evaluated against the selected filtering criteria."
+        )
 
     # -----------------------------------------------------------
     # SIDEBAR: FILTERS + inline doc icons (FIXED: ℹ️ next to label)
@@ -1069,10 +2075,7 @@ with tab_app:
     if any_filter_active():
         st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (reset)"), unsafe_allow_html=True)
         if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_top"):
-            for k in FILTER_KEYS:
-                st.session_state.pop(k, None)
-            st.session_state["show_adv"] = False
-            st.session_state["page"] = 1  # MCGPT: reset pagination
+            reset_all_filters()
             st.rerun()
 
     search_term = sidebar_widget_inline_doc(
@@ -1082,65 +2085,107 @@ with tab_app:
         key="search_any",
     )
 
-    pass_sb_options = ["Show all", "PASSED", "NOT PASSED"]
+    # These top-level pass/fail filters were removed from the sidebar.
+    # Keep them neutral so old browser/session state cannot silently filter rows.
+    conservation_choice = "Show all"
+    expression_choice = "Show all"
+    structure_choice = "Show all"
+    for _k in ["sb_conservation", "sb_expression", "sb_structure"]:
+        st.session_state[_k] = "Show all"
 
-    conservation_choice = sidebar_widget_inline_doc(
-        st.sidebar.selectbox,
-        "Conservation:",
-        "doc_filter_conservation_pf",
-        pass_sb_options,
-        index=0,
-        key="sb_conservation",
-    )
+    # Database/source filters: checkbox row, not mutually exclusive.
+    # On first run after this version, start with all databases selected.
+    # After that, user choices are preserved, including selecting none.
+    if st.session_state.get("_db_defaults_version") != "v19":
+        st.session_state["db_mirbase_full"] = True
+        st.session_state["db_mirbase_hc"] = True
+        st.session_state["db_mirgendb"] = True
+        st.session_state["db_filter"] = ["miRBase-full", "miRBase-HC", "MirGeneDB"]
+        st.session_state["_db_defaults_version"] = "v19"
 
-    expression_choice = sidebar_widget_inline_doc(
-        st.sidebar.selectbox,
-        "Expression:",
-        "doc_filter_expression_pf",
-        pass_sb_options,
-        index=0,
-        key="sb_expression",
-    )
+    # Filtering-criteria presets are selected later in the script, but Streamlit
+    # checkbox keys must be updated before the checkbox widgets are instantiated.
+    # The preset callback stores the desired sidebar state here, then the next
+    # rerun applies it safely at this point.
+    pending_sidebar_db_sources = st.session_state.pop("_pending_sidebar_db_sources", None)
+    if pending_sidebar_db_sources is not None:
+        pending_sidebar_db_sources = list(pending_sidebar_db_sources or [])
+        st.session_state["db_mirbase_full"] = "miRBase-full" in pending_sidebar_db_sources
+        st.session_state["db_mirbase_hc"] = "miRBase-HC" in pending_sidebar_db_sources
+        st.session_state["db_mirgendb"] = "MirGeneDB" in pending_sidebar_db_sources
+        st.session_state["db_filter"] = pending_sidebar_db_sources
 
-    structure_choice = sidebar_widget_inline_doc(
-        st.sidebar.selectbox,
-        "Structure:",
-        "doc_filter_structure_pf",
-        pass_sb_options,
+    sidebar_label_with_doc("Database:", "doc_filter_database")
+    db_c1, db_c2, db_c3 = st.sidebar.columns(3)
+    with db_c1:
+        db_mirbase_full = st.checkbox("miRBase-full", key="db_mirbase_full")
+    with db_c2:
+        db_mirbase_hc = st.checkbox("miRBase-HC", key="db_mirbase_hc")
+    with db_c3:
+        db_mirgendb = st.checkbox("MirGeneDB", key="db_mirgendb")
+
+    database_selected = []
+    if db_mirbase_full:
+        database_selected.append("miRBase-full")
+    if db_mirbase_hc:
+        database_selected.append("miRBase-HC")
+    if db_mirgendb:
+        database_selected.append("MirGeneDB")
+
+    # Keep variable name used later, but it now stores a list of selected database sources.
+    mirgene_filter = database_selected
+    st.session_state["db_filter"] = database_selected
+
+    # If a preset previously set the database sources, but the user now changes
+    # the sidebar checkboxes manually, stop using the preset override.
+    # This makes the Database checkboxes truly interactive again.
+    active_preset_sources = st.session_state.get("filtering_preset_db_sources", None)
+    if active_preset_sources is not None and sorted(database_selected) != sorted(list(active_preset_sources or [])):
+        st.session_state["filtering_preset_db_sources"] = None
+
+    exp_label_col, exp_doc_col = st.sidebar.columns([12, 1], vertical_alignment="center")
+    with exp_label_col:
+        show_exp_evidence_col = st.checkbox(
+            "Show Experimental evidence (Kim et al. 2021)",
+            value=False,
+            key="show_exp_evidence_col",
+        )
+    with exp_doc_col:
+        st.markdown(doc_jump_icon("doc_adv_confidence_evidence"), unsafe_allow_html=True)
+
+    sidebar_label_with_doc("Filter Experimental evidence:", "doc_adv_confidence_evidence")
+    experimental_evidence_filter = st.sidebar.selectbox(
+        "Filter Experimental evidence:",
+        [
+            "Show all",
+            "Pass stringent filter",
+            "Pass lenient filter",
+            "No pass",
+        ],
         index=0,
-        key="sb_structure",
+        key="experimental_evidence_filter",
+        label_visibility="collapsed",
     )
 
     hsa_sb_options = ["Show all", "Only hsa-specific", "Not hsa-specific"]
     hsa_choice = sidebar_widget_inline_doc(
-        st.sidebar.selectbox,
+        st.sidebar.radio,
         "hsa specificity:",
         "doc_filter_hsa",
         hsa_sb_options,
         index=0,
         key="sb_hsa",
+        horizontal=True,
     )
 
-    family_options = [
-        "no family – miRBase",
-        "no family – MirGeneDB",
-        "miRNAs in family – miRBase",
-        "miRNAs in family – MirGeneDB",
-    ]
-    family_selected = sidebar_widget_inline_doc(
-        st.sidebar.multiselect,
-        "Family:",
-        "doc_filter_family",
-        family_options,
-        default=[],
-        key="ms_family",
-    )
+    # Family filters removed. Keep neutral variable for downstream compatibility.
+    family_selected = []
 
     repeats_selected = sidebar_widget_inline_doc(
         st.sidebar.multiselect,
         "Repeat class:",
         "doc_filter_repeat",
-        sorted(df["Repeat_Class"].dropna().unique()) if "Repeat_Class" in df.columns else [],
+        sorted(app_df["Repeat_Class"].dropna().unique()) if "Repeat_Class" in app_df.columns else [],
         default=[],
         key="ms_repeat",
     )
@@ -1166,8 +2211,12 @@ with tab_app:
     stability_choice = "All"
 
     show_class_cols = False
-    mirgene_filter = "Show all"
     classes_selected = []
+
+    show_high_conf_col = False
+    show_overlap_col = False
+    high_conf_filter = "Show all"
+    experimental_evidence_filter = "Show all"
 
     show_adv = sidebar_widget_inline_doc(
         st.sidebar.toggle,
@@ -1324,16 +2373,16 @@ with tab_app:
 
                 tissues_not_filter = sorted(tissues_not_filter_set)
 
-        with st.sidebar.expander("Database / Class", expanded=True):
+        with st.sidebar.expander("Structural class", expanded=True):
             st.sidebar.markdown(
-                f"<div style='margin-top:-2px; margin-bottom:6px;font-size:14px;'>{doc_jump_link('doc_adv_db_class', 'Docs (database/class)')}</div>",
+                f"<div style='margin-top:-2px; margin-bottom:6px;font-size:14px;'>{doc_jump_link('doc_adv_db_class', 'Docs (structural class)')}</div>",
                 unsafe_allow_html=True
             )
 
             st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
             show_class_cols = st.checkbox(
-                "Show Class columns",
+                "Show Structural class columns",
                 value=False,
                 key="show_class_cols",
             )
@@ -1341,23 +2390,18 @@ with tab_app:
             st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
             st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
-            mirgene_filter = st.selectbox(
-                "Database:",
-                ["Show all", "In both", "Only in miRBase"],
-                key="db_filter",
-            )
-
-            classes = sorted(df["Class_miRBase"].dropna().unique()) if "Class_miRBase" in df.columns else []
             classes_selected = st.multiselect(
-                "Class:",
-                classes,
+                "Structural class:",
+                ["R", "D", "I", "S"],
                 default=[],
                 key="class_filter",
             )
 
+
+
+
     def apply_preset(preset_name: str):
-        for k in FILTER_KEYS:
-            st.session_state.pop(k, None)
+        reset_all_filters()
 
         st.session_state["show_adv"] = True
         st.session_state["sb_conservation"] = "Show all"
@@ -1369,9 +2413,18 @@ with tab_app:
         st.session_state["search_any"] = ""
         st.session_state["ms_family"] = []
         st.session_state["ms_repeat"] = []
-        st.session_state["db_filter"] = "Show all"
+        st.session_state["db_filter"] = ["miRBase-full", "miRBase-HC", "MirGeneDB"]
+        st.session_state["db_mirbase_full"] = True
+        st.session_state["db_mirbase_hc"] = True
+        st.session_state["db_mirgendb"] = True
         st.session_state["class_filter"] = []
         st.session_state["show_class_cols"] = False
+
+        st.session_state["show_high_conf_col"] = False
+        st.session_state["show_exp_evidence_col"] = False
+        st.session_state["show_overlap_col"] = False
+        st.session_state["high_conf_filter"] = "Show all"
+        st.session_state["experimental_evidence_filter"] = "Show all"
 
         # clear show-cols selections explicitly (optional but clearer)
         for sys_name in SYSTEM_TISSUES.keys():
@@ -1442,16 +2495,13 @@ with tab_app:
         # (Reset is a main doc anchor; icon could be made inline too, but left like this)
         st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (Reset)"), unsafe_allow_html=True)
         if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_bottom"):
-            for k in FILTER_KEYS:
-                st.session_state.pop(k, None)
-            st.session_state["show_adv"] = False
-            st.session_state["page"] = 1  # MCGPT: reset pagination
+            reset_all_filters()
             st.rerun()
 
     # -----------------------------------------------------------
     # APPLY FILTERS
     # -----------------------------------------------------------
-    filtered = df.copy()
+    filtered = app_df.copy()
 
     def apply_pass_choice(data: pd.DataFrame, choice: str, helper_col: str) -> pd.DataFrame:
         if not choice or choice == "Show all":
@@ -1462,41 +2512,64 @@ with tab_app:
             return data[data[helper_col] == "FALSE"]
         return data
 
-    filtered = apply_pass_choice(filtered, conservation_choice, "_Conservation_tf")
-    filtered = apply_pass_choice(filtered, expression_choice, "_Expression_tf")
-    filtered = apply_pass_choice(filtered, structure_choice, "_Structure_tf")
+    # Top-level Conservation / Expression / Structure pass-fail filters are not shown in the sidebar.
+    # Advanced filtering remains available through the dedicated controls below.
 
     if hsa_choice != "Show all":
         hsa_flag = filtered["hsa-specificity"].astype(str).str.strip().str.upper()
+        hsa_true = hsa_flag.isin(["YES", "TRUE", "1", "Y", "SI", "SÌ"])
+        hsa_false = hsa_flag.isin(["NO", "FALSE", "0", "N"])
         if hsa_choice == "Only hsa-specific":
-            filtered = filtered[hsa_flag == "YES"]
+            filtered = filtered[hsa_true]
         elif hsa_choice == "Not hsa-specific":
-            filtered = filtered[hsa_flag == "NO"]
+            filtered = filtered[hsa_false]
 
-    if mirgene_filter == "In both":
-        filtered = filtered[filtered["Class_miRBase"] == filtered["Class_MirGeneDB"]]
-    elif mirgene_filter == "Only in miRBase":
-        filtered = filtered[(filtered["Class_miRBase"].notna()) & (filtered["Class_MirGeneDB"] == "—")]
+    # Database/source filter.
+    # This is always applied because all database checkboxes are selected by default.
+    # If the user deselects all databases, db_mask remains all False and the table shows 0 rows.
+    db_mask = pd.Series(False, index=filtered.index)
 
-    if classes_selected and "Class_miRBase" in filtered.columns:
-        filtered = filtered[filtered["Class_miRBase"].isin(classes_selected)]
+    mirbase_class = filtered["Class_miRBase"].astype(str).str.strip().str.upper()
+    mirgenedb_class = filtered["Class_MirGeneDB"].astype(str).str.strip().str.upper()
 
-    if family_selected:
-        fam_mask = pd.Series(False, index=filtered.index)
-        mirbase_flag = filtered["miRBase family"].astype(str).str.strip().str.upper()
-        mirgenedb_flag = filtered["MirGeneDB family"].astype(str).str.strip().str.upper()
+    mirbase_present = filtered["Class_miRBase"].notna() & ~mirbase_class.isin(["", "NA", "NAN", "—", "-", "<NA>"])
+    mirgenedb_present = filtered["Class_MirGeneDB"].notna() & ~mirgenedb_class.isin(["", "NA", "NAN", "—", "-", "<NA>"])
 
-        if "no family – miRBase" in family_selected:
-            fam_mask |= (mirbase_flag == "NO")
-        if "miRNAs in family – miRBase" in family_selected:
-            fam_mask |= (mirbase_flag == "YES")
+    if "miRBase-full" in mirgene_filter:
+        db_mask |= mirbase_present
+    if "miRBase-HC" in mirgene_filter:
+        db_mask |= filtered["_High_confidence_tf"] == "TRUE"
+    if "MirGeneDB" in mirgene_filter:
+        db_mask |= mirgenedb_present
 
-        if "no family – MirGeneDB" in family_selected:
-            fam_mask |= (mirgenedb_flag == "NO")
-        if "miRNAs in family – MirGeneDB" in family_selected:
-            fam_mask |= (mirgenedb_flag == "YES")
+    filtered = filtered[db_mask]
 
-        filtered = filtered[fam_mask]
+    if classes_selected:
+        mirbase_class = filtered["Class_miRBase"].astype(str).str.strip().str.upper()
+        mirgenedb_class = filtered["Class_MirGeneDB"].astype(str).str.strip().str.upper()
+        filtered = filtered[
+            mirbase_class.isin(classes_selected)
+            | mirgenedb_class.isin(classes_selected)
+        ]
+
+    high_conf_filter = st.session_state.get("high_conf_filter", "Show all")
+    experimental_evidence_filter = st.session_state.get("experimental_evidence_filter", "Show all")
+
+    if high_conf_filter in ["High confidence", "High confidence (TRUE)"]:
+        filtered = filtered[filtered["_High_confidence_tf"] == "TRUE"]
+    elif high_conf_filter in ["Low confidence", "Low confidence (FALSE)"]:
+        filtered = filtered[filtered["_High_confidence_tf"] == "FALSE"]
+
+    if experimental_evidence_filter == "Pass stringent filter":
+        filtered = filtered[filtered["_Experimental_evidence_level"] == 2]
+    elif experimental_evidence_filter == "Pass lenient filter":
+        filtered = filtered[filtered["_Experimental_evidence_level"] == 1]
+    elif experimental_evidence_filter == "No pass":
+        filtered = filtered[filtered["_Experimental_evidence_level"] == 0]
+
+
+    # Family filtering removed.
+
 
     if repeats_selected:
         filtered = filtered[filtered["Repeat_Class"].isin(repeats_selected)]
@@ -1576,15 +2649,29 @@ with tab_app:
     st.session_state["page"] = max(1, min(st.session_state["page"], total_pages))
 
     # Prev / Next controls (compact)
+    def _go_prev_page():
+        st.session_state["page"] = max(1, int(st.session_state.get("page", 1)) - 1)
+
+    def _go_next_page():
+        st.session_state["page"] = min(total_pages, int(st.session_state.get("page", 1)) + 1)
+
     nav_c1, nav_c2, nav_c3 = st.columns([1, 2, 1])
     with nav_c1:
-        if st.button("← Prev", disabled=st.session_state["page"] == 1, use_container_width=True):
-            st.session_state["page"] -= 1
-            st.rerun()
+        st.button(
+            "← Prev",
+            disabled=st.session_state["page"] == 1,
+            use_container_width=True,
+            key="main_prev_page",
+            on_click=_go_prev_page,
+        )
     with nav_c3:
-        if st.button("Next →", disabled=st.session_state["page"] == total_pages, use_container_width=True):
-            st.session_state["page"] += 1
-            st.rerun()
+        st.button(
+            "Next →",
+            disabled=st.session_state["page"] == total_pages,
+            use_container_width=True,
+            key="main_next_page",
+            on_click=_go_next_page,
+        )
     with nav_c2:
         st.markdown(
             f"""
@@ -1618,9 +2705,17 @@ with tab_app:
     # MCGPT: display only current page (downloads still use full filtered set)
     df_display = page_filtered.copy()
 
-    df_display["Conservation"] = df_display["Conservation_display"]
-    df_display["Expression"] = df_display["Expression_display"]
+    # Display counts are dynamic when ablation criteria are applied to the main table.
+    # Otherwise they use the manuscript/default display logic.
+    if st.session_state.get("apply_ablation_to_main", False):
+        df_display["Conservation"] = current_conservation_count(df_display)
+        df_display["Expression"] = current_expression_count(df_display)
+    else:
+        df_display["Conservation"] = df_display["Conservation_display"]
+        df_display["Expression"] = df_display["Expression_display"]
+
     df_display["Structure"] = df_display["Structure_display"]
+    df_display["_Structure_dynamic_tf"] = current_structure_pass(df_display).map(lambda x: "TRUE" if bool(x) else "FALSE")
 
     df_display["miRBase family"] = df_display["miRBase_family_display"]
     df_display["MirGeneDB family"] = df_display["MirGeneDB_family_display"]
@@ -1636,6 +2731,13 @@ with tab_app:
         "Class_MirGeneDB": "Class MirGeneDB",
     })
 
+    if "Class MirGeneDB" in df_display.columns:
+        df_display["Class MirGeneDB"] = (
+            df_display["Class MirGeneDB"]
+            .replace(["—", "-", "", "nan", "NaN", "<NA>"], "NA")
+            .fillna("NA")
+        )
+
     mandatory_display_cols = [
         "miRNA", "Conservation", "Expression", "Structure",
         "MirGeneDB family", "miRBase family", "hsa-specificity", "Repeat Class",
@@ -1645,6 +2747,14 @@ with tab_app:
     tissues_to_show_display = [c for c in tissues_to_show if c in df_display.columns]
     class_to_show_display = ["Class miRBase", "Class MirGeneDB"] if show_class_cols else []
 
+    evidence_to_show_display = []
+
+    if st.session_state.get("show_exp_evidence_col", False):
+        evidence_to_show_display.append("Experimental evidence")
+
+
+    evidence_to_show_display = [c for c in evidence_to_show_display if c in df_display.columns]
+
     desired_order = (
         ["miRNA", "Conservation"]
         + animals_to_show_display
@@ -1652,12 +2762,19 @@ with tab_app:
         + tissues_to_show_display
         + ["Structure"]
         + class_to_show_display
+        + evidence_to_show_display
         + ["MirGeneDB family", "miRBase family", "hsa-specificity", "Repeat Class"]
     )
 
     visible_cols = []
     for c in desired_order:
-        if (c in mandatory_display_cols) or (c in animals_to_show_display) or (c in tissues_to_show_display) or (c in class_to_show_display):
+        if (
+            (c in mandatory_display_cols)
+            or (c in animals_to_show_display)
+            or (c in tissues_to_show_display)
+            or (c in class_to_show_display)
+            or (c in evidence_to_show_display)
+        ):
             if c in df_display.columns:
                 visible_cols.append(c)
 
@@ -1666,8 +2783,9 @@ with tab_app:
 
     helper_cols = [
         "_Conservation_tf",
-        "_Expression_tf", "_Structure_tf",
+        "_Expression_tf", "_Structure_tf", "_Structure_dynamic_tf",
         "_miRBase_family_flag", "_MirGeneDB_family_flag",
+        "_High_confidence_tf", "_Experimental_evidence_level",
     ]
     helper_cols_present = [c for c in helper_cols if c in df_display.columns]
     df_display = df_display[visible_cols + helper_cols_present]
@@ -1684,9 +2802,15 @@ with tab_app:
     # ✅ FIX 2: prepare TSV export from FULL filtered set (not just the current page)
     df_export_full = filtered_sorted.copy()
 
-    df_export_full["Conservation"] = df_export_full["Conservation_display"]
-    df_export_full["Expression"] = df_export_full["Expression_display"]
+    if st.session_state.get("apply_ablation_to_main", False):
+        df_export_full["Conservation"] = current_conservation_count(df_export_full)
+        df_export_full["Expression"] = current_expression_count(df_export_full)
+    else:
+        df_export_full["Conservation"] = df_export_full["Conservation_display"]
+        df_export_full["Expression"] = df_export_full["Expression_display"]
+
     df_export_full["Structure"] = df_export_full["Structure_display"]
+    df_export_full["_Structure_dynamic_tf"] = current_structure_pass(df_export_full).map(lambda x: "TRUE" if bool(x) else "FALSE")
 
     df_export_full["miRBase family"] = df_export_full["miRBase_family_display"]
     df_export_full["MirGeneDB family"] = df_export_full["MirGeneDB_family_display"]
@@ -1701,6 +2825,13 @@ with tab_app:
         "Class_miRBase": "Class miRBase",
         "Class_MirGeneDB": "Class MirGeneDB",
     })
+
+    if "Class MirGeneDB" in df_export_full.columns:
+        df_export_full["Class MirGeneDB"] = (
+            df_export_full["Class MirGeneDB"]
+            .replace(["—", "-", "", "nan", "NaN", "<NA>"], "NA")
+            .fillna("NA")
+        )
 
     helper_cols_present_full = [c for c in helper_cols if c in df_export_full.columns]
     df_export_full = df_export_full[visible_cols + helper_cols_present_full]
@@ -1726,6 +2857,15 @@ with tab_app:
     CLASS_I_BG = "#6A3D9A"
     CLASS_S_BG = "#CAB2D6"
 
+    HIGH_CONF_TRUE_COLOR = "#F2B6C6"
+    HIGH_CONF_FALSE_COLOR = "#D9D9D9"
+
+    EXP_EVIDENCE_STRINGENT_COLOR = "#F2C94C"  # gold
+    EXP_EVIDENCE_LENIENT_COLOR = "#D9F0D3"    # light green
+    EXP_EVIDENCE_NOPASS_COLOR = "#E6E6E6"     # light gray
+    EXP_EVIDENCE_NODATA_COLOR = "#FFFFFF"     # white
+    OVERLAP_BG = "#d9f0a3"
+
     def color_binary(v):
         if pd.isna(v):
             return f"background-color:{NA_SPECIES_COLOR};"
@@ -1738,7 +2878,12 @@ with tab_app:
     def color_hsa(v):
         if pd.isna(v):
             return ""
-        return "background-color:#f1b6da;" if str(v) == "YES" else "background-color:#0072B2;"
+        s = str(v).strip().upper()
+        if s in ["YES", "TRUE", "1", "Y", "SI", "SÌ"]:
+            return "background-color:#f1b6da;"
+        if s in ["NO", "FALSE", "0", "N"]:
+            return "background-color:#0072B2;"
+        return ""
 
     def hide_text_species(_v):
         return "color: transparent !important; text-shadow: 0 0 0 transparent !important;"
@@ -1753,17 +2898,33 @@ with tab_app:
             return f"background-color:{FALSE_COLOR};"
         return ""
 
+
+    def bg_dynamic_count(v, threshold):
+        """
+        Color a displayed count according to the current threshold.
+        The comparison is intentionally >=, matching the ablation/filter criteria.
+        """
+        if pd.isna(v):
+            return ""
+        try:
+            x = float(v)
+        except Exception:
+            return ""
+        if x >= float(threshold):
+            return f"background-color:{TRUE_COLOR};"
+        return f"background-color:{FALSE_COLOR};"
+
     def bg_family(flag):
         if pd.isna(flag):
-            return ""
-        f = str(flag).upper()
+            return "background-color:white;"
+        f = str(flag).strip().upper()
         if f == "YES":
             return f"background-color:{FAM_YES_COLOR};"
         if f == "NO":
             return f"background-color:{FAM_NO_COLOR};"
-        if str(flag) == "—":
-            return ""
-        return f"background-color:{FAM_NO_COLOR};"
+        if f in ["", "NAN", "NA", "—", "<NA>"]:
+            return "background-color:white;"
+        return "background-color:white;"
 
     def bg_repeat(val):
         if pd.isna(val):
@@ -1794,8 +2955,10 @@ with tab_app:
 
     def class_bg(v):
         if pd.isna(v):
-            return ""
+            return "background-color:white; color:black !important;"
         s = str(v).strip().upper()
+        if s in ["NA", "—", "-", "", "NAN", "<NA>"]:
+            return "background-color:white; color:black !important;"
         if s == "R":
             return f"background-color:{CLASS_R_BG}; color: white !important;"
         if s == "D":
@@ -1806,10 +2969,44 @@ with tab_app:
             return f"background-color:{CLASS_S_BG}; color: black !important;"
         return ""
 
+    def bg_high_conf(flag):
+        if pd.isna(flag):
+            return ""
+        f = str(flag).upper()
+        if f == "TRUE":
+            return f"background-color:{HIGH_CONF_TRUE_COLOR}; color: black !important;"
+        if f == "FALSE":
+            return f"background-color:{HIGH_CONF_FALSE_COLOR}; color: black !important;"
+        return ""
+
+    def bg_experimental_evidence(level):
+        if pd.isna(level):
+            return f"background-color:{EXP_EVIDENCE_NODATA_COLOR}; color: black !important;"
+        try:
+            lvl = int(float(level))
+        except Exception:
+            return f"background-color:{EXP_EVIDENCE_NODATA_COLOR}; color: black !important;"
+        if lvl == 2:
+            return f"background-color:{EXP_EVIDENCE_STRINGENT_COLOR}; color: black !important;"
+        if lvl == 1:
+            return f"background-color:{EXP_EVIDENCE_LENIENT_COLOR}; color: black !important;"
+        if lvl == 0:
+            return f"background-color:{EXP_EVIDENCE_NOPASS_COLOR}; color: black !important;"
+        return f"background-color:{EXP_EVIDENCE_NODATA_COLOR}; color: black !important;"
+
+    def overlap_bg(v):
+        if pd.isna(v):
+            return ""
+        return f"background-color:{OVERLAP_BG}; color: black !important;"
+
     visible_species_cols = [animal_display_names[c] for c in animals_to_show if c in animal_display_names]
     visible_species_cols = [c for c in visible_species_cols if c in df_display.columns]
     visible_tissue_cols = [c for c in tissues_to_show_display if c in df_display.columns]
     visible_class_cols = [c for c in class_to_show_display if c in df_display.columns]
+    visible_overlap_cols = [
+        c for c in ["Overlap"]
+        if c in df_display.columns and c in evidence_to_show_display
+    ]
 
     styled_df = df_display.style
 
@@ -1840,21 +3037,61 @@ with tab_app:
     if visible_class_cols:
         styled_df = styled_df.applymap(class_bg, subset=visible_class_cols)
 
+
+    if visible_overlap_cols:
+        styled_df = styled_df.applymap(overlap_bg, subset=visible_overlap_cols)
+
+    conservation_color_threshold = (
+        int(st.session_state.get("sens_min_species", 3))
+        if st.session_state.get("apply_ablation_to_main", False)
+        else 3
+    )
+    expression_color_threshold = (
+        int(st.session_state.get("sens_min_tissues", 1))
+        if st.session_state.get("apply_ablation_to_main", False)
+        else 1
+    )
+
     def style_row(row):
         styles = ["font-weight: 700; font-size: 10px;"] * len(row)
         idx = {c: i for i, c in enumerate(row.index)}
 
-        if "Conservation" in idx and "_Conservation_tf" in idx:
-            styles[idx["Conservation"]] += bg_true_false(row["_Conservation_tf"])
-        if "Expression" in idx and "_Expression_tf" in idx:
-            styles[idx["Expression"]] += bg_true_false(row["_Expression_tf"])
-        if "Structure" in idx and "_Structure_tf" in idx:
-            styles[idx["Structure"]] += bg_true_false(row["_Structure_tf"])
+        if "Conservation" in idx:
+            styles[idx["Conservation"]] += bg_dynamic_count(row["Conservation"], conservation_color_threshold)
+        if "Expression" in idx:
+            styles[idx["Expression"]] += bg_dynamic_count(row["Expression"], expression_color_threshold)
+        if "Structure" in idx:
+            if "_Structure_dynamic_tf" in idx:
+                styles[idx["Structure"]] += bg_true_false(row["_Structure_dynamic_tf"])
+            elif "_Structure_tf" in idx:
+                styles[idx["Structure"]] += bg_true_false(row["_Structure_tf"])
 
         if "miRBase family" in idx and "_miRBase_family_flag" in idx:
-            styles[idx["miRBase family"]] += bg_family(row["_miRBase_family_flag"])
+            _flag = row["_miRBase_family_flag"]
+            styles[idx["miRBase family"]] += bg_family(_flag)
+            if str(_flag).strip().upper() == "NO":
+                styles[idx["miRBase family"]] += "color: transparent !important; text-shadow: 0 0 0 transparent !important;"
         if "MirGeneDB family" in idx and "_MirGeneDB_family_flag" in idx:
-            styles[idx["MirGeneDB family"]] += bg_family(row["_MirGeneDB_family_flag"])
+            _flag = row["_MirGeneDB_family_flag"]
+            styles[idx["MirGeneDB family"]] += bg_family(_flag)
+            if str(_flag).strip().upper() == "NO":
+                styles[idx["MirGeneDB family"]] += "color: transparent !important; text-shadow: 0 0 0 transparent !important;"
+
+        if "miRBase high confidence miRNA" in idx and "_High_confidence_tf" in idx:
+            styles[idx["miRBase high confidence miRNA"]] += (
+                bg_high_conf(row["_High_confidence_tf"])
+                + "color: transparent !important; text-shadow: 0 0 0 transparent !important;"
+            )
+
+        if "Experimental evidence" in idx and "_Experimental_evidence_level" in idx:
+            styles[idx["Experimental evidence"]] += bg_experimental_evidence(row["_Experimental_evidence_level"])
+            if not pd.isna(row["_Experimental_evidence_level"]):
+                styles[idx["Experimental evidence"]] += (
+                    "color: transparent !important; text-shadow: 0 0 0 transparent !important;"
+                )
+            else:
+                styles[idx["Experimental evidence"]] += "color: black !important;"
+
 
         return styles
 
@@ -2058,6 +3295,8 @@ with tab_app:
     # -----------------------------------------------------------
     # ROW COUNT
     # -----------------------------------------------------------
+    st.markdown('<div id="main_table_anchor" class="doc-anchor"></div>', unsafe_allow_html=True)
+
     # MCGPT: show total filtered rows (not just page size)
     st.write(f"Rows shown (filtered total): **{len(filtered_sorted)}**")
 
@@ -2139,6 +3378,29 @@ with tab_app:
     <span class="legend-item"><span class="swatch" style="background:{CLASS_D_BG};"></span>D</span>
     <span class="legend-item"><span class="swatch" style="background:{CLASS_I_BG};"></span>I</span>
     <span class="legend-item"><span class="swatch" style="background:{CLASS_S_BG};"></span>S</span>
+  </div>
+</div>
+""")
+
+    if "miRBase high confidence miRNA" in evidence_to_show_display:
+        legend_cards.append(f"""
+<div class="legend-card">
+  <div class="legend-title">miRBase high confidence miRNA</div>
+  <div class="legend-row">
+    <span class="legend-item"><span class="swatch" style="background:{HIGH_CONF_TRUE_COLOR};"></span>TRUE</span>
+    <span class="legend-item"><span class="swatch" style="background:{HIGH_CONF_FALSE_COLOR};"></span>FALSE</span>
+  </div>
+</div>
+""")
+
+    if "Experimental evidence" in evidence_to_show_display:
+        legend_cards.append(f"""
+<div class="legend-card">
+  <div class="legend-title">Experimental evidence</div>
+  <div class="legend-row">
+    <span class="legend-item"><span class="swatch" style="background:{EXP_EVIDENCE_STRINGENT_COLOR};"></span>Pass stringent filter</span>
+    <span class="legend-item"><span class="swatch" style="background:{EXP_EVIDENCE_LENIENT_COLOR};"></span>Pass lenient filter</span>
+    <span class="legend-item"><span class="swatch" style="background:{EXP_EVIDENCE_NOPASS_COLOR};"></span>No pass</span>
   </div>
 </div>
 """)
@@ -2289,7 +3551,665 @@ with tab_app:
 
 
 # ===========================================================
-# TAB 2 — DOCUMENTATION (split into sections + granular anchors)
+# TAB 2 — ABLATION ANALYSIS
+# ===========================================================
+with tab_sensitivity:
+    st.markdown(
+        """
+        <style>
+        /* Compact tables used in Filtering criteria benchmark. */
+        .compact-table-wrap{
+            width: 100%;
+            overflow-x: visible;
+            margin: 0.15rem 0 0.65rem 0;
+        }
+        .compact-table-wrap table{
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+            font-size: clamp(14px, 0.98vw, 18px);
+            line-height: 1.08;
+        }
+        .compact-table-wrap th,
+        .compact-table-wrap td{
+            border: 1px solid rgba(128,128,128,0.24);
+            padding: 0.28rem 0.24rem;
+            text-align: center;
+            vertical-align: middle;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: normal;
+        }
+        .compact-table-wrap th{
+            background: color-mix(in srgb, var(--text) 5%, transparent);
+            font-weight: 900;
+            color: var(--text);
+        }
+        .compact-table-wrap td{
+            font-weight: 400;
+        }
+        .compact-table-wrap td:first-child{
+            font-weight: 800;
+        }
+        .compact-table-wrap td:nth-child(2),
+        .compact-table-wrap td:nth-child(3),
+        .compact-table-wrap td:nth-child(4){
+            font-weight: 800;
+        }
+
+        .min-criteria-card{
+            border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+            border-radius: 14px;
+            padding: 0.85rem 1rem 0.95rem 1rem;
+            background: color-mix(in srgb, var(--bg) 94%, var(--text) 6%);
+            margin: 0.25rem 0 1rem 0;
+        }
+        .min-criteria-card-title{
+            font-weight: 800;
+            font-size: 0.95rem;
+            margin-bottom: 0.15rem;
+        }
+        .min-criteria-card-caption{
+            opacity: 0.75;
+            font-size: 0.80rem;
+            margin-bottom: 0.55rem;
+        }
+        div[data-testid="stDownloadButton"] button{
+            font-size: 0.78rem !important;
+            padding: 0.22rem 0.45rem !important;
+            min-height: 1.7rem !important;
+            border-radius: 0.45rem !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.title("Filtering criteria")
+    st.markdown(
+        "Explore how the retained catalog size changes under alternative "
+        "expression, conservation and structural-class criteria."
+    )
+
+    def _filtering_settings_changed():
+        # Changing criteria only updates the counts on this page.
+        # The main table is changed only after explicitly clicking
+        # "Apply filtering criteria to main table" again.
+        st.session_state["apply_ablation_to_main"] = False
+        st.session_state["_switch_to_app_after_apply"] = False
+
+    def _set_database_sources(sources):
+        # Sidebar database checkboxes are instantiated before this page is rendered.
+        # Streamlit does not allow changing their widget keys afterward.
+        # Store preset database choices in a separate internal key for calculations,
+        # and queue the same choice so the sidebar checkboxes update on the next rerun.
+        sources = list(sources or [])
+        st.session_state["filtering_preset_db_sources"] = sources
+        st.session_state["_pending_sidebar_db_sources"] = sources
+
+    def _set_filtering_defaults(database_sources=None):
+        st.session_state["filtering_rule"] = "At least 2 of 3 criteria"
+        st.session_state["sens_expression_cutoff"] = 1.5
+        st.session_state["sens_min_tissues"] = 1
+        st.session_state["sens_min_species"] = 3
+        st.session_state["sens_stable_classes"] = ["R", "D"]
+        st.session_state["custom_use_conservation"] = True
+        st.session_state["custom_use_expression"] = True
+        st.session_state["custom_use_structure"] = True
+        st.session_state["custom_min_criteria"] = 2
+        st.session_state["_last_custom_selected_count"] = 3
+        if database_sources is not None:
+            _set_database_sources(database_sources)
+
+    def _set_database_only_defaults(database_sources):
+        # Database/source defaults represent the selected catalog/source only.
+        # Evidence criteria are intentionally neutral and displayed as 0 / empty.
+        st.session_state["filtering_rule"] = "At least 2 of 3 criteria"
+        st.session_state["sens_expression_cutoff"] = 0.0
+        st.session_state["sens_min_tissues"] = 0
+        st.session_state["sens_min_species"] = 0
+        st.session_state["sens_stable_classes"] = []
+        st.session_state["custom_use_conservation"] = True
+        st.session_state["custom_use_expression"] = True
+        st.session_state["custom_use_structure"] = True
+        st.session_state["custom_min_criteria"] = 2
+        st.session_state["_last_custom_selected_count"] = 3
+        _set_database_sources(database_sources)
+
+    def _set_kim_optimised_defaults():
+        st.session_state["filtering_rule"] = "At least 2 of 3 criteria"
+        st.session_state["sens_expression_cutoff"] = 0.5
+        st.session_state["sens_min_tissues"] = 1
+        st.session_state["sens_min_species"] = 3
+        st.session_state["sens_stable_classes"] = ["R"]
+        st.session_state["custom_use_conservation"] = True
+        st.session_state["custom_use_expression"] = True
+        st.session_state["custom_use_structure"] = True
+        st.session_state["custom_min_criteria"] = 2
+        st.session_state["_last_custom_selected_count"] = 3
+        _set_database_sources(["miRBase-full", "miRBase-HC", "MirGeneDB"])
+
+    def _set_custom_starting_defaults():
+        # Reset the Custom panel to its initial/default configuration each time
+        # the user enters Custom from another Filtering setup.
+        st.session_state["filtering_preset_db_sources"] = None
+        st.session_state.pop("_pending_sidebar_db_sources", None)
+        st.session_state["filtering_rule"] = "At least 2 of 3 criteria"
+        st.session_state["sens_expression_cutoff"] = 1.5
+        st.session_state["sens_min_tissues"] = 1
+        st.session_state["sens_min_species"] = 3
+        st.session_state["sens_stable_classes"] = ["R", "D"]
+        st.session_state["custom_use_conservation"] = True
+        st.session_state["custom_use_expression"] = True
+        st.session_state["custom_use_structure"] = True
+        st.session_state["custom_min_criteria"] = 2
+        st.session_state["_last_custom_selected_count"] = 3
+
+    def _apply_filtering_setup_preset():
+        setup = st.session_state.get("filtering_mode", "Default")
+
+        if setup == "Default":
+            _set_filtering_defaults(["miRBase-full", "miRBase-HC", "MirGeneDB"])
+        elif setup == "miRBase-full":
+            _set_database_only_defaults(["miRBase-full"])
+        elif setup == "miRBase-HC":
+            _set_database_only_defaults(["miRBase-HC"])
+        elif setup == "MirGeneDB":
+            _set_database_only_defaults(["MirGeneDB"])
+        elif setup == "Kim et al. optimised":
+            _set_kim_optimised_defaults()
+        elif setup == "Custom":
+            _set_custom_starting_defaults()
+
+    def _filtering_mode_changed():
+        _filtering_settings_changed()
+        _apply_filtering_setup_preset()
+
+
+    default_overlap = get_default_overlap_catalog()
+
+    # Prevent stale navigation state from switching to the App tab when the
+    # user changes only the Filtering setup.
+    if not st.session_state.get("apply_ablation_to_main", False):
+        st.session_state["_switch_to_app_after_apply"] = False
+
+    filtering_mode = st.radio(
+        "Filtering setup",
+        [
+            "Default",
+            "miRBase-full",
+            "miRBase-HC",
+            "MirGeneDB",
+            "Kim et al. optimised",
+            "Custom",
+        ],
+        key="filtering_mode",
+        horizontal=True,
+        on_change=_filtering_mode_changed,
+    )
+
+    previous_filtering_mode = st.session_state.get("_last_filtering_mode_rendered", None)
+
+    if filtering_mode == "Custom" and previous_filtering_mode != "Custom":
+        _set_custom_starting_defaults()
+    elif filtering_mode != "Custom" and previous_filtering_mode != filtering_mode:
+        # Apply preset values only when the setup changes.
+        # Do not re-apply on every rerun, otherwise sidebar Database checkboxes
+        # are forced back to the preset and cannot be manually deselected.
+        _apply_filtering_setup_preset()
+
+    st.session_state["_last_filtering_mode_rendered"] = filtering_mode
+
+    filtering_candidate_df = get_filtering_candidate_universe(df_all)
+    filtering_base_df = apply_filtering_page_sidebar_filters(filtering_candidate_df)
+    active_database_sources = get_active_filtering_database_sources()
+    active_database_label = ", ".join(active_database_sources) if active_database_sources else "None"
+
+
+    st.markdown(
+        """
+        <style>
+        .criteria-title{
+          font-size: 22px;
+          font-weight: 800;
+          line-height: 1.08;
+          margin-bottom: 14px;
+        }
+        .criteria-subtitle{
+          font-size: 13px;
+          opacity: 0.75;
+          margin-top: -6px;
+          margin-bottom: 12px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
+
+    c1, c2, c3 = st.columns(3, gap="large")
+
+    with c1:
+        with st.container(border=True):
+            st.markdown("<div class='criteria-title'>Evolutionary<br>conservation</div>", unsafe_allow_html=True)
+            if st.session_state.get("filtering_mode", "Default") == "Custom":
+                st.checkbox("Use this criterion", key="custom_use_conservation", on_change=_filtering_settings_changed)
+            st.markdown("<div class='criteria-subtitle'>Species-level stable conservation support</div>", unsafe_allow_html=True)
+            sens_min_species = st.slider(
+                "Minimum conserved species",
+                min_value=0,
+                max_value=max(1, len(animal_cols)),
+                step=1,
+                key="sens_min_species",
+                on_change=_filtering_settings_changed,
+                disabled=(filtering_mode != "Custom"),
+            )
+
+    with c2:
+        with st.container(border=True):
+            st.markdown("<div class='criteria-title'>Tissue Expression</div>", unsafe_allow_html=True)
+            if st.session_state.get("filtering_mode", "Default") == "Custom":
+                st.checkbox("Use this criterion", key="custom_use_expression", on_change=_filtering_settings_changed)
+            st.markdown("<div class='criteria-subtitle'>Expression support across tissues</div>", unsafe_allow_html=True)
+            sens_expression_cutoff = st.slider(
+                "Expression RPMM threshold",
+                min_value=0.0,
+                max_value=10.0,
+                step=0.1,
+                key="sens_expression_cutoff",
+                on_change=_filtering_settings_changed,
+                disabled=(filtering_mode != "Custom"),
+            )
+            sens_min_tissues = st.number_input(
+                "Minimum expressed tissues",
+                min_value=0,
+                max_value=max(1, len(tissue_cols)),
+                step=1,
+                key="sens_min_tissues",
+                on_change=_filtering_settings_changed,
+                disabled=(filtering_mode != "Custom"),
+            )
+
+    with c3:
+        with st.container(border=True):
+            st.markdown("<div class='criteria-title'>Structural class</div>", unsafe_allow_html=True)
+            if st.session_state.get("filtering_mode", "Default") == "Custom":
+                st.checkbox("Use this criterion", key="custom_use_structure", on_change=_filtering_settings_changed)
+            st.markdown("<div class='criteria-subtitle'>Structural class</div>", unsafe_allow_html=True)
+
+            structural_class_options = ["R", "D", "I", "S"]
+
+            sens_stable_classes = st.multiselect(
+                "Structural class",
+                structural_class_options,
+                key="sens_stable_classes",
+                on_change=_filtering_settings_changed,
+                disabled=(filtering_mode != "Custom"),
+            )
+
+    if filtering_mode == "Custom":
+        active_custom_criteria = [
+            st.session_state.get("custom_use_conservation", True),
+            st.session_state.get("custom_use_expression", True),
+            st.session_state.get("custom_use_structure", True),
+        ]
+        selected_custom_count = int(sum(active_custom_criteria))
+
+        recommended_min_criteria = (
+            selected_custom_count - 1
+            if selected_custom_count >= 2
+            else selected_custom_count
+        )
+
+        last_selected_custom_count = st.session_state.get(
+            "_last_custom_selected_count",
+            selected_custom_count,
+        )
+
+        if last_selected_custom_count != selected_custom_count:
+            st.session_state["custom_min_criteria"] = recommended_min_criteria
+            st.session_state["_last_custom_selected_count"] = selected_custom_count
+        elif int(st.session_state.get("custom_min_criteria", recommended_min_criteria)) > selected_custom_count:
+            st.session_state["custom_min_criteria"] = recommended_min_criteria
+
+        st.markdown(
+            """
+            <div class="min-criteria-card">
+              <div class="min-criteria-card-title">Minimum criteria to pass</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        min_col, _ = st.columns([1.25, 5])
+        with min_col:
+            st.number_input(
+                "Minimum number of selected criteria that must pass",
+                min_value=0,
+                max_value=selected_custom_count,
+                step=1,
+                key="custom_min_criteria",
+                label_visibility="collapsed",
+                help="This number cannot be greater than the number of selected criteria.",
+                on_change=_filtering_settings_changed,
+            )
+
+    st.markdown("---")
+
+    # First compute the retained set from the full candidate table, then intersect
+    # with the active Database selection. This makes the Database filter affect
+    # the Filtering retained number exactly as it affects the main table.
+    retained_sens_all = compute_ablation_catalog(df_all)
+    retained_filters_only = apply_filtering_page_sidebar_filters(filtering_candidate_df)
+    retained_sens = apply_filtering_page_sidebar_filters(retained_sens_all)
+
+    db_only_preset = filtering_mode in ["miRBase-full", "miRBase-HC", "MirGeneDB"]
+
+    if db_only_preset:
+        st.metric("Retained by criteria + filters", len(retained_sens))
+    else:
+        top_m1, top_m2 = st.columns(2)
+        top_m1.metric("Retained by criteria", len(retained_sens_all))
+        top_m2.metric("Retained by criteria + filters", len(retained_sens))
+
+    def _mark_apply_state():
+        # Apply criteria to the App table, but never navigate automatically.
+        if st.session_state.get("apply_ablation_to_main", False):
+            st.session_state["_switch_to_app_after_apply"] = True
+        else:
+            st.session_state["_switch_to_app_after_apply"] = False
+
+    st.checkbox(
+        "Apply filtering criteria to main table",
+        value=False,
+        key="apply_ablation_to_main",
+        help=(
+            "Click this after choosing criteria to update the main App table with the filtering-retained catalog. "
+            "If you later change criteria, this is automatically turned off until you apply again."
+        ),
+        on_change=_mark_apply_state,
+    )
+
+    # Do not automatically switch tabs.
+    # The user can go to the App tab manually after applying filtering criteria.
+    if st.session_state.pop("_switch_to_app_after_apply", False):
+        st.info("Filtering criteria are applied. Open the App tab to view the updated main table.")
+
+    if db_only_preset:
+        st.caption(
+            "Database/source presets do not use evidence criteria; the retained count shows the selected source after active sidebar filters."
+        )
+    else:
+        st.caption(
+            "Retained by criteria uses only the selected Filtering criteria. "
+            "Retained by criteria + filters also applies the active sidebar filters."
+        )
+
+    if filtering_mode == "Custom":
+        with st.container(border=True):
+            st.subheader("Criteria combination summary")
+            st.caption(
+                "Custom setup shown after applying the active sidebar filters."
+            )
+
+            combination_summary_df = build_filtering_combination_summary(filtering_base_df)
+            render_compact_html_table(combination_summary_df)
+            st.download_button(
+                "Download criteria combination summary (TSV)",
+                data=make_tsv_download(combination_summary_df),
+                file_name="criteria_combination_summary.tsv",
+                mime="text/tab-separated-values",
+                key="download_criteria_combination_summary",
+                use_container_width=False,
+            )
+
+    with st.container(border=True):
+        st.subheader("Experimental-evidence benchmark")
+        st.caption(
+            "Dynamic benchmark against Experimental evidence over the active Filtering criteria universe. "
+            "The fixed Default is always shown as baseline. Separate sections show Criteria and Criteria + filters when relevant. "
+            "Criteria applies only the selected Filtering criteria; Criteria + filters also applies the active visible sidebar filters. "
+            "Rows with missing Experimental evidence are reported separately and are never counted in TP, FP, FN, precision, recall or F1."
+        )
+
+        benchmark_section_tables = []
+
+        def show_benchmark_section(title: str, catalog: pd.DataFrame):
+            st.markdown(f"#### {title}")
+            section_df = build_validation_benchmark_table({title: catalog}, df_all)
+            if section_df.empty:
+                st.info("Experimental-evidence benchmark is unavailable because the required columns are missing.")
+            else:
+                section_download_df = reorder_benchmark_columns(section_df, include_selection=True)
+                section_display_df = reorder_benchmark_columns(section_df, include_selection=False)
+                if "Selection" in section_display_df.columns:
+                    section_display_df = section_display_df.drop(columns=["Selection"])
+
+                benchmark_section_tables.append(section_download_df)
+                render_compact_html_table(section_display_df)
+
+                dl_col, _ = st.columns([1.15, 7])
+                with dl_col:
+                    st.download_button(
+                        "Download TSV",
+                        data=make_tsv_download(section_download_df),
+                        file_name=f"experimental_evidence_benchmark_{safe_filename_label(title)}.tsv",
+                        mime="text/tab-separated-values",
+                        key=f"download_benchmark_{safe_filename_label(title)}",
+                        use_container_width=True,
+                    )
+
+        current_setup_label = str(filtering_mode)
+
+        show_benchmark_section("Default", get_default_overlap_catalog())
+
+        if db_only_preset:
+            show_benchmark_section(f"{current_setup_label} + Filters", retained_sens)
+        elif filtering_mode == "Custom":
+            show_benchmark_section("Custom", retained_sens_all)
+            show_benchmark_section("Custom + Filters", retained_sens)
+        elif filtering_mode != "Default":
+            show_benchmark_section(current_setup_label, retained_sens_all)
+            show_benchmark_section(f"{current_setup_label} + Filters", retained_sens)
+        elif len(retained_sens) != len(get_default_overlap_catalog()) or len(retained_filters_only) != len(filtering_candidate_df):
+            show_benchmark_section("Default + Filters", retained_sens)
+
+        if benchmark_section_tables:
+            benchmark_all_df = reorder_benchmark_columns(
+                pd.concat(benchmark_section_tables, ignore_index=True),
+                include_selection=True,
+            )
+            dl_all_col, _ = st.columns([1.35, 7])
+            with dl_all_col:
+                st.download_button(
+                    "Download all TSV",
+                    data=make_tsv_download(benchmark_all_df),
+                    file_name="experimental_evidence_benchmark_all_sections.tsv",
+                    mime="text/tab-separated-values",
+                    key="download_benchmark_all_sections",
+                    use_container_width=True,
+                )
+
+            st.markdown("#### Precision / recall overview")
+            st.caption(
+                "Each point corresponds to a unique Precision/Recall/F1 combination among the benchmark rows shown above. "
+                "The x-axis is Recall, the y-axis is Precision, and the label reports only F1. "
+                "If multiple selections have identical Precision, Recall and F1, they are merged into one point and listed together in the legend/tooltip."
+            )
+
+            plot_df = benchmark_all_df.copy()
+            if not plot_df.empty and {"Selection", "Precision", "Recall", "F1", "Validation threshold"}.issubset(plot_df.columns):
+                # Use the same two-decimal precision shown in the benchmark tables.
+                # This avoids showing multiple points when the displayed values are identical.
+                plot_df["Precision_plot"] = pd.to_numeric(plot_df["Precision"], errors="coerce").round(2)
+                plot_df["Recall_plot"] = pd.to_numeric(plot_df["Recall"], errors="coerce").round(2)
+                plot_df["F1_plot"] = pd.to_numeric(plot_df["F1"], errors="coerce").round(2)
+
+                def render_precision_recall_scatter(threshold_label: str):
+                    threshold_df = plot_df[plot_df["Validation threshold"] == threshold_label].copy()
+                    if threshold_df.empty:
+                        return
+
+                    # Merge identical visible points into a single plotted point.
+                    grouped = (
+                        threshold_df
+                        .groupby(["Validation threshold", "Precision_plot", "Recall_plot", "F1_plot"], dropna=False)
+                        .agg(
+                            **{
+                                "Selection group": ("Selection", lambda s: " / ".join(dict.fromkeys(s.astype(str)))),
+                                "N selections": ("Selection", "nunique"),
+                            }
+                        )
+                        .reset_index()
+                    )
+
+                    grouped["F1 label"] = grouped["F1_plot"].map(lambda x: f"{x:.2f}" if pd.notna(x) else "")
+                    grouped["Legend"] = grouped.apply(
+                        lambda r: (
+                            f"{r['Selection group']} (same point)"
+                            if int(r["N selections"]) > 1
+                            else str(r["Selection group"])
+                        ),
+                        axis=1,
+                    )
+
+                    def stable_color_key(selection_group: str) -> str:
+                        parts = [p.strip() for p in str(selection_group).split(" / ")]
+                        if "Default" in parts:
+                            return "Default"
+                        if "Default + Filters" in parts:
+                            return "Default + Filters"
+                        if "Custom" in parts:
+                            return "Custom"
+                        if "Custom + Filters" in parts:
+                            return "Custom + Filters"
+                        if "Kim et al. optimised" in parts:
+                            return "Kim et al. optimised"
+                        if "Kim et al. optimised + Filters" in parts:
+                            return "Kim et al. optimised + Filters"
+                        if "miRBase-full + Filters" in parts:
+                            return "miRBase-full + Filters"
+                        if "miRBase-HC + Filters" in parts:
+                            return "miRBase-HC + Filters"
+                        if "MirGeneDB + Filters" in parts:
+                            return "MirGeneDB + Filters"
+                        return parts[0] if parts else "Selection"
+
+                    color_map = {
+                        "Default": "#1f77b4",
+                        "Default + Filters": "#aec7e8",
+                        "Custom": "#d62728",
+                        "Custom + Filters": "#ff9896",
+                        "Kim et al. optimised": "#2ca02c",
+                        "Kim et al. optimised + Filters": "#98df8a",
+                        "miRBase-full + Filters": "#9467bd",
+                        "miRBase-HC + Filters": "#8c564b",
+                        "MirGeneDB + Filters": "#e377c2",
+                    }
+
+                    grouped["Color key"] = grouped["Selection group"].map(stable_color_key)
+                    grouped["Point color"] = grouped["Color key"].map(color_map).fillna("#7f7f7f")
+
+                    # Label-only offsets, not point offsets: points remain at their true rounded coordinates.
+                    grouped = grouped.reset_index(drop=True)
+                    grouped["Label precision"] = [
+                        min(1.0, max(0.0, float(p) + 0.060 + (i % 3) * 0.030))
+                        for i, p in enumerate(grouped["Precision_plot"])
+                    ]
+
+                    st.markdown(f"##### {threshold_label}")
+
+                    base = alt.Chart(grouped).encode(
+                        x=alt.X(
+                            "Recall_plot:Q",
+                            title="Recall",
+                            scale=alt.Scale(domain=[0, 1]),
+                        ),
+                        y=alt.Y(
+                            "Precision_plot:Q",
+                            title="Precision",
+                            scale=alt.Scale(domain=[0, 1]),
+                        ),
+                        tooltip=[
+                            alt.Tooltip("Legend:N", title="Selection(s)"),
+                            alt.Tooltip("Selection group:N", title="Merged rows"),
+                            alt.Tooltip("N selections:Q", title="Rows merged", format=".0f"),
+                            alt.Tooltip("Precision_plot:Q", title="Precision", format=".2f"),
+                            alt.Tooltip("Recall_plot:Q", title="Recall", format=".2f"),
+                            alt.Tooltip("F1_plot:Q", title="F1", format=".2f"),
+                        ],
+                    )
+
+                    points = base.mark_circle(size=230, opacity=0.90).encode(
+                        color=alt.Color(
+                            "Point color:N",
+                            title=None,
+                            scale=None,
+                            legend=None,
+                        ),
+                    )
+
+                    labels = alt.Chart(grouped).mark_text(
+                        align="center",
+                        baseline="bottom",
+                        fontSize=18,
+                        fontWeight="bold",
+                    ).encode(
+                        x=alt.X("Recall_plot:Q", title="Recall", scale=alt.Scale(domain=[0, 1])),
+                        y=alt.Y("Label precision:Q", title="Precision", scale=alt.Scale(domain=[0, 1])),
+                        text="F1 label:N",
+                        color=alt.value("black"),
+                    )
+
+                    legend_rows = grouped[["Legend", "Point color"]].drop_duplicates().reset_index(drop=True)
+                    legend_rows["x"] = 0
+                    legend_rows["y"] = legend_rows.index
+
+                    legend_points = alt.Chart(legend_rows).mark_circle(size=90).encode(
+                        x=alt.X("x:Q", axis=None),
+                        y=alt.Y("y:Q", axis=None, sort=None),
+                        color=alt.Color("Point color:N", scale=None, legend=None),
+                    )
+
+                    legend_text = alt.Chart(legend_rows).mark_text(
+                        align="left",
+                        baseline="middle",
+                        dx=8,
+                        fontSize=17,
+                        fontWeight="bold",
+                    ).encode(
+                        x=alt.X("x:Q", axis=None),
+                        y=alt.Y("y:Q", axis=None, sort=None),
+                        text="Legend:N",
+                    )
+
+                    legend_chart = (
+                        (legend_points + legend_text)
+                        .properties(width=260, height=max(70, 34 * len(legend_rows)))
+                    )
+
+                    main_chart = (points + labels).properties(width=680, height=310)
+
+                    combined_chart = (
+                        alt.hconcat(main_chart, legend_chart, spacing=8)
+                        .configure_axis(
+                            grid=True,
+                            titleFontWeight="bold",
+                            titleFontSize=16,
+                            labelFontSize=12,
+                        )
+                        .configure_view(strokeOpacity=0)
+                    )
+
+                    st.altair_chart(combined_chart, use_container_width=True)
+
+                render_precision_recall_scatter("Stringent filter")
+                render_precision_recall_scatter("Lenient filter")
+
+
+
+
+# ===========================================================
+# TAB 3 — DOCUMENTATION (split into sections + granular anchors)
 # ✅ CHANGED: updated tissue “Show columns” description (individual tissues)
 # ===========================================================
 with tab_docs:
@@ -2306,11 +4226,12 @@ An interactive **Streamlit** web application for exploring, filtering, and expor
 
 > *"miR-RF: a database-independent machine-learning workflow and integrative evidence framework for systematic annotation of human microRNAs"*
 
-This application enables dynamic interrogation and subsetting of human pre-miRNAs based on:
+This application enables dynamic interrogation and subsetting of human pre-miRNA based on:
 
 - **Predicted structural stability**
 - **Evolutionary conservation**
 - **Tissue expression patterns**
+- **Experimental-evidence validation level** from Kim *et al.* 2021, when enabled
 
 Users can define flexible, multi-parameter filtering strategies tailored to specific biological questions, and export selected subsets for downstream analyses.
 The app is designed to support both exploratory data analysis and hypothesis-driven investigation of human pre-miRNA candidates, along with their sequence.
@@ -2319,7 +4240,7 @@ The app is designed to support both exploratory data analysis and hypothesis-dri
 
 ### Overview
 
-Human pre-miRNAs are displayed in an interactive table featuring:
+Human pre-miRNA are displayed in an interactive table featuring:
 
 - **Sticky header** and **sticky first column** for improved navigation
 - **Color-coded cells** with an integrated legend indicating:
@@ -2344,6 +4265,8 @@ The browser combines annotations described in:
 - **Tissue expression values** (RPMM)
 - **miRNA family context** (miRBase / MirGeneDB)
 - **Repeat annotation**
+- **miRBase high-confidence miRNA annotation**, when used in Filtering criteria
+- **Experimental evidence validation level**, when enabled from the sidebar
 
 All displayed results correspond to the analyses reported in the accompanying manuscript and are provided as a reusable resource to support downstream computational and experimental studies.
 """
@@ -2361,7 +4284,7 @@ All displayed results correspond to the analyses reported in the accompanying ma
 Filters can be combined freely: **any combination of filters can be applied simultaneously**.
 
 All selected filters are combined using **logical AND**.  
-This means that only pre-miRNAs satisfying *all* active criteria will be displayed in the table.
+This means that only pre-miRNA satisfying *all* active criteria will be displayed in the table.
 
 Results update automatically whenever filter settings are modified.
 """
@@ -2371,7 +4294,7 @@ Results update automatically whenever filter settings are modified.
     doc_heading(3, "global", "Search by name")
     st.markdown(
         """
-Search for one or more miRNAs across **all rows** of the table.
+Search for one or more miRNA/s across **all rows** of the table.
 
 - Matching is **case-insensitive**.
 - The search performs a **partial match**: rows are retained if any cell **contains** the input text.
@@ -2379,15 +4302,31 @@ Search for one or more miRNAs across **all rows** of the table.
 """
     )
 
+    st.markdown('<div id="doc_filter_database" class="doc-anchor"></div>', unsafe_allow_html=True)
+    doc_heading(3, "database-main", "Database filter")
+    st.markdown(
+        """
+Filter entries according to database/source annotation. The options are not mutually exclusive: selecting multiple sources retains miRNA/s matching **any** selected source.
+
+- **All three selected** *(default)*: retain miRNA/s matching at least one selected source.
+- **No selection**: no database/source is selected, so the table contains 0 rows.
+- **miRBase-full**: retain miRNA/s present in the full miRBase-derived annotation set.
+- **miRBase-HC**: retain miRNA/s with `High confidence miRNA = TRUE`.
+- **MirGeneDB**: retain miRNA/s present in MirGeneDB.
+
+Selections are combined with logical **OR** within this filter.
+"""
+    )
+
     st.markdown('<div id="doc_filter_conservation_pf" class="doc-anchor"></div>', unsafe_allow_html=True)
     doc_heading(3, "cons1", "Conservation")
     st.markdown(
         """
-Keep or exclude human pre-miRNAs based on their **evolutionary conservation** across the selected species.
+The visible **Conservation** column reports the number of species with `TRUE` conservation support.
 
-- **Show all** *(default)*: no filter applied.
-- **PASSED**: evolutionarily conserved according to the criteria defined in the manuscript (detected in ≥ 3 species).
-- **NOT PASSED**: not conserved under the specified criteria.
+- `TRUE` values are counted.
+- `FALSE` and `NA` values are not counted.
+- The current default manuscript threshold is **at least 3 TRUE conserved species**.
 """
     )
 
@@ -2395,11 +4334,11 @@ Keep or exclude human pre-miRNAs based on their **evolutionary conservation** ac
     doc_heading(3, "tissue1", "Expression")
     st.markdown(
         """
-Keep or exclude human pre-miRNAs based on evidence of **expression**.
+The visible **Expression** column reports the number of tissues with expression above the selected/default RPMM threshold.
 
-- **Show all** *(default)*: no filter applied.
-- **PASSED**: expressed according to the criteria defined in the paper (RPMM ≥ in at least one tissue).
-- **NOT PASSED**: not conserved under the specified criteria.
+- The default expression threshold is **RPMM ≥ 1.5**.
+- The default minimum number of expressed tissues is **1**.
+- Tissue-level values can be shown from **Advanced options → Tissue expression**.
 """
     )
 
@@ -2407,7 +4346,7 @@ Keep or exclude human pre-miRNAs based on evidence of **expression**.
     doc_heading(3, "structure", "Structural Classification Filter (miRBase / MirGeneDB)")
     st.markdown(
         """
-Keep or exclude human pre-miRNAs according to their **structural classification** in miRBase or MirGeneDB.
+Keep or exclude human pre-miRNA according to their **structural classification** in miRBase or MirGeneDB.
 
 - **Show all** *(default)*: no filter applied.
 - **PASSED**: pre-miRNA classified as **R** or **D** (structurally robust).
@@ -2419,11 +4358,11 @@ Keep or exclude human pre-miRNAs according to their **structural classification*
     doc_heading(3, "hsa", "hsa specificity")
     st.markdown(
         """
-Filter human-specific or non human-specific pre-miRNAs.
+Filter human-specific or non human-specific pre-miRNA.
 
 - **Show all**: no filter applied.
-- **Only hsa-specific**: retain only pre-miRNAs annotated as human-specific.
-- **Not hsa-specific**: exclude human-specific premiRNAs and retain all other entries.
+- **Only hsa-specific**: retain only pre-miRNA annotated as human-specific.
+- **Not hsa-specific**: exclude human-specific premiRNA/s and retain all other entries.
 """
     )
 
@@ -2431,10 +4370,10 @@ Filter human-specific or non human-specific pre-miRNAs.
     doc_heading(3, "fam", "miRNA Family Membership")
     st.markdown(
         """
-Filter pre-miRNAs based on family annotations from **miRBase** and/or **MirGeneDB**.
+Filter pre-miRNA based on family annotations from **miRBase** and/or **MirGeneDB**.
 
-- **no family**: pre-miRNAs not assigned to any family in the selected databases.
-- **miRNAs in family**: pre-miRNAs annotated as belonging to a family (the family name is displayed when available).
+- **no family**: pre-miRNA not assigned to any family in the selected databases.
+- **miRNA/s in family**: pre-miRNA annotated as belonging to a family (the family name is displayed when available).
 """
     )
 
@@ -2442,10 +4381,10 @@ Filter pre-miRNAs based on family annotations from **miRBase** and/or **MirGeneD
     doc_heading(3, "rep", "Repeat class")
     st.markdown(
         """
-Filter miRNAs based on the presence and type of **overlapping repeat elements**.
+Filter miRNA/s based on the presence and type of **overlapping repeat elements**.
 
 - Select one or more repeat classes (e.g. **LINE**, **SINE**, **LTR**, **DNA repeats**, **Low complexity repeats**).
-- If multiple classes are selected, miRNAs overlapping **any** of the chosen categories are retained (logical OR).
+- If multiple classes are selected, miRNA/s overlapping **any** of the chosen categories are retained (logical OR).
 """
     )
 
@@ -2464,10 +4403,42 @@ Enable **“Show repeat class distribution”** to visualize the repeat composit
     doc_heading(3, "reset", "Reset all filters")
     st.markdown(
         """
-Use **Reset all filters** to clear selections and restore default settings.
+Use **Reset all filters** to clear selections and restore the initial app state.
 
-- The button is shown only when at least one filter is active.
-- It also resets navigation-dependent state (e.g. pagination).
+- The button is shown only when at least one filter or display option is active.
+- It resets main filters, advanced options, filtering criteria, pagination, and applied filtering-criteria state.
+"""
+    )
+
+    st.markdown("---")
+
+    # -----------------------------
+    # Sensitivity analysis
+    # -----------------------------
+    st.markdown('<div id="doc_filtering_criteria" class="doc-anchor"></div>', unsafe_allow_html=True)
+    doc_heading(2, "adv2", "Filtering criteria")
+    st.markdown(
+        """
+The **Filtering criteria** page is an expert page designed to evaluate how the retained catalog size changes under alternative analytical choices.
+
+**What the page uses**
+
+- The main **App** page opens on the default manuscript catalog (`Default = yes`).
+- The **Filtering criteria** page uses the complete candidate table, so it can test rows outside the default catalog.
+
+**Criteria that can be changed**
+
+- **Evolutionary conservation**: minimum number of species with `TRUE` conservation support.
+- **Tissue Expression**: RPMM threshold and minimum number of expressed tissues.
+- **Structural class**: classes considered passing (`R`, `D`, `I`, `S`) and optional miRBase high-confidence restriction.
+
+**Rules that can be compared**
+
+- **At least 2 of 3 criteria**: retained if at least two criteria pass.
+- **All 3 criteria**: retained only if conservation, expression and structural class all pass.
+- **Stable structural class + at least one other criterion**: retained if structural class is stable and at least one other criterion passes.
+
+The page reports the retained count and marks the selected rule in the criteria-combination summary. The main table changes only after selecting **Apply filtering criteria to main table**.
 """
     )
 
@@ -2513,13 +4484,20 @@ Use **Reset all filters** to clear selections and restore default settings.
 """)
 
     st.markdown('<div id="doc_adv_db_class" class="doc-anchor"></div>', unsafe_allow_html=True)
-    doc_heading(3, "database", "Database / class (advanced)")
+    doc_heading(3, "database", "Structural class (advanced)")
     st.markdown("""
-- **Show Class columns** (miRBase / MirGeneDB).  
-- **Database filter**: 
-    - entries present in both databases 
-    - entries present in miRBase.  
-- **Class filter**: filter by structural class (R, D, I, S).  
+- **Show Structural class columns** displays the miRBase and MirGeneDB structural class annotations.  
+- **Structural class filter** retains rows where either miRBase or MirGeneDB has one of the selected classes (`R`, `D`, `I`, `S`).  
+- Missing MirGeneDB class values are displayed as `NA`.  
+""")
+
+    st.markdown('<div id="doc_adv_confidence_evidence" class="doc-anchor"></div>', unsafe_allow_html=True)
+    doc_heading(3, "adv", "Experimental evidence")
+    st.markdown("""
+- The sidebar control “Show Experimental evidence (Kim et al. 2021)” displays the experimental-evidence validation column in the main table.  
+- The table uses color only for validation levels; missing values are shown as `NA`.  
+- **Experimental evidence filter**: retain miRNA/s by validation level: **Pass stringent filter**, **Pass lenient filter**, or **No pass**.  
+- The `Experimental evidence` annotation was processed from the experimental validation data reported by Kim *et al.* in **A quantitative map of human primary microRNA processing sites** (PMID: **34320405**), using **Supplementary Table S6** as the starting table.  
 """)
 
     st.markdown("---")
@@ -2557,24 +4535,24 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     # ---- Use case 1 (TITLE WITH ICON) ----
     st.markdown(
-        f"### {doc_icon_html('mouseCuore')}Use case 1 - Cardiovascular-associated miRNAs conserved in mouse",
+        f"### {doc_icon_html('mouseCuore')}Use case 1 - Cardiovascular-associated miRNA/s conserved in mouse",
         unsafe_allow_html=True
     )
 
     st.markdown(
         """
-    This use case focuses on human pre-miRNAs conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues and fluids.
+    This use case focuses on human pre-miRNA conserved in *Mus musculus*, structurally robust, and expressed in cardiovascular-related tissues and fluids.
 
     **Conservation support**
     - In **Advanced options -> Evolutionary conservation**, select *M. musculus* under **Found in**.  
-        This restricts the table to pre-miRNAs with detectable conservation in mouse.
+        This restricts the table to pre-miRNA with detectable conservation in mouse.
     - In **Advanced options -> Evolutionary conservation**, select **Stable (R/D)** under **Structure**.
 
     **Tissue expression context**
     - In **Advanced options -> Tissue expression**, select tissues belonging to the **Cardiorespiratory** system (heart and lung), under "Show extra columns". 
     - In **Advanced options -> Tissue expression**, select tissues under **Expressed in (select tissues by system):** all cardiovascular-related tissues and fluids. 
 
-    Under these conditions, **99 miRNAs** are retained. For each entry, the app enables inspection of whether the locus:
+    Under these conditions, **99 miRNA/s** are retained. For each entry, the app enables inspection of whether the miRNA:
     - is conserved in mouse;
     - displays expression across multiple cardiovascular tissues;
     - is classified as structurally stable (R or D).
@@ -2585,13 +4563,13 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     # ---- Use case 2 (TITLE WITH ICON) ----
     st.markdown(
-        f"### {doc_icon_html('scimmiaBrain')}miRNAs conserved in Great apes (human and Pan) and expressed in brain",
+        f"### {doc_icon_html('scimmiaBrain')}miRNA/s conserved in Great apes (human and Pan) and expressed in brain",
         unsafe_allow_html=True
     )
 
     st.markdown(
         """
-    This use case identifies human pre-miRNAs that are conserved in *Pan troglodytes* and *Pan paniscus* and show expression in neural tissues.
+    This use case identifies human pre-miRNA that are conserved in *Pan troglodytes* and *Pan paniscus* and show expression in neural tissues.
 
     **Conservation support**
     - In **Advanced options -> Evolutionary conservation**, select *P. troglodytes*, *P. paniscus*, *M. mulatta* and *L. catta* under **Show extra columns**.
@@ -2603,7 +4581,7 @@ These exports are intended to support downstream analyses and custom pipelines.
     - In **Advanced options → Tissue expression**, select tissues belonging to the **Neuro-Endocrine system** (brain and cerebellum), under "Show extra columns".  
       This option displays the corresponding tissue expression columns but does not filter the results.
 
-    Under these conditions, **29 miRNAs** are retained. For each entry, the app enables inspection of whether the locus:
+    Under these conditions, **29 miRNA/s** are retained. For each entry, the app enables inspection of whether the miRNA:
     - is conserved in *Pan troglodytes* and *Pan paniscus*;
     - not conserved in *Macaca mulatta* and *Lemur catta*;
     - is classified as structurally stable (R or D);
@@ -2615,7 +4593,6 @@ These exports are intended to support downstream analyses and custom pipelines.
 
     st.markdown("---")
     st.markdown("License: CC BY 4.0")
-
 
 
 
