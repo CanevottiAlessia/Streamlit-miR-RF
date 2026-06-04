@@ -23,7 +23,7 @@ The app is designed to support both exploratory data analysis and hypothesis-dri
 
 ## Filtering criteria page
 
-The **Filtering criteria** page allows users to explore how different filters affect the retained miRNA/s.
+The **Filtering criteria** page allows users to explore how different filters/criteria affect the retained miRNA/s.
 
 This page does **not** automatically modify the main table in the **App** tab. Instead, it first shows the effect of each setup inside the Filtering criteria page. The main App table is updated only when the user selects **Apply filtering criteria to main table**.
 
