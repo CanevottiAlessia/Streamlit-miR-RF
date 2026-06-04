@@ -219,11 +219,9 @@ Filter entries according to database/source annotation.
 
 The options are **not mutually exclusive**: selecting multiple sources retains miRNA/s matching any selected source.
 
-| Option           | Meaning                                                    |
-| ---------------- | ---------------------------------------------------------- |
-| **miRBase-full** | Retain miRNA/s present in miRBase. |
-| **miRBase-HC**   | Retain miRNA/s annotated as miRBase high-confidence.       |
-| **MirGeneDB**    | Retain miRNA/s present in MirGeneDB.                       |
+- **miRBase-full**: Retain miRNA/s present in miRBase. 
+- **miRBase-HC**: Retain miRNA/s annotated as miRBase high-confidence.       
+- **MirGeneDB**: Retain miRNA/s present in MirGeneDB.                       
 
 Selections are combined with logical `OR` within this filter.
 
@@ -234,12 +232,9 @@ If no database/source is selected, no entries are retained by the database filte
 ## 🧍 Human specificity
 
 Filter human-specific or non-human-specific pre-miRNAs.
-
-| Option                | Meaning                                                         |
-| --------------------- | --------------------------------------------------------------- |
-| **Show all**          | No human-specificity filtering is applied.                      |
-| **Only hsa-specific** | Retain only pre-miRNAs annotated as human-specific.             |
-| **Not hsa-specific**  | Exclude human-specific pre-miRNAs and retain all other entries. |
+- **Show all**: No human-specificity filtering is applied.                     
+- **Only hsa-specific**: Retain only pre-miRNAs annotated as human-specific.             
+- **Not hsa-specific**: Exclude human-specific pre-miRNAs and retain all other entries. 
 
 ---
 
@@ -247,12 +242,10 @@ Filter human-specific or non-human-specific pre-miRNAs.
 
 Experimental-evidence information can be displayed and filtered from the sidebar.
 
-| Option                    | Meaning                                                        |
-| ------------------------- | -------------------------------------------------------------- |
-| **Show all**              | No experimental-evidence filtering is applied.                 |
-| **Pass stringent filter** | Retain entries with the highest experimental-evidence support. |
-| **Pass lenient filter**   | Retain entries passing the lenient evidence threshold.         |
-| **No pass**               | Retain entries not passing the experimental-evidence filters.  |
+- **Show all**: No experimental-evidence filtering is applied.                 
+- **Pass stringent filter**: Retain entries with the highest experimental-evidence support. 
+- **Pass lenient filter**: Retain entries passing the lenient evidence threshold.         
+- **No pass**: Retain entries not passing the experimental-evidence filters.  
 
 Entries with unavailable experimental-evidence information are reported as `NA` when the column is displayed.
 
