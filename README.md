@@ -21,6 +21,122 @@ The app is designed to support both exploratory data analysis and hypothesis-dri
 
 ---
 
+## Filtering criteria page
+
+The **Filtering criteria** page allows users to explore how different filters affect the retained miRNA/s.
+
+This page does **not** automatically modify the main table in the **App** tab. Instead, it first shows the effect of each setup inside the Filtering criteria page. The main App table is updated only when the user selects **Apply filtering criteria to main table**.
+
+---
+
+## Filtering setup presets
+
+At the top of the page, the **Filtering setup** buttons define the starting configuration:
+
+| Preset                   | Description                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------------- |
+| **Default**              | Uses the current miR-RF default rule based on conservation, expression and structural class. |
+| **miRBase-full**         | Uses the full input catalog associated with miRBase-full; all criteria are disabled.    |
+| **miRBase-HC**           | Uses the miRBase high-confidence subset; criteria are disabled.                     |
+| **MirGeneDB**            | Uses the MirGeneDB subset; criteria are disabled.                                   |
+| **Kim et al. optimised** | Uses a configuration optimised against experimental evidence.                                |
+| **Custom**               | Allows the user to manually select and tune the evidence criteria.                           |
+
+For database-specific presets, namely **miRBase-full**, **miRBase-HC** and **MirGeneDB**, the conservation, expression and structural-class criteria are intentionally set to neutral/disabled values. In these cases, the relevant output is **Retained by criteria + filters**, because the retained set is defined by the selected database source and any active sidebar filters.
+
+---
+
+## Custom criteria
+
+When **Custom** is selected, the user can activate or deactivate each evidence criterion independently:
+
+| Criterion                     | Description                                                        |
+| ----------------------------- | ------------------------------------------------------------------ |
+| **Evolutionary conservation** | Minimum number of species with conservation support.               |
+| **Tissue Expression**         | RPMM expression threshold and minimum number of expressed tissues. |
+| **Structural class**          | Structural classes considered as stable.                          |
+
+The control **Minimum criteria to pass** defines how many of the selected criteria must be satisfied. 
+For example, if all three criteria are active and the minimum is set to `2`, a miRNA/s is retained when it passes at least two of the three evidence criteria.
+
+When switching to **Custom**, the panel is reset to the default custom starting configuration:
+
+* conservation ≥ 3 species;
+* expression RPMM ≥ 1.5 in at least 1 tissue;
+* structural class R/D;
+* all three criteria active;
+* minimum criteria to pass = 2.
+
+---
+
+## Counts shown on the page
+
+The page reports one or two retained counts depending on the selected setup:
+
+| Count                              | Meaning                                                                                                        |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Retained by criteria**           | Number of miRNA/s retained by the selected evidence criteria only.                                             |
+| **Retained by criteria + filters** | Number of miRNA/s retained after applying both the selected Filtering criteria and the active sidebar filters. |
+
+For database-specific presets, **Retained by criteria** is not shown because evidence criteria are not used.
+
+The sidebar **Database** checkboxes remain interactive. If a database preset is selected, the corresponding database checkbox is selected automatically. If the user manually changes the database checkboxes, the page uses the manual sidebar selection.
+
+---
+
+## Experimental-evidence benchmark
+
+The **Experimental-evidence benchmark** compares the retained sets against the experimental-evidence annotation.
+
+The benchmark always includes the fixed **Default** reference. Depending on the selected setup, it may also show additional sections, such as the current preset or **Custom** setup and the same setup after applying active sidebar filters.
+
+For each benchmark row, the table reports:
+
+* **Precision**
+* **Recall**
+* **F1**
+* supported entries included
+* not-supported entries included
+* supported entries missed
+* entries with unavailable experimental evidence
+
+Two validation thresholds are evaluated:
+
+| Threshold            | Supported entries                         |
+| -------------------- | ----------------------------------------- |
+| **Stringent filter** | Entries with `Experimental evidence = 2`. |
+| **Lenient filter**   | Entries with `Experimental evidence ≥ 1`. |
+
+Rows with unavailable experimental evidence are reported separately and are not counted in precision, recall, F1, supported included, not-supported included, or supported not included.
+
+---
+
+## Precision/recall plots
+
+The scatterplots summarise benchmark performance visually:
+
+| Plot element    | Meaning   |
+| --------------- | --------- |
+| **x-axis**      | Recall    |
+| **y-axis**      | Precision |
+| **Point label** | F1 score  |
+
+Separate plots are shown for the **Stringent filter** and **Lenient filter** thresholds.
+
+If multiple configurations have identical precision, recall and F1 values, they are merged into a single point and listed together in the legend or tooltip.
+
+---
+
+## Applying results to the main table
+
+To update the table in the **App** tab, select:
+
+```text
+Apply filtering criteria to main table
+```
+
+The app does not automatically switch tabs after applying the criteria. To inspect the updated retained table, open the **App** tab manually.
+
 
 ## 📊 Overview
 
