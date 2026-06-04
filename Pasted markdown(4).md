@@ -37,7 +37,7 @@ After applying the criteria, the app does not automatically switch tabs. To insp
 
 ---
 
-# Filtering setup presets
+### Filtering setup presets
 
 At the top of the Filtering criteria page, the **Filtering setup** buttons define the starting configuration:
 
@@ -56,7 +56,7 @@ The sidebar **Database** checkboxes remain interactive. If a database preset is 
 
 ---
 
-# Custom filtering criteria
+### Custom filtering criteria
 
 When **Custom** is selected, the user can activate or deactivate each evidence criterion independently:
 
@@ -80,7 +80,7 @@ When switching to **Custom**, the panel is reset to the default custom starting 
 
 ---
 
-# Counts shown on the Filtering criteria page
+### Counts shown on the Filtering criteria page
 
 The page reports one or two retained counts depending on the selected setup:
 
@@ -93,7 +93,7 @@ For database-specific presets, **Retained by criteria** is not shown because evi
 
 ---
 
-# Experimental-evidence benchmark
+### Experimental-evidence benchmark
 
 The **Experimental-evidence benchmark** compares the retained sets against the experimental-evidence annotation.
 
@@ -120,7 +120,7 @@ Rows with unavailable experimental evidence are reported separately and are not 
 
 ---
 
-# Precision/recall plots
+### Precision/recall plots
 
 The scatterplots summarise benchmark performance visually:
 
