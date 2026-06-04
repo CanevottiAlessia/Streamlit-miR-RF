@@ -221,7 +221,7 @@ The options are **not mutually exclusive**: selecting multiple sources retains m
 
 | Option           | Meaning                                                    |
 | ---------------- | ---------------------------------------------------------- |
-| **miRBase-full** | Retain miRNA/s present in the miRBase-full annotation set. |
+| **miRBase-full** | Retain miRNA/s present in miRBase. |
 | **miRBase-HC**   | Retain miRNA/s annotated as miRBase high-confidence.       |
 | **MirGeneDB**    | Retain miRNA/s present in MirGeneDB.                       |
 
