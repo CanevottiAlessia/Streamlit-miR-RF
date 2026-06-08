@@ -6,6 +6,7 @@ from pathlib import Path
 from PIL import Image
 import re
 import base64
+import html
 from io import BytesIO
 
 
@@ -1329,6 +1330,7 @@ def reset_all_filters():
         "_filtering_defaults_version",
         "_db_defaults_version",
         "_pending_sidebar_db_sources",
+        "_stay_on_filtering_tab",
         "apply_filtering_criteria_button",
         "reset_filtering_criteria_button",
     ]
@@ -2250,6 +2252,32 @@ tab_app, tab_sensitivity, tab_docs = st.tabs(["App", "Filtering criteria", "Docu
 
 # ✅ inject the tab switch + scroll router once
 _inject_doc_nav_js()
+
+
+def _inject_filtering_tab_restore_js():
+    """
+    Keep the Filtering criteria tab active after widgets inside that tab trigger
+    a Streamlit rerun. Without this, st.tabs may visually return to the first tab.
+    """
+    components.html(
+        """
+        <script>
+        setTimeout(function () {
+          const tabs = window.parent.document.querySelectorAll('button[role="tab"]');
+          const target = Array.from(tabs).find(b => {
+            const txt = (b.innerText || b.textContent || '').trim().toLowerCase();
+            return txt === 'filtering criteria' || txt.includes('filtering criteria');
+          });
+          if (target) { target.click(); }
+        }, 80);
+        </script>
+        """,
+        height=0,
+    )
+
+
+if st.session_state.pop("_stay_on_filtering_tab", False):
+    _inject_filtering_tab_restore_js()
 
 
 # -----------------------------------------------------------
@@ -3870,6 +3898,7 @@ with tab_sensitivity:
         # "Apply filtering criteria to main table" again.
         st.session_state["apply_ablation_to_main"] = False
         st.session_state["_switch_to_app_after_apply"] = False
+        st.session_state["_stay_on_filtering_tab"] = True
 
     def _set_database_sources(sources):
         # Sidebar database checkboxes are instantiated before this page is rendered.
@@ -3985,10 +4014,15 @@ with tab_sensitivity:
 
     if filtering_mode == "Custom" and previous_filtering_mode != "Custom":
         _set_custom_starting_defaults()
-    elif filtering_mode != "Custom" and previous_filtering_mode != filtering_mode:
-        # Apply preset values only when the setup changes.
-        # Do not re-apply on every rerun, otherwise sidebar Database checkboxes
-        # are forced back to the preset and cannot be manually deselected.
+    elif (
+        filtering_mode != "Custom"
+        and previous_filtering_mode is not None
+        and previous_filtering_mode != filtering_mode
+    ):
+        # Apply preset values only when the setup changes after the first render.
+        # Do not re-apply on the initial render or on ordinary reruns, otherwise
+        # sidebar Database checkboxes are forced back to the preset and cannot be
+        # manually deselected.
         _apply_filtering_setup_preset()
 
     st.session_state["_last_filtering_mode_rendered"] = filtering_mode
@@ -4147,6 +4181,7 @@ with tab_sensitivity:
 
     def _mark_apply_state():
         # Apply criteria to the App table, but never navigate automatically.
+        st.session_state["_stay_on_filtering_tab"] = True
         if st.session_state.get("apply_ablation_to_main", False):
             st.session_state["_switch_to_app_after_apply"] = True
         else:
@@ -4233,18 +4268,35 @@ with tab_sensitivity:
                     )
 
         current_setup_label = str(filtering_mode)
+        default_catalog_for_benchmark = get_default_overlap_catalog()
 
-        show_benchmark_section("Default", get_default_overlap_catalog())
+        def same_mirna_set(left: pd.DataFrame, right: pd.DataFrame) -> bool:
+            if left is None or right is None:
+                return False
+            if "miRNA" in left.columns and "miRNA" in right.columns:
+                return set(left["miRNA"].astype(str)) == set(right["miRNA"].astype(str))
+            return len(left) == len(right) and set(left.index) == set(right.index)
+
+        custom_same_as_default = (
+            filtering_mode == "Custom"
+            and same_mirna_set(retained_sens_all, default_catalog_for_benchmark)
+        )
+        custom_filters_same_as_default = (
+            filtering_mode == "Custom"
+            and same_mirna_set(retained_sens, default_catalog_for_benchmark)
+        )
+
+        show_benchmark_section("Default", default_catalog_for_benchmark)
 
         if db_only_preset:
             show_benchmark_section(f"{current_setup_label} + Filters", retained_sens)
         elif filtering_mode == "Custom":
-            show_benchmark_section("Custom", retained_sens_all)
-            show_benchmark_section("Custom + Filters", retained_sens)
+            show_benchmark_section("Custom = Default" if custom_same_as_default else "Custom", retained_sens_all)
+            show_benchmark_section("Custom + Filters = Default" if custom_filters_same_as_default else "Custom + Filters", retained_sens)
         elif filtering_mode != "Default":
             show_benchmark_section(current_setup_label, retained_sens_all)
             show_benchmark_section(f"{current_setup_label} + Filters", retained_sens)
-        elif len(retained_sens) != len(get_default_overlap_catalog()) or len(retained_filters_only) != len(filtering_candidate_df):
+        elif len(retained_sens) != len(default_catalog_for_benchmark) or len(retained_filters_only) != len(filtering_candidate_df):
             show_benchmark_section("Default + Filters", retained_sens)
 
         if benchmark_section_tables:
@@ -4297,12 +4349,27 @@ with tab_sensitivity:
                     )
 
                     grouped["F1 label"] = grouped["F1_plot"].map(lambda x: f"{x:.2f}" if pd.notna(x) else "")
+
+                    def simplify_merged_selection_label(selection_group: str, n_selections: int) -> str:
+                        parts = [p.strip() for p in str(selection_group).split(" / ") if str(p).strip()]
+                        part_set = set(parts)
+
+                        custom_default_labels = {
+                            "Default",
+                            "Custom",
+                            "Custom + Filters",
+                            "Custom = Default",
+                            "Custom + Filters = Default",
+                        }
+                        if "Default" in part_set and part_set.issubset(custom_default_labels):
+                            return "Custom = Default"
+
+                        if int(n_selections) > 1:
+                            return f"{selection_group} (same point)"
+                        return str(selection_group)
+
                     grouped["Legend"] = grouped.apply(
-                        lambda r: (
-                            f"{r['Selection group']} (same point)"
-                            if int(r["N selections"]) > 1
-                            else str(r["Selection group"])
-                        ),
+                        lambda r: simplify_merged_selection_label(r["Selection group"], r["N selections"]),
                         axis=1,
                     )
 
@@ -4312,6 +4379,10 @@ with tab_sensitivity:
                             return "Default"
                         if "Default + Filters" in parts:
                             return "Default + Filters"
+                        if "Custom = Default" in parts:
+                            return "Default"
+                        if "Custom + Filters = Default" in parts:
+                            return "Default"
                         if "Custom" in parts:
                             return "Custom"
                         if "Custom + Filters" in parts:
@@ -4395,36 +4466,10 @@ with tab_sensitivity:
                     )
 
                     legend_rows = grouped[["Legend", "Point color"]].drop_duplicates().reset_index(drop=True)
-                    legend_rows["x"] = 0
-                    legend_rows["y"] = legend_rows.index
 
-                    legend_points = alt.Chart(legend_rows).mark_circle(size=90).encode(
-                        x=alt.X("x:Q", axis=None),
-                        y=alt.Y("y:Q", axis=None, sort=None),
-                        color=alt.Color("Point color:N", scale=None, legend=None),
-                    )
-
-                    legend_text = alt.Chart(legend_rows).mark_text(
-                        align="left",
-                        baseline="middle",
-                        dx=8,
-                        fontSize=17,
-                        fontWeight="bold",
-                    ).encode(
-                        x=alt.X("x:Q", axis=None),
-                        y=alt.Y("y:Q", axis=None, sort=None),
-                        text="Legend:N",
-                    )
-
-                    legend_chart = (
-                        (legend_points + legend_text)
-                        .properties(width=260, height=max(70, 34 * len(legend_rows)))
-                    )
-
-                    main_chart = (points + labels).properties(width=680, height=310)
-
-                    combined_chart = (
-                        alt.hconcat(main_chart, legend_chart, spacing=8)
+                    main_chart = (
+                        (points + labels)
+                        .properties(height=310)
                         .configure_axis(
                             grid=True,
                             titleFontWeight="bold",
@@ -4434,7 +4479,58 @@ with tab_sensitivity:
                         .configure_view(strokeOpacity=0)
                     )
 
-                    st.altair_chart(combined_chart, use_container_width=True)
+                    plot_col, legend_col = st.columns([3.8, 1.7], gap="small")
+                    with plot_col:
+                        st.altair_chart(main_chart, use_container_width=True)
+                    with legend_col:
+                        # Render the legend as non-indented HTML.
+                        # Indented HTML can be interpreted by Markdown as a code block,
+                        # which makes raw <div> / <span> tags appear on screen.
+                        legend_items = []
+                        for _, row in legend_rows.iterrows():
+                            color = html.escape(str(row["Point color"]))
+                            label = html.escape(str(row["Legend"]))
+                            legend_items.append(
+                                '<div class="scatter-custom-legend-item">'
+                                f'<span class="scatter-custom-legend-dot" style="background:{color};"></span>'
+                                f'<span class="scatter-custom-legend-label">{label}</span>'
+                                '</div>'
+                            )
+
+                        legend_html = (
+                            '<style>'
+                            '.scatter-custom-legend{'
+                            'margin-top:1.25rem;'
+                            'padding-left:0.15rem;'
+                            'max-width:100%;'
+                            'overflow-wrap:anywhere;'
+                            '}'
+                            '.scatter-custom-legend-item{'
+                            'display:flex;'
+                            'align-items:center;'
+                            'gap:0.45rem;'
+                            'margin:0.45rem 0;'
+                            'line-height:1.15;'
+                            '}'
+                            '.scatter-custom-legend-dot{'
+                            'flex:0 0 auto;'
+                            'width:0.72rem;'
+                            'height:0.72rem;'
+                            'border-radius:50%;'
+                            'display:inline-block;'
+                            '}'
+                            '.scatter-custom-legend-label{'
+                            'font-size:0.95rem;'
+                            'font-weight:800;'
+                            'overflow-wrap:anywhere;'
+                            '}'
+                            '</style>'
+                            '<div class="scatter-custom-legend">'
+                            + ''.join(legend_items)
+                            + '</div>'
+                        )
+
+                        st.markdown(legend_html, unsafe_allow_html=True)
 
                 render_precision_recall_scatter("Stringent filter")
                 render_precision_recall_scatter("Lenient filter")
