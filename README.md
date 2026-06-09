@@ -415,7 +415,7 @@ The resulting table enables inspection of whether each locus:
 
 ---
 
-### 🧠🦧 Use case 2 — miRNAs conserved in great apes and expressed in brain
+#### 🧠🦧 Use case 2 — miRNAs conserved in great apes and expressed in brain
 
 This use case identifies 28 human pre-miRNAs that are conserved in *Pan troglodytes* and *Pan paniscus* and show expression in neural tissues.
 
