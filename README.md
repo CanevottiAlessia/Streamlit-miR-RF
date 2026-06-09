@@ -436,4 +436,3 @@ The resulting table enables inspection of whether each locus:
 * is absent from selected outgroup species, when applied;
 * is structurally stable;
 * displays expression across neuro-endocrine tissues.
-
