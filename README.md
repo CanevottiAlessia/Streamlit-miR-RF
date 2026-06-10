@@ -18,133 +18,19 @@ The app allows users to inspect the retained miR-RF catalog and explore human pr
 
 Users can define flexible, multi-parameter filtering strategies tailored to specific biological questions, compare alternative filtering criteria, and export selected subsets for downstream analyses.
 
-🔗 **Live app:**
-https://app-mir-rf-vfd7s8nncj3mx6anbaaxrh.streamlit.app/
-
 ---
 
-## 💻​ Filtering criteria page
-
-The **Filtering criteria** page allows users to explore how different evidence-based rules affect the retained miRNA/s catalog. It is designed to compare the default miR-RF selection with alternative database- or evidence-driven configurations.
-
-This page does **not** automatically modify the main table in the **App** tab. Instead, it first shows the effect of each setup inside the Filtering criteria page. The main App table is updated only when the user selects:
-
-```text
-Apply filtering criteria to main table
-```
-
-After applying the criteria, the app does not automatically switch tabs. To inspect the updated retained table, open the **App** tab manually.
-
----
-
-### Filtering setup presets
-
-At the top of the Filtering criteria page, the **Filtering setup** buttons define the starting configuration:
-
-| Preset                   | Description                                                                                  |
-| ------------------------ | -------------------------------------------------------------------------------------------- |
-| **Default**              | Uses the current miR-RF default rule based on conservation, expression and structural class. |
-| **miRBase-full**         | Uses the full input catalog associated with miRBase-full; evidence criteria are disabled.    |
-| **miRBase-HC**           | Uses the miRBase high-confidence subset; evidence criteria are disabled.                     |
-| **MirGeneDB**            | Uses the MirGeneDB subset; evidence criteria are disabled.                                   |
-| **Kim et al. optimised** | Uses a configuration optimised against experimental evidence.                                |
-| **Custom**               | Allows the user to manually select and tune the evidence criteria.                           |
-
-For database-specific presets, namely **miRBase-full**, **miRBase-HC** and **MirGeneDB**, the conservation, expression and structural-class criteria are intentionally set to neutral/disabled values. In these cases, the relevant output is **Retained by criteria + filters**, because the retained set is defined by the selected database source and any active sidebar filters.
-
-The sidebar **Database** checkboxes remain interactive. If a database preset is selected, the corresponding database checkbox is selected automatically. If the user manually changes the database checkboxes, the page uses the manual sidebar selection.
-
----
-
-### Custom filtering criteria
-
-When **Custom** is selected, the user can activate or deactivate each evidence criterion independently:
-
-| Criterion                     | Description                                                        |
-| ----------------------------- | ------------------------------------------------------------------ |
-| **Evolutionary conservation** | Minimum number of species with conservation support.               |
-| **Tissue Expression**         | RPMM expression threshold and minimum number of expressed tissues. |
-| **Structural class**          | Structural classes considered as passing.                          |
-
-The control **Minimum criteria to pass** defines how many of the selected criteria must be satisfied.
-
-For example, if all three criteria are active and the minimum is set to `2`, a miRNA/s is retained when it passes at least two of the three evidence criteria.
-
-When switching to **Custom**, the panel is reset to the default custom starting configuration:
-
-* conservation ≥ 3 species;
-* expression RPMM ≥ 1.5 in at least 1 tissue;
-* structural class R/D;
-* all three criteria active;
-* minimum criteria to pass = 2.
-
----
-
-### Counts shown on the Filtering criteria page
-
-The page reports one or two retained counts depending on the selected setup:
-
-| Count                              | Meaning                                                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Retained by criteria**           | Number of miRNA/s retained by the selected evidence criteria only.                                             |
-| **Retained by criteria + filters** | Number of miRNA/s retained after applying both the selected Filtering criteria and the active sidebar filters. |
-
-For database-specific presets, **Retained by criteria** is not shown because evidence criteria are not used.
-
----
-
-### Experimental-evidence benchmark
-
-The **Experimental-evidence benchmark** compares the retained sets against the experimental-evidence annotation.
-
-The benchmark always includes the fixed **Default** reference. Depending on the selected setup, it may also show additional sections, such as the current preset or **Custom** setup and the same setup after applying active sidebar filters.
-
-For each benchmark row, the table reports:
-
-* **Precision**
-* **Recall**
-* **F1**
-* supported entries included
-* not-supported entries included
-* supported entries missed
-* entries with unavailable experimental evidence
-
-Two validation thresholds are evaluated:
-
-| Threshold            | Supported entries                         |
-| -------------------- | ----------------------------------------- |
-| **Stringent filter** | Entries with `Experimental evidence = 2`. |
-| **Lenient filter**   | Entries with `Experimental evidence ≥ 1`. |
-
-Rows with unavailable experimental evidence are reported separately and are not counted in precision, recall, F1, supported included, not-supported included, or supported not included.
-
----
-
-### Precision/recall plots
-
-The scatterplots summarise benchmark performance visually:
-
-| Plot element    | Meaning   |
-| --------------- | --------- |
-| **x-axis**      | Recall    |
-| **y-axis**      | Precision |
-| **Point label** | F1 score  |
-
-Separate plots are shown for the **Stringent filter** and **Lenient filter** thresholds.
-
-If multiple configurations have identical precision, recall and F1 values, they are merged into a single point and listed together in the legend or tooltip.
-
----
+# 1. Basic usage
 
 ## 📊 Overview
 
-Human pre-miRNAs are displayed in an interactive table featuring:
+pre-miRNAs supported by the evidence layers specified in the **Criteria section** are displayed in the form of an interactive table featuring:
 
 * **Sticky header** and **sticky first column** for improved navigation
 * **Color-coded cells** with an integrated legend indicating:
 
   * pass/fail status for **structure**, **conservation**, and **expression**
-  * **human specificity**
+  * **human specific annotations**
   * **repeat element annotation**
   * **species-level conservation**
   * **tissue expression values**
@@ -157,20 +43,20 @@ The table updates dynamically according to the selected sidebar filters and can 
 
 ## 🔍 Integrated annotation
 
-The browser combines annotations described in:
+Please refer to:
 
-> **miR-RF: a database-independent machine-learning workflow and integrative evidence framework for systematic annotation of human microRNAs**
+> **An integrative evidence framework and interactive resource for annotating the human pre-miRNA repertoire** by Canevotti et al for a complete overview/description of the features included in this browser.
 
-Including:
+Briefly, this resource allows the integration, visualization and filtering of human pre-miRNAs annotations across a range of database-catalogs and custom derived computational evidence for their support. These include:
 
-* miR-RF structural stability classes (`R`, `D`, `I`, `S`)
-* multi-species conservation profiles
-* human specificity annotation
-* tissue expression values (`RPMM`)
-* miRNA family context from miRBase and/or MirGeneDB
-* repeat annotation
-* miRBase high-confidence annotation
-* experimental-evidence validation level
+* miR-RF structural stability classes (`R`, `D`, `I`, `S`);
+* multi-species conservation profiles;
+* human specificity annotation;
+* tissue expression values (`RPMM`);
+* miRNA family context from miRBase and/or MirGeneDB;
+* repeat annotation;
+* miRBase high-confidence annotation;
+* experimental-evidence validation level.
 
 All displayed results correspond to the analyses reported in the accompanying manuscript and are provided as a reusable resource to support downstream computational and experimental studies.
 
@@ -219,9 +105,9 @@ Filter entries according to database/source annotation.
 
 The options are **not mutually exclusive**: selecting multiple sources retains miRNA/s matching any selected source.
 
-- **miRBase-full**: Retain miRNA/s present in miRBase. 
-- **miRBase-HC**: Retain miRNA/s annotated as miRBase high-confidence.       
-- **MirGeneDB**: Retain miRNA/s present in MirGeneDB.                       
+- **miRBase-full**: Retain miRNA/s present in miRBase.
+- **miRBase-HC**: Retain miRNA/s annotated as miRBase high-confidence.
+- **MirGeneDB**: Retain miRNA/s present in MirGeneDB.
 
 Selections are combined with logical `OR` within this filter.
 
@@ -231,23 +117,23 @@ If no database/source is selected, no entries are retained by the database filte
 
 ## 🧪 Experimental evidence
 
-Experimental-evidence information can be displayed and filtered from the sidebar.
+Experimental-evidence information, according to the Kim et al *in vitro* Microprocessor processing assay, can be displayed and used to select pre-miRNAs.
 
-- **Show all**: No experimental-evidence filtering is applied.                 
-- **Pass stringent filter**: Retain entries with the highest experimental-evidence support. 
-- **Pass lenient filter**: Retain entries passing the lenient evidence threshold.         
-- **No pass**: Retain entries not passing the experimental-evidence filters.  
+- **Show all**: No experimental-evidence filtering is applied.
+- **Pass stringent**: Retain entries with the highest experimental-evidence support.
+- **Pass lenient**: Retain entries passing the lenient evidence threshold.
+- **No pass**: Retain entries not passing the experimental-evidence filters.
 
 Entries with unavailable experimental-evidence information are reported as `NA` when the column is displayed.
 
 ---
 
-## 🧍 Human specificity
+## 🧍 Human specific miRNAs
 
-Filter human-specific or non-human-specific pre-miRNAs.
-- **Show all**: No human-specificity filtering is applied.                     
-- **Only hsa-specific**: Retain only pre-miRNAs annotated as human-specific.             
-- **Not hsa-specific**: Exclude human-specific pre-miRNAs and retain all other entries. 
+Display or hide human-specific or pre-miRNAs.
+- **Show all**: No human-specificity filtering is applied.
+- **Only hsa-specific**: Retain only pre-miRNAs annotated as human-specific.
+- **Not hsa-specific**: Exclude human-specific pre-miRNAs and retain all other entries.
 
 ---
 
@@ -268,55 +154,6 @@ The bar plot displays both counts and percentages for each repeat class. This vi
 
 ---
 
-## ⚙️ Advanced options
-
-Enable **Advanced options** in the sidebar to unlock additional controls and column display options.
-
----
-
-### 🐂 Evolutionary conservation
-
-The evolutionary-conservation section allows users to display and filter per-species conservation information.
-
-Users can:
-
-* show species-level conservation columns;
-* filter entries **found in** selected species;
-* filter entries **not found in** selected species;
-* optionally stratify conservation by structural stability when species-level filters are active.
-
-The current default conservation criterion used in the Filtering criteria page is conservation in at least 3 species.
-
----
-
-### 🦴 Tissue expression
-
-The tissue-expression section allows users to display and filter tissue expression values grouped by anatomical system.
-
-Users can:
-
-* show tissue columns by anatomical system;
-* filter entries **expressed in** selected tissues;
-* filter entries **not expressed in** selected tissues.
-
-Expression is evaluated using RPMM values. In the default filtering-criteria setup, expression is considered passing when RPMM ≥ 1.5 in at least one tissue.
-
----
-
-### 🧬 Structural class
-
-The structural-class section allows users to display and filter miR-RF structural annotations from miRBase and/or MirGeneDB.
-
-Users can:
-
-* show miRBase and MirGeneDB structural-class columns;
-* filter entries by structural class;
-* inspect whether entries are classified as `R`, `D`, `I` or `S`.
-
-In the default filtering-criteria setup, structural class is considered passing when the entry is classified as `R` or `D`.
-
----
-
 ## ♻️ Reset all filters
 
 Use **Reset all filters** to clear selections and restore default settings.
@@ -325,7 +162,7 @@ The reset button:
 
 * clears active sidebar filters;
 * resets advanced options;
-* restores filtering-criteria defaults;
+* restores criteria defaults;
 * resets pagination and navigation-dependent state.
 
 The button appears only when at least one filter or display option is active.
@@ -343,10 +180,221 @@ These exports are intended to support downstream analyses and custom pipelines.
 
 ---
 
+# 2. Criteria
+
+## 💻 Criteria
+
+The **Criteria** page allows users to explore how different evidence-based rules affect the catalog supported pre-miRNAs visualized in the app. It is designed to compare the default selection -based on the criteria and parametrization introduced by Canevotti et al-  with alternative database- or evidence-driven configurations. Entering **Custom mode** allows users to set custom thresholds and criteria combinations.
+
+> [!IMPORTANT]
+> This page does **not** automatically modify the main table in the **App** tab.
+
+Instead, it first shows the effect of each setup inside the Criteria page. The main App table is updated only when the user selects:
+
+```text
+Apply criteria to main table
+```
+
+After applying the criteria, the app does not automatically switch tabs. To inspect the updated retained table, open the **App** tab manually.
+
+---
+
+### Criteria setup presets
+
+At the top of the Criteria page, the **Criteria setup** buttons define the starting configuration:
+
+| Preset                   | Description                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------------- |
+| **Default**              | Uses the current miR-RF default rule based on conservation, expression and structural class. |
+| **miRBase-full**         | Complete miRBase catalog (miRBase-full); evidence criteria are disabled.    |
+| **miRBase-HC**           | miRBase high-confidence subset (miRBase-HC); evidence criteria are disabled.                     |
+| **MirGeneDB**            | MirGeneDB database; evidence criteria are disabled.                                   |
+| **Kim et al. optimised** | Optimal configuration for maximum F1-score on the Kim et al in-vitro Microprocessor assay (See supplementary Dataset S16 in Canevotti et al).                                |
+| **Custom**               | Allows the user to manually select and tune the evidence criteria.                           |
+
+For database-driven presents, the conservation, expression and structural-class criteria are intentionally disabled. In the tables with evaluations metrics these configurations are labelled   **<Database-name> + filters**, because the retained set is defined by the selected database source and any active sidebar filters, but criteria are not applied.
+
+---
+
+### Custom criteria configuration
+
+When **Custom** is selected, the user can activate or deactivate each evidence criterion independently:
+
+| Criterion                     | Description                                                        |
+| ----------------------------- | ------------------------------------------------------------------ |
+| **Evolutionary conservation** | Minimum number of species with conservation support.               |
+| **Tissue Expression**         | RPMM expression threshold and minimum number of expressed tissues. |
+| **Structural class**          | Structural classes considered as passing.                          |
+
+The control **Minimum criteria to pass** defines how many of the selected criteria must be satisfied for a supported pre-miRNA annotation.
+
+For example, if all three criteria are active and the minimum is set to `2`, an entry is retained when it passes at least two of the three evidence criteria.
+
+When switching to **Custom**, the default configuration is always reapplied at first. Users can apply any modification starting from this preset.
+
+Deault configuration:
+
+* conservation ≥ 3 species;
+* expression RPMM ≥ 1.5 in at least 1 tissue;
+* structural class R/D;
+* all three criteria active;
+* minimum criteria to pass = 2.
+
+---
+
+### Comparison w.r.t Kim et al
+
+For any active configuration, a summary table is compute to illustrate key features w.r.t the Kim et al in vitro Microprocessor processing benchmark. A brief summary is reported in the table below.
+
+| Count                              | Meaning                                                                                                        |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Supported by criteria**           | Number of miRNA/s compatible with the selected evidence criteria only.                                             |
+| **Supported by criteria +active filters** | Number of miRNA/s retained after applying the active sidebar filters on the top of the evidence criteria. |
+
+For database-specific presets, **Supported by criteria** is not shown because evidence criteria are not used.
+
+---
+
+### Comparison with default settings
+
+For any change/selection, the metrics described above, are summarized in the form of tables including descriptive statistics and key perfomances metrics w.r.t the reference benchmark.
+Kim et al introduced both a "stringent" and a "lenient" set of rules to identify candidate Microprocessor-processed miRNAs in their in vitro assay. Evaluation metrics are computed and reported according to both sets. Consequently, the summary tables report the following metrics:
+
+* **Precision**;
+* **Recall**;
+* **F1**;
+* supported entries included (S.I.);
+* not-supported entries included (N.S.I);
+* supported entries not included (S.N.I);
+* entries with unavailable experimental evidence
+
+for both the lenient and the stringent "truth" set.
+
+Rows with unavailable experimental evidence are reported separately.
+
+---
+
+### Precision/recall plots
+
+The scatterplots summarise benchmark performance visually:
+
+| Plot element    | Meaning   |
+| --------------- | --------- |
+| **x-axis**      | Recall    |
+| **y-axis**      | Precision |
+| **Point label** | F1 score  |
+
+Separate plots are shown for the **Stringent** and **Lenient** Kim et al validation sets.
+
+---
+
+# 3. Advanced usage
+
+## ⚙️ Advanced options
+
+Enable **Advanced options** in the sidebar to unlock additional controls and column display options.
+
+---
+
+### 🐂 Evolutionary conservation
+
+The evolutionary-conservation section allows users to display and filter per-species conservation information.
+
+Users can:
+
+* show species-level conservation columns;
+* filter entries **found in** selected species;
+* filter entries **not found in** selected species;
+* optionally stratify conservation by structural stability when species-level filters are active.
+
+The current default conservation criterion used in the Criteria page is conservation in at least 3 species.
+
+---
+
+### 🦴 Tissue expression
+
+The tissue-expression section allows users to display and filter tissue expression values grouped by anatomical system.
+
+Users can:
+
+* show tissue columns by anatomical system;
+* filter entries **expressed in** selected tissues;
+* filter entries **not expressed in** selected tissues.
+
+Expression is evaluated using RPMM values. In the default criteria setup, expression is considered passing when RPMM ≥ 1.5 in at least one tissue.
+
+---
+
+### 🧬 Structural class
+
+The structural-class section allows users to display and filter miR-RF structural annotations from miRBase and/or MirGeneDB.
+
+Users can:
+
+* show miRBase and MirGeneDB structural-class columns;
+* filter entries by structural class;
+* inspect whether entries are classified as `R`, `D`, `I` or `S`.
+
+In the default criteria setup, structural class is considered passing when the entry is classified as `R` or `D`.
+
+---
+
+## Example use cases
+
+**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining complementary filters.
+
+---
+
+### 🫀🐁 Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
+
+This use case identifies 99 human pre-miRNAs conserved in *Mus musculus*, structurally robust and expressed in cardiovascular-related tissues and fluids.
+
+**Conservation support**
+
+* In **Advanced options → Evolutionary conservation**, select *M. musculus* under **Found in**.
+* Select the structural-stability option when available to focus on stable conservation support.
+
+**Tissue expression context**
+
+* In **Advanced options → Tissue expression**, select tissues belonging to the **Cardiorespiratory system**, such as heart and lung, under **Show extra columns**.
+* Under **Expressed in**, select cardiovascular-related tissues and fluids.
+
+The resulting table enables inspection of whether each locus:
+
+* is conserved in mouse;
+* displays expression across cardiovascular tissues;
+* is classified as structurally stable.
+
+---
+
+### 🧠🦧 Use case 2 — miRNAs conserved in great apes and expressed in brain
+
+This use case identifies 28 human pre-miRNAs that are conserved in *Pan troglodytes* and *Pan paniscus* and show expression in neural tissues.
+
+**Conservation support**
+
+* In **Advanced options → Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
+* Optionally display additional species columns such as *M. mulatta* and *L. catta*.
+* Use **Not found in** to exclude entries conserved in selected outgroup species, when relevant.
+
+**Tissue expression context**
+
+* In **Advanced options → Tissue expression**, select tissues belonging to the **Neuro-Endocrine system**, such as brain and cerebellum, under **Show extra columns**.
+* Optionally use expression filters to retain entries expressed in neural tissues.
+
+The resulting table enables inspection of whether each locus:
+
+* is conserved in selected great ape species;
+* is absent from selected outgroup species, when applied;
+* is structurally stable;
+* displays expression across neuro-endocrine tissues.
+
+---
+
 ## Repository contents
 
 * `app.py` – Streamlit application code
-* `s8_new.tsv` – curated dataset used by the app
+* `s8_new` – curated dataset used by the app
 * `*.png` – icons used in the interface
 * `README.md` – documentation
 
@@ -384,55 +432,3 @@ If you use this resource, please cite the accompanying manuscript:
 * The application is intended as a **companion resource** to the manuscript and reflects the same thresholds and classification criteria.
 * Users are encouraged to apply filtering strategies appropriate to their research goals, for example prioritising structural robustness for functional studies or relaxing constraints for exploratory analyses.
 * The current version is an interactive browser of precomputed miR-RF annotations. It does not perform de novo annotation of newly submitted miRNA candidates.
-
----
-
-## Example use cases
-
-**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining complementary filters.
-
----
-
-### 🫀🐁 Use case 1 — Cardiovascular-associated miRNAs conserved in mouse
-
-This use case identifies 99 human pre-miRNAs conserved in *Mus musculus*, structurally robust and expressed in cardiovascular-related tissues and fluids.
-
-**Conservation support**
-
-* In **Advanced options → Evolutionary conservation**, select *M. musculus* under **Found in**.
-* Select the structural-stability option when available to focus on stable conservation support.
-
-**Tissue expression context**
-
-* In **Advanced options → Tissue expression**, select tissues belonging to the **Cardiorespiratory system**, such as heart and lung, under **Show extra columns**.
-* Under **Expressed in**, select cardiovascular-related tissues and fluids.
-
-The resulting table enables inspection of whether each locus:
-
-* is conserved in mouse;
-* displays expression across cardiovascular tissues;
-* is classified as structurally stable.
-
----
-
-#### 🧠🦧 Use case 2 — miRNAs conserved in great apes and expressed in brain
-
-This use case identifies 28 human pre-miRNAs that are conserved in *Pan troglodytes* and *Pan paniscus* and show expression in neural tissues.
-
-**Conservation support**
-
-* In **Advanced options → Evolutionary conservation**, select *P. troglodytes* and *P. paniscus* under **Found in**.
-* Optionally display additional species columns such as *M. mulatta* and *L. catta*.
-* Use **Not found in** to exclude entries conserved in selected outgroup species, when relevant.
-
-**Tissue expression context**
-
-* In **Advanced options → Tissue expression**, select tissues belonging to the **Neuro-Endocrine system**, such as brain and cerebellum, under **Show extra columns**.
-* Optionally use expression filters to retain entries expressed in neural tissues.
-
-The resulting table enables inspection of whether each locus:
-
-* is conserved in selected great ape species;
-* is absent from selected outgroup species, when applied;
-* is structurally stable;
-* displays expression across neuro-endocrine tissues.

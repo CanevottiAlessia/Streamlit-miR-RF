@@ -36,37 +36,7 @@ DOC_SECTIONS = {
         "anchor": "doc_overview",
         "heading": "# miR-RF human pre-miRNA Explorer",
     },
-    "filtering_criteria": {
-        "title": "Filtering criteria page",
-        "anchor": "doc_filtering_criteria",
-        "heading": "## 💻\u200b Filtering criteria page",
-    },
-    "filtering_presets": {
-        "title": "Filtering setup presets",
-        "anchor": "doc_filtering_presets",
-        "heading": "### Filtering setup presets",
-    },
-    "custom_filtering": {
-        "title": "Custom filtering criteria",
-        "anchor": "doc_custom_filtering",
-        "heading": "### Custom filtering criteria",
-    },
-    "filtering_counts": {
-        "title": "Filtering criteria counts",
-        "anchor": "doc_filtering_counts",
-        "heading": "### Counts shown on the Filtering criteria page",
-    },
-    "benchmark": {
-        "title": "Experimental-evidence benchmark",
-        "anchor": "doc_benchmark",
-        "heading": "### Experimental-evidence benchmark",
-    },
-    "precision_recall": {
-        "title": "Precision/recall plots",
-        "anchor": "doc_precision_recall",
-        "heading": "### Precision/recall plots",
-    },
-    "overview_table": {
+    "table_overview": {
         "title": "Table overview",
         "anchor": "doc_table_overview",
         "heading": "## 📊 Overview",
@@ -96,15 +66,15 @@ DOC_SECTIONS = {
         "anchor": "doc_filter_database",
         "heading": "## 🗂️ Database filter",
     },
-    "human_specificity": {
-        "title": "Human specificity",
-        "anchor": "doc_filter_hsa",
-        "heading": "## 🧍 Human specificity",
-    },
     "experimental_evidence": {
         "title": "Experimental evidence",
         "anchor": "doc_adv_confidence_evidence",
         "heading": "## 🧪 Experimental evidence",
+    },
+    "human_specificity": {
+        "title": "Human specific miRNAs",
+        "anchor": "doc_filter_hsa",
+        "heading": "## 🧍 Human specific miRNAs",
     },
     "repeat_class": {
         "title": "Repeat class",
@@ -115,6 +85,46 @@ DOC_SECTIONS = {
         "title": "Repeat class distribution",
         "anchor": "doc_repeat_distribution",
         "heading": "## 📈 Repeat class distribution",
+    },
+    "reset": {
+        "title": "Reset all filters",
+        "anchor": "doc_reset",
+        "heading": "## ♻️ Reset all filters",
+    },
+    "data_export": {
+        "title": "Data export",
+        "anchor": "doc_export",
+        "heading": "## ⬇️ Data export",
+    },
+    "criteria": {
+        "title": "Criteria",
+        "anchor": "doc_filtering_criteria",
+        "heading": "## 💻 Criteria",
+    },
+    "criteria_presets": {
+        "title": "Criteria setup presets",
+        "anchor": "doc_filtering_presets",
+        "heading": "### Criteria setup presets",
+    },
+    "custom_criteria": {
+        "title": "Custom criteria configuration",
+        "anchor": "doc_custom_filtering",
+        "heading": "### Custom criteria configuration",
+    },
+    "kim_comparison": {
+        "title": "Kim et al comparison",
+        "anchor": "doc_filtering_counts",
+        "heading": "### Comparison w.r.t Kim et al",
+    },
+    "benchmark": {
+        "title": "Benchmark metrics",
+        "anchor": "doc_benchmark",
+        "heading": "### Comparison with default settings",
+    },
+    "precision_recall": {
+        "title": "Precision/recall plots",
+        "anchor": "doc_precision_recall",
+        "heading": "### Precision/recall plots",
     },
     "advanced_options": {
         "title": "Advanced options",
@@ -136,15 +146,10 @@ DOC_SECTIONS = {
         "anchor": "doc_adv_db_class",
         "heading": "### 🧬 Structural class",
     },
-    "reset": {
-        "title": "Reset all filters",
-        "anchor": "doc_reset",
-        "heading": "## ♻️ Reset all filters",
-    },
-    "data_export": {
-        "title": "Data export",
-        "anchor": "doc_export",
-        "heading": "## ⬇️ Data export",
+    "example_use_cases": {
+        "title": "Example use cases",
+        "anchor": "doc_use_cases",
+        "heading": "## Example use cases",
     },
     "repository_contents": {
         "title": "Repository contents",
@@ -166,37 +171,35 @@ DOC_SECTIONS = {
         "anchor": "doc_notes",
         "heading": "## 🧷 Notes",
     },
-    "example_use_cases": {
-        "title": "Example use cases",
-        "anchor": "doc_use_cases",
-        "heading": "## Example use cases",
-    },
 }
 
 # Sections shown in the sidebar Documentation menu.
 DOC_SIDEBAR_ORDER = [
     "overview",
-    "filtering_criteria",
-    "filtering_presets",
-    "custom_filtering",
-    "filtering_counts",
-    "benchmark",
-    "precision_recall",
+    "table_overview",
+    "integrated_annotation",
+    "interface",
     "key_features",
     "search_by_name",
     "database_filter",
-    "human_specificity",
     "experimental_evidence",
+    "human_specificity",
     "repeat_class",
+    "repeat_distribution",
+    "reset",
+    "data_export",
+    "criteria",
+    "criteria_presets",
+    "custom_criteria",
+    "kim_comparison",
+    "benchmark",
+    "precision_recall",
     "advanced_options",
     "conservation",
     "tissue_expression",
     "structural_class",
-    "reset",
-    "data_export",
     "example_use_cases",
 ]
-
 
 def normalize_markdown_heading(text: str) -> str:
     """
@@ -835,6 +838,27 @@ st.markdown(
     }
 
     /* =======================================================
+       ✅ EXTRA ROBUST STICKY TABS
+       Keep the page names visible while scrolling.
+    ======================================================= */
+    div[data-testid="stTabs"] > div:first-child{
+      position: sticky !important;
+      top: 0px !important;
+      z-index: 10080 !important;
+      background: var(--bg) !important;
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
+      border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent) !important;
+    }
+    div[data-testid="stTabs"] > div:first-child div[role="tablist"]{
+      position: relative !important;
+      top: auto !important;
+      z-index: 10081 !important;
+      background: var(--bg) !important;
+      border-bottom: 0 !important;
+    }
+
+    /* =======================================================
        ✅ DOC ANCHORS: prevent being hidden under sticky header+tabs
     ======================================================= */
     .doc-anchor{
@@ -1377,7 +1401,7 @@ def reset_all_filters():
         st.session_state[f"tree_pos_{sys_name}"] = []
         st.session_state[f"tree_neg_{sys_name}"] = []
 
-    # Filtering criteria page defaults.
+    # Criteria page defaults.
     st.session_state["apply_ablation_to_main"] = False
     st.session_state["sens_expression_cutoff"] = 1.5
     st.session_state["sens_min_tissues"] = 1
@@ -1586,7 +1610,7 @@ def overlap_missing(data: pd.DataFrame) -> pd.Series:
 def filtering_uses_full_input() -> bool:
     """
     Database-specific Default presets are defined over the full input table.
-    Other Filtering criteria setups keep the missing/NA Overlap candidate universe.
+    Other Criteria setups keep the missing/NA Overlap candidate universe.
     Database-specific Default presets do not apply evidence criteria.
     """
     return st.session_state.get("filtering_mode", "Default") in [
@@ -1598,7 +1622,7 @@ def filtering_uses_full_input() -> bool:
 
 def get_filtering_candidate_universe(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Candidate universe for Filtering criteria calculations.
+    Candidate universe for Criteria calculations.
     - miRBase-full / miRBase-HC / MirGeneDB: all input rows.
     - Other setups: rows with missing/NA Overlap.
     """
@@ -1801,7 +1825,7 @@ df = get_default_overlap_catalog().copy()
 
 def get_active_filtering_database_sources():
     """
-    Database sources used by the Filtering criteria page.
+    Database sources used by the Criteria page.
 
     Preset setups are selected after sidebar widgets have already been
     instantiated, so they cannot safely modify sidebar checkbox widget keys.
@@ -1819,7 +1843,7 @@ def get_active_filtering_database_sources():
 
 def apply_database_source_filter(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Apply the active Filtering criteria database filter to any dataframe.
+    Apply the active Criteria database filter to any dataframe.
 
     All database sources are selected by default. If no database source is
     selected, this returns an empty dataframe.
@@ -1851,7 +1875,7 @@ def apply_database_source_filter(data: pd.DataFrame) -> pd.DataFrame:
 
 def apply_filtering_page_sidebar_filters(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Apply the visible sidebar filters to a dataframe for the Filtering criteria page.
+    Apply the visible sidebar filters to a dataframe for the Criteria page.
 
     This is used for applying visible sidebar filters to benchmark and retained counts.
     It intentionally mirrors the main visible filters:
@@ -1883,9 +1907,9 @@ def apply_filtering_page_sidebar_filters(data: pd.DataFrame) -> pd.DataFrame:
 
     # Experimental evidence filter
     experimental_evidence_filter = st.session_state.get("experimental_evidence_filter", "Show all")
-    if experimental_evidence_filter == "Pass stringent filter":
+    if experimental_evidence_filter == "Pass stringent":
         filtered = filtered[filtered["_Experimental_evidence_level"] == 2]
-    elif experimental_evidence_filter == "Pass lenient filter":
+    elif experimental_evidence_filter == "Pass lenient":
         filtered = filtered[filtered["_Experimental_evidence_level"] == 1]
     elif experimental_evidence_filter == "No pass":
         filtered = filtered[filtered["_Experimental_evidence_level"] == 0]
@@ -1962,7 +1986,7 @@ def current_structure_pass(data: pd.DataFrame) -> pd.Series:
 def compute_filtering_flags(data: pd.DataFrame) -> pd.DataFrame:
     """
     Compute expression, conservation and structure pass/fail flags using the
-    current Filtering criteria controls. Used for the combination-count table.
+    current Criteria controls. Used for the combination-count table.
     """
     out = data[overlap_missing(data)].copy()
 
@@ -2050,7 +2074,7 @@ def build_filtering_combination_summary(data: pd.DataFrame) -> pd.DataFrame:
         label = " + ".join(selected_labels) if selected_labels else "No criteria selected"
         return pd.DataFrame([{
             "Applied": "✓",
-            "Filtering rule": f"Custom: {label}; minimum passing = {custom_min}",
+            "Criteria rule": f"Custom: {label}; minimum passing = {custom_min}",
             "Retained miRNA/s": retained,
         }])
 
@@ -2074,7 +2098,7 @@ def build_filtering_combination_summary(data: pd.DataFrame) -> pd.DataFrame:
     for rule_name, mask in rule_masks.items():
         rows.append({
             "Applied": "✓" if rule_name == selected_rule else "",
-            "Filtering rule": rule_name,
+            "Criteria rule": rule_name,
             "Retained miRNA/s": int(mask.sum()),
         })
 
@@ -2182,12 +2206,12 @@ def build_validation_benchmark_table(catalogs: dict, reference_data: pd.DataFram
 
     threshold_definitions = [
         {
-            "Validation threshold": "Stringent filter",
+            "Validation threshold": "Stringent",
             "supported_mask": evidence_num == 2,
             "not_supported_mask": evidence_num.isin([0, 1]),
         },
         {
-            "Validation threshold": "Lenient filter",
+            "Validation threshold": "Lenient",
             "supported_mask": evidence_num >= 1,
             "not_supported_mask": evidence_num == 0,
         },
@@ -2248,7 +2272,7 @@ def build_validation_benchmark_table(catalogs: dict, reference_data: pd.DataFram
 # ===========================================================
 # TABS BAR (APP / SENSITIVITY / DOCUMENTATION)
 # ===========================================================
-tab_app, tab_sensitivity, tab_docs = st.tabs(["App", "Filtering criteria", "Documentation"])
+tab_app, tab_sensitivity, tab_docs = st.tabs(["App", "Criteria", "Documentation"])
 
 # ✅ inject the tab switch + scroll router once
 _inject_doc_nav_js()
@@ -2266,7 +2290,7 @@ def _inject_filtering_tab_restore_js():
           const tabs = window.parent.document.querySelectorAll('button[role="tab"]');
           const target = Array.from(tabs).find(b => {
             const txt = (b.innerText || b.textContent || '').trim().toLowerCase();
-            return txt === 'filtering criteria' || txt.includes('filtering criteria');
+            return txt === 'criteria';
           });
           if (target) { target.click(); }
         }, 80);
@@ -2324,8 +2348,8 @@ with tab_app:
 
     if st.session_state.get("apply_ablation_to_main", False):
         st.info(
-            "Filtering criteria are currently applied to the main table. "
-            "Conservation, Expression and Structure colors are evaluated against the selected filtering criteria."
+            "Criteria are currently applied to the main table. "
+            "Conservation, Expression and Structure colors are evaluated against the selected criteria."
         )
 
     # -----------------------------------------------------------
@@ -2378,13 +2402,22 @@ with tab_app:
         st.session_state["db_filter"] = pending_sidebar_db_sources
 
     sidebar_label_with_doc("Database:", "doc_filter_database")
+    locked_database_mode = st.session_state.get("filtering_mode", "Default") in [
+        "miRBase-full",
+        "miRBase-HC",
+        "MirGeneDB",
+        "Kim et al. optimised",
+    ]
     db_c1, db_c2, db_c3 = st.sidebar.columns(3)
     with db_c1:
-        db_mirbase_full = st.checkbox("miRBase-full", key="db_mirbase_full")
+        db_mirbase_full = st.checkbox("miRBase-full", key="db_mirbase_full", disabled=locked_database_mode)
     with db_c2:
-        db_mirbase_hc = st.checkbox("miRBase-HC", key="db_mirbase_hc")
+        db_mirbase_hc = st.checkbox("miRBase-HC", key="db_mirbase_hc", disabled=locked_database_mode)
     with db_c3:
-        db_mirgendb = st.checkbox("MirGeneDB", key="db_mirgendb")
+        db_mirgendb = st.checkbox("MirGeneDB", key="db_mirgendb", disabled=locked_database_mode)
+
+    if locked_database_mode:
+        st.sidebar.caption("Database selection is locked by the active Criteria preset.")
 
     database_selected = []
     if db_mirbase_full:
@@ -2402,7 +2435,11 @@ with tab_app:
     # the sidebar checkboxes manually, stop using the preset override.
     # This makes the Database checkboxes truly interactive again.
     active_preset_sources = st.session_state.get("filtering_preset_db_sources", None)
-    if active_preset_sources is not None and sorted(database_selected) != sorted(list(active_preset_sources or [])):
+    if (
+        not locked_database_mode
+        and active_preset_sources is not None
+        and sorted(database_selected) != sorted(list(active_preset_sources or []))
+    ):
         st.session_state["filtering_preset_db_sources"] = None
 
     exp_label_col, exp_doc_col = st.sidebar.columns([12, 1], vertical_alignment="center")
@@ -2420,8 +2457,8 @@ with tab_app:
         "Filter Experimental evidence:",
         [
             "Show all",
-            "Pass stringent filter",
-            "Pass lenient filter",
+            "Pass stringent",
+            "Pass lenient",
             "No pass",
         ],
         index=0,
@@ -2755,7 +2792,7 @@ with tab_app:
     st.sidebar.markdown("---")
     if any_filter_active():
         # (Reset is a main doc anchor; icon could be made inline too, but left like this)
-        st.sidebar.markdown(doc_jump_link("doc_filter_reset", "Docs (Reset)"), unsafe_allow_html=True)
+        st.sidebar.markdown(doc_jump_link("doc_reset", "Docs (Reset)"), unsafe_allow_html=True)
         if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_bottom"):
             reset_all_filters()
             st.rerun()
@@ -2822,9 +2859,9 @@ with tab_app:
     elif high_conf_filter in ["Low confidence", "Low confidence (FALSE)"]:
         filtered = filtered[filtered["_High_confidence_tf"] == "FALSE"]
 
-    if experimental_evidence_filter == "Pass stringent filter":
+    if experimental_evidence_filter == "Pass stringent":
         filtered = filtered[filtered["_Experimental_evidence_level"] == 2]
-    elif experimental_evidence_filter == "Pass lenient filter":
+    elif experimental_evidence_filter == "Pass lenient":
         filtered = filtered[filtered["_Experimental_evidence_level"] == 1]
     elif experimental_evidence_filter == "No pass":
         filtered = filtered[filtered["_Experimental_evidence_level"] == 0]
@@ -3886,16 +3923,11 @@ with tab_sensitivity:
         """,
         unsafe_allow_html=True,
     )
-    st.title("Filtering criteria")
-    st.markdown(
-        "Explore how the retained catalog size changes under alternative "
-        "expression, conservation and structural-class criteria."
-    )
-
+    st.title("Criteria")
     def _filtering_settings_changed():
         # Changing criteria only updates the counts on this page.
         # The main table is changed only after explicitly clicking
-        # "Apply filtering criteria to main table" again.
+        # "Apply criteria to main table" again.
         st.session_state["apply_ablation_to_main"] = False
         st.session_state["_switch_to_app_after_apply"] = False
         st.session_state["_stay_on_filtering_tab"] = True
@@ -3996,7 +4028,7 @@ with tab_sensitivity:
         st.session_state["_switch_to_app_after_apply"] = False
 
     filtering_mode = st.radio(
-        "Filtering setup",
+        "Criteria setup",
         [
             "Default",
             "miRBase-full",
@@ -4188,7 +4220,7 @@ with tab_sensitivity:
             st.session_state["_switch_to_app_after_apply"] = False
 
     st.checkbox(
-        "Apply filtering criteria to main table",
+        "Apply criteria to main table",
         value=False,
         key="apply_ablation_to_main",
         help=(
@@ -4201,16 +4233,11 @@ with tab_sensitivity:
     # Do not automatically switch tabs.
     # The user can go to the App tab manually after applying filtering criteria.
     if st.session_state.pop("_switch_to_app_after_apply", False):
-        st.info("Filtering criteria are applied. Open the App tab to view the updated main table.")
+        st.info("Criteria are applied. Open the App tab to view the updated main table.")
 
     if db_only_preset:
         st.caption(
             "Database/source presets do not use evidence criteria; the retained count shows the selected source after active sidebar filters."
-        )
-    else:
-        st.caption(
-            "Retained by criteria uses only the selected Filtering criteria. "
-            "Retained by criteria + filters also applies the active sidebar filters."
         )
 
     if filtering_mode == "Custom":
@@ -4233,13 +4260,6 @@ with tab_sensitivity:
 
     with st.container(border=True):
         st.subheader("Experimental-evidence benchmark")
-        st.caption(
-            "Dynamic benchmark against Experimental evidence over the active Filtering criteria universe. "
-            "The fixed Default is always shown as baseline. Separate sections show Criteria and Criteria + filters when relevant. "
-            "Criteria applies only the selected Filtering criteria; Criteria + filters also applies the active visible sidebar filters. "
-            "Rows with missing Experimental evidence are reported separately and are never counted in TP, FP, FN, precision, recall or F1."
-        )
-
         benchmark_section_tables = []
 
         def show_benchmark_section(title: str, catalog: pd.DataFrame):
@@ -4316,12 +4336,6 @@ with tab_sensitivity:
                 )
 
             st.markdown("#### Precision / recall overview")
-            st.caption(
-                "Each point corresponds to a unique Precision/Recall/F1 combination among the benchmark rows shown above. "
-                "The x-axis is Recall, the y-axis is Precision, and the label reports only F1. "
-                "If multiple selections have identical Precision, Recall and F1, they are merged into one point and listed together in the legend/tooltip."
-            )
-
             plot_df = benchmark_all_df.copy()
             if not plot_df.empty and {"Selection", "Precision", "Recall", "F1", "Validation threshold"}.issubset(plot_df.columns):
                 # Use the same two-decimal precision shown in the benchmark tables.
@@ -4532,8 +4546,8 @@ with tab_sensitivity:
 
                         st.markdown(legend_html, unsafe_allow_html=True)
 
-                render_precision_recall_scatter("Stringent filter")
-                render_precision_recall_scatter("Lenient filter")
+                render_precision_recall_scatter("Stringent")
+                render_precision_recall_scatter("Lenient")
 
 
 
