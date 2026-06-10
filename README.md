@@ -1,4 +1,4 @@
-# miR-RF human pre-miRNA Explorer
+# human pre-miRNA browser
 
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
@@ -341,7 +341,7 @@ In the default criteria setup, structural class is considered passing when the e
 
 ## Example use cases
 
-**Using the pre-miRNA Annotation Browser as a support tool**, the application can be used to narrow the search space by combining complementary filters.
+**Using the human pre-miRNA browser as a support tool**, the application can be used to narrow the search space by combining complementary filters.
 
 ---
 

@@ -7,6 +7,7 @@ from PIL import Image
 import re
 import base64
 import html
+import json
 from io import BytesIO
 
 
@@ -19,7 +20,7 @@ UI_SCALE = 0.80
 # -----------------------------------------------------------
 # STREAMLIT CONFIG (must be before any other st.* output)
 # -----------------------------------------------------------
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="human pre-miRNA browser", layout="wide")
 st.set_option("client.toolbarMode", "minimal")
 
 
@@ -34,7 +35,7 @@ DOC_SECTIONS = {
     "overview": {
         "title": "Overview",
         "anchor": "doc_overview",
-        "heading": "# miR-RF human pre-miRNA Explorer",
+        "heading": "# human pre-miRNA browser",
     },
     "table_overview": {
         "title": "Table overview",
@@ -265,10 +266,9 @@ def load_local_readme() -> str:
 
 
 # -----------------------------------------------------------
-# ✅ FIX: in-page navigation (NO new tab)
-# - Clicking a doc link:
-#   1) switches to Documentation tab (by TEXT, not index)
-#   2) scrolls to the right anchor in the same page
+# In-page documentation navigation.
+# Clicking a doc link switches to the Documentation page by radio label,
+# then scrolls to the right anchor in the same page.
 # -----------------------------------------------------------
 def _inject_doc_nav_js():
     components.html(
@@ -276,17 +276,20 @@ def _inject_doc_nav_js():
         <script>
         (function () {
 
-          function clickTabByText(tabText) {
-            const tabs = window.parent.document.querySelectorAll('button[role="tab"]');
-            if (!tabs || tabs.length === 0) return false;
+          function selectPageByText(optionText) {
+            const buttons = window.parent.document.querySelectorAll('button');
+            if (!buttons || buttons.length === 0) return false;
 
-            const wanted = (tabText || '').toLowerCase();
-            const target = Array.from(tabs).find(b => {
-              const txt = (b.innerText || b.textContent || '').trim().toLowerCase();
-              return txt === wanted || txt.includes(wanted);
+            const wanted = (optionText || '').toLowerCase();
+            const target = Array.from(buttons).find(button => {
+              const txt = (button.innerText || button.textContent || '').trim().toLowerCase();
+              return txt === wanted;
             });
 
-            if (target) { target.click(); return true; }
+            if (target) {
+              target.click();
+              return true;
+            }
             return false;
           }
 
@@ -315,8 +318,9 @@ def _inject_doc_nav_js():
           // Global function called by our click handlers
           window.parent.mirrfNav = function(sectionId) {
             if (!sectionId) return false;
+            if (scrollToId(sectionId)) return false;
             try { window.parent.sessionStorage.setItem("mirrf_pending_doc_id", sectionId); } catch(e) {}
-            clickTabByText("Documentation");
+            selectPageByText("Documentation");
             waitAndScroll(sectionId);
             return false;
           };
@@ -801,65 +805,18 @@ st.markdown(
       font-size: 14px !important;
     }
 
-    /* =======================================================
-       ✅ TABS BAR: STICKY (robusto)
-    ======================================================= */
-
     /* IMPORTANTISSIMO: se un genitore ha overflow, sticky non funziona */
     div[data-testid="stAppViewContainer"],
-    div[data-testid="stMain"],
-    div[data-testid="stTabs"]{
+    div[data-testid="stMain"]{
       overflow: visible !important;
     }
 
-    /* se vuoi tener conto della header Streamlit, metti 3.5rem; altrimenti 0px */
     :root{
       --st-header-h: 0px;
-      --tabs-h: 58px;  /* se serve aumenta a 64/70 */
-    }
-
-    /* la barra vera dei tabs */
-    div[data-testid="stTabs"] div[role="tablist"]{
-      position: sticky !important;
-      top: var(--st-header-h) !important;
-      z-index: 10050 !important;
-      background: var(--bg) !important;
-      border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent) !important;
-      padding-top: 6px !important;
-      padding-bottom: 6px !important;
-    }
-
-    /* stile bottoni tabs */
-    div[data-testid="stTabs"] button[role="tab"]{
-      font-size: 18px !important;
-      font-weight: 800 !important;
-      padding: 10px 18px !important;
-      border-radius: 14px !important;
     }
 
     /* =======================================================
-       ✅ EXTRA ROBUST STICKY TABS
-       Keep the page names visible while scrolling.
-    ======================================================= */
-    div[data-testid="stTabs"] > div:first-child{
-      position: sticky !important;
-      top: 0px !important;
-      z-index: 10080 !important;
-      background: var(--bg) !important;
-      padding-top: 4px !important;
-      padding-bottom: 4px !important;
-      border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent) !important;
-    }
-    div[data-testid="stTabs"] > div:first-child div[role="tablist"]{
-      position: relative !important;
-      top: auto !important;
-      z-index: 10081 !important;
-      background: var(--bg) !important;
-      border-bottom: 0 !important;
-    }
-
-    /* =======================================================
-       ✅ DOC ANCHORS: prevent being hidden under sticky header+tabs
+       ✅ DOC ANCHORS: prevent being hidden under sticky header
     ======================================================= */
     .doc-anchor{
       scroll-margin-top: calc(var(--st-header-h) + 90px);
@@ -1294,6 +1251,22 @@ for sys_name in SYSTEM_TISSUES.keys():
     FILTER_KEYS.append(f"tree_pos_{sys_name}")
     FILTER_KEYS.append(f"tree_neg_{sys_name}")
 
+
+def preserve_conditional_widget_state(keys):
+    """
+    Keep keyed widgets alive when their page is not rendered.
+
+    Streamlit cleans up widget state for widgets that disappear on a rerun.
+    Re-saving the current value detaches it from that cleanup pass, so page
+    navigation does not reset filters or Criteria settings.
+    """
+    for key in keys:
+        if key in st.session_state:
+            st.session_state[key] = st.session_state[key]
+
+
+preserve_conditional_widget_state(FILTER_KEYS)
+
 # -----------------------------------------------------------
 # ABLATION DEFAULT SESSION STATE
 # -----------------------------------------------------------
@@ -1354,7 +1327,6 @@ def reset_all_filters():
         "_filtering_defaults_version",
         "_db_defaults_version",
         "_pending_sidebar_db_sources",
-        "_stay_on_filtering_tab",
         "apply_filtering_criteria_button",
         "reset_filtering_criteria_button",
     ]
@@ -2155,6 +2127,186 @@ def render_compact_html_table(data: pd.DataFrame, decimals: int = 2) -> None:
     )
 
 
+MAIN_PAGES = ["App", "Criteria", "Documentation"]
+
+
+def set_main_page(page: str) -> None:
+    st.session_state["main_navigation"] = page
+
+
+def render_navigation_bar() -> str:
+    st.session_state.setdefault("main_navigation", "App")
+
+    current_page = st.session_state.get("main_navigation", "App")
+    pages_json = json.dumps(MAIN_PAGES)
+    current_page_json = json.dumps(current_page)
+
+    components.html(
+        f"""
+        <script>
+        (function(){{
+          const doc = window.parent.document;
+          const pages = {pages_json};
+          const currentPage = {current_page_json};
+
+          let style = doc.getElementById("mirrf-fixed-nav-style");
+          if (!style) {{
+            style = doc.createElement("style");
+            style.id = "mirrf-fixed-nav-style";
+            doc.head.appendChild(style);
+          }}
+          style.textContent = `
+            #mirrf-fixed-nav {{
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              z-index: 2147483000;
+              min-height: 58px;
+              display: flex;
+              align-items: center;
+              gap: 16px;
+              padding: 8px 18px;
+              border-bottom: 1px solid rgba(128,128,128,0.28);
+              background: var(--background-color, #ffffff);
+              box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+              box-sizing: border-box;
+            }}
+            #mirrf-fixed-nav .mirrf-brand {{
+              font-weight: 900;
+              font-size: 15px;
+              white-space: nowrap;
+            }}
+            #mirrf-fixed-nav .mirrf-nav-links {{
+              display: flex;
+              gap: 6px;
+              align-items: center;
+            }}
+            #mirrf-fixed-nav button {{
+              min-height: 36px;
+              border: 1px solid rgba(128,128,128,0.36);
+              border-radius: 6px;
+              padding: 0 14px;
+              background: transparent;
+              color: inherit;
+              font-weight: 800;
+              cursor: pointer;
+            }}
+            #mirrf-fixed-nav button[data-active="true"] {{
+              background: rgb(255, 75, 75);
+              border-color: rgb(255, 75, 75);
+              color: white;
+            }}
+            .doc-anchor {{
+              scroll-margin-top: calc(var(--mirrf-fixed-nav-height, 64px) + 24px) !important;
+            }}
+            .mirrf-nav-click-targets {{
+              position: absolute !important;
+              left: -10000px !important;
+              top: auto !important;
+              width: 1px !important;
+              height: 1px !important;
+              overflow: hidden !important;
+            }}
+            @media (max-width: 760px) {{
+              #mirrf-fixed-nav {{
+                align-items: stretch;
+                flex-direction: column;
+                gap: 6px;
+              }}
+              #mirrf-fixed-nav .mirrf-nav-links {{
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                width: 100%;
+              }}
+              #mirrf-fixed-nav .mirrf-brand {{
+                font-size: 14px;
+              }}
+            }}
+          `;
+
+          let nav = doc.getElementById("mirrf-fixed-nav");
+          if (!nav) {{
+            nav = doc.createElement("nav");
+            nav.id = "mirrf-fixed-nav";
+            nav.setAttribute("aria-label", "Primary navigation");
+            doc.body.appendChild(nav);
+          }}
+
+          nav.innerHTML = "";
+          const brand = doc.createElement("div");
+          brand.className = "mirrf-brand";
+          brand.textContent = "human pre-miRNA browser";
+          nav.appendChild(brand);
+
+          const links = doc.createElement("div");
+          links.className = "mirrf-nav-links";
+          nav.appendChild(links);
+
+          function clickStreamlitNavButton(label) {{
+            const buttons = Array.from(doc.querySelectorAll("button"));
+            const target = buttons.find(button => {{
+              if (button.closest("#mirrf-fixed-nav")) return false;
+              const txt = (button.innerText || button.textContent || "").trim();
+              return txt === label;
+            }});
+            if (target) target.click();
+          }}
+
+          pages.forEach(page => {{
+            const button = doc.createElement("button");
+            button.type = "button";
+            button.textContent = page;
+            button.dataset.active = String(page === currentPage);
+            button.addEventListener("click", () => clickStreamlitNavButton(page));
+            links.appendChild(button);
+          }});
+
+          requestAnimationFrame(() => {{
+            doc.documentElement.style.setProperty(
+              "--mirrf-fixed-nav-height",
+              `${{nav.offsetHeight || 64}}px`
+            );
+          }});
+
+          let tries = 0;
+          const hideTargets = setInterval(() => {{
+            tries++;
+            const marker = doc.querySelector(".main-nav-click-targets-marker");
+            if (marker) {{
+              const host = marker.closest('div[data-testid="stVerticalBlock"]');
+              if (host) {{
+                host.classList.add("mirrf-nav-click-targets");
+                clearInterval(hideTargets);
+              }}
+            }}
+            if (tries >= 20) clearInterval(hideTargets);
+          }}, 100);
+        }})();
+        </script>
+        """,
+        height=0,
+    )
+
+    with st.container():
+        st.markdown('<div class="main-nav-click-targets-marker"></div>', unsafe_allow_html=True)
+        nav_cols = st.columns(len(MAIN_PAGES), gap="small")
+
+        for col, page in zip(nav_cols, MAIN_PAGES):
+            with col:
+                st.button(
+                    page,
+                    key=f"nav_{page.lower()}",
+                    use_container_width=True,
+                    type="primary" if current_page == page else "secondary",
+                    on_click=set_main_page,
+                    args=(page,),
+                )
+
+    st.markdown('<div style="height: var(--mirrf-fixed-nav-height, 64px);"></div>', unsafe_allow_html=True)
+    return st.session_state.get("main_navigation", "App")
+
+
 def reorder_benchmark_columns(data: pd.DataFrame, include_selection: bool = True) -> pd.DataFrame:
     """
     Put Precision / Recall / F1 first in benchmark tables.
@@ -2270,63 +2422,26 @@ def build_validation_benchmark_table(catalogs: dict, reference_data: pd.DataFram
 
 
 # ===========================================================
-# TABS BAR (APP / SENSITIVITY / DOCUMENTATION)
+# NAVIGATION BAR (APP / CRITERIA / DOCUMENTATION)
 # ===========================================================
-tab_app, tab_sensitivity, tab_docs = st.tabs(["App", "Criteria", "Documentation"])
+selected_page = render_navigation_bar()
 
-# ✅ inject the tab switch + scroll router once
+
 _inject_doc_nav_js()
 
 
-def _inject_filtering_tab_restore_js():
-    """
-    Keep the Filtering criteria tab active after widgets inside that tab trigger
-    a Streamlit rerun. Without this, st.tabs may visually return to the first tab.
-    """
-    components.html(
-        """
-        <script>
-        setTimeout(function () {
-          const tabs = window.parent.document.querySelectorAll('button[role="tab"]');
-          const target = Array.from(tabs).find(b => {
-            const txt = (b.innerText || b.textContent || '').trim().toLowerCase();
-            return txt === 'criteria';
-          });
-          if (target) { target.click(); }
-        }, 80);
-        </script>
-        """,
-        height=0,
-    )
-
-
-if st.session_state.pop("_stay_on_filtering_tab", False):
-    _inject_filtering_tab_restore_js()
-
-
-# -----------------------------------------------------------
-# Sidebar: Documentation (internal anchors, no new tab)
-# (kept as main sections only)
-# -----------------------------------------------------------
-with st.sidebar.expander("Documentation", expanded=False):
-    for section_key in DOC_SIDEBAR_ORDER:
-        section = DOC_SECTIONS[section_key]
-        st.markdown(
-            "- " + doc_jump_link(section["anchor"], section["title"]),
-            unsafe_allow_html=True,
-        )
-
+app_df = get_main_catalog()
 
 
 # ===========================================================
 # TAB 1 — APP (DEFAULT)
 # ===========================================================
-with tab_app:
+if selected_page == "App":
     # --- HEADER (title + help) ---
     col_title, col_help = st.columns([12, 1])
 
     with col_title:
-        st.title("miR-RF human pre-miRNA Explorer")
+        st.title("human pre-miRNA browser")
         st.markdown(
             "Interactively explore and filter pre-miRNA annotations by species conservation, "
             "tissue expression, repeat classification and family context."
@@ -2344,459 +2459,445 @@ with tab_app:
 - Use **Reset all filters** (bottom and top of the sidebar) to clear everything and start over
 """)
 
-    app_df = get_main_catalog()
-
     if st.session_state.get("apply_ablation_to_main", False):
         st.info(
             "Criteria are currently applied to the main table. "
             "Conservation, Expression and Structure colors are evaluated against the selected criteria."
         )
 
-    # -----------------------------------------------------------
-    # SIDEBAR: FILTERS + inline doc icons (FIXED: ℹ️ next to label)
-    # -----------------------------------------------------------
-    st.sidebar.header("Filters")
+# -----------------------------------------------------------
+# SIDEBAR: FILTERS + inline doc icons (FIXED: ℹ️ next to label)
+# -----------------------------------------------------------
+st.sidebar.header("Filters")
 
-    # ✅ FIX 1: Reset all filters ALSO above the filters in the sidebar
-    if any_filter_active():
-        st.sidebar.markdown(doc_jump_link("doc_reset", "Docs (reset)"), unsafe_allow_html=True)
-        if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_top"):
-            reset_all_filters()
-            st.rerun()
-
-    search_term = sidebar_widget_inline_doc(
-        st.sidebar.text_input,
-        "Search by name:",
-        "doc_filter_search_any",
-        key="search_any",
-    )
-
-    # These top-level pass/fail filters were removed from the sidebar.
-    # Keep them neutral so old browser/session state cannot silently filter rows.
-    conservation_choice = "Show all"
-    expression_choice = "Show all"
-    structure_choice = "Show all"
-    for _k in ["sb_conservation", "sb_expression", "sb_structure"]:
-        st.session_state[_k] = "Show all"
-
-    # Database/source filters: checkbox row, not mutually exclusive.
-    # On first run after this version, start with all databases selected.
-    # After that, user choices are preserved, including selecting none.
-    if st.session_state.get("_db_defaults_version") != "v19":
-        st.session_state["db_mirbase_full"] = True
-        st.session_state["db_mirbase_hc"] = True
-        st.session_state["db_mirgendb"] = True
-        st.session_state["db_filter"] = ["miRBase-full", "miRBase-HC", "MirGeneDB"]
-        st.session_state["_db_defaults_version"] = "v19"
-
-    # Filtering-criteria presets are selected later in the script, but Streamlit
-    # checkbox keys must be updated before the checkbox widgets are instantiated.
-    # The preset callback stores the desired sidebar state here, then the next
-    # rerun applies it safely at this point.
-    pending_sidebar_db_sources = st.session_state.pop("_pending_sidebar_db_sources", None)
-    if pending_sidebar_db_sources is not None:
-        pending_sidebar_db_sources = list(pending_sidebar_db_sources or [])
-        st.session_state["db_mirbase_full"] = "miRBase-full" in pending_sidebar_db_sources
-        st.session_state["db_mirbase_hc"] = "miRBase-HC" in pending_sidebar_db_sources
-        st.session_state["db_mirgendb"] = "MirGeneDB" in pending_sidebar_db_sources
-        st.session_state["db_filter"] = pending_sidebar_db_sources
-
-    sidebar_label_with_doc("Database:", "doc_filter_database")
-    locked_database_mode = st.session_state.get("filtering_mode", "Default") in [
-        "miRBase-full",
-        "miRBase-HC",
-        "MirGeneDB",
-        "Kim et al. optimised",
-    ]
-    db_c1, db_c2, db_c3 = st.sidebar.columns(3)
-    with db_c1:
-        db_mirbase_full = st.checkbox("miRBase-full", key="db_mirbase_full", disabled=locked_database_mode)
-    with db_c2:
-        db_mirbase_hc = st.checkbox("miRBase-HC", key="db_mirbase_hc", disabled=locked_database_mode)
-    with db_c3:
-        db_mirgendb = st.checkbox("MirGeneDB", key="db_mirgendb", disabled=locked_database_mode)
-
-    if locked_database_mode:
-        st.sidebar.caption("Database selection is locked by the active Criteria preset.")
-
-    database_selected = []
-    if db_mirbase_full:
-        database_selected.append("miRBase-full")
-    if db_mirbase_hc:
-        database_selected.append("miRBase-HC")
-    if db_mirgendb:
-        database_selected.append("MirGeneDB")
-
-    # Keep variable name used later, but it now stores a list of selected database sources.
-    mirgene_filter = database_selected
-    st.session_state["db_filter"] = database_selected
-
-    # If a preset previously set the database sources, but the user now changes
-    # the sidebar checkboxes manually, stop using the preset override.
-    # This makes the Database checkboxes truly interactive again.
-    active_preset_sources = st.session_state.get("filtering_preset_db_sources", None)
-    if (
-        not locked_database_mode
-        and active_preset_sources is not None
-        and sorted(database_selected) != sorted(list(active_preset_sources or []))
-    ):
-        st.session_state["filtering_preset_db_sources"] = None
-
-    exp_label_col, exp_doc_col = st.sidebar.columns([12, 1], vertical_alignment="center")
-    with exp_label_col:
-        show_exp_evidence_col = st.checkbox(
-            "Show Experimental evidence (Kim et al. 2021)",
-            value=False,
-            key="show_exp_evidence_col",
-        )
-    with exp_doc_col:
-        st.markdown(doc_jump_icon("doc_adv_confidence_evidence"), unsafe_allow_html=True)
-
-    st.sidebar.markdown("**Filter Experimental evidence:**")
-    experimental_evidence_filter = st.sidebar.selectbox(
-        "Filter Experimental evidence:",
-        [
-            "Show all",
-            "Pass stringent",
-            "Pass lenient",
-            "No pass",
-        ],
-        index=0,
-        key="experimental_evidence_filter",
-        label_visibility="collapsed",
-    )
-
-    hsa_sb_options = ["Show all", "Only hsa-specific", "Not hsa-specific"]
-    hsa_choice = sidebar_widget_inline_doc(
-        st.sidebar.radio,
-        "hsa specificity:",
-        "doc_filter_hsa",
-        hsa_sb_options,
-        index=0,
-        key="sb_hsa",
-        horizontal=True,
-    )
-
-    # Family filters removed. Keep neutral variable for downstream compatibility.
-    family_selected = []
-
-    repeats_selected = sidebar_widget_inline_doc(
-        st.sidebar.multiselect,
-        "Repeat class:",
-        "doc_filter_repeat",
-        sorted(app_df["Repeat_Class"].dropna().unique()) if "Repeat_Class" in app_df.columns else [],
-        default=[],
-        key="ms_repeat",
-    )
-
-    show_repeat_plot = sidebar_widget_inline_doc(
-        st.sidebar.checkbox,
-        "Show repeat class distribution",
-        "doc_repeat_distribution",
-        value=False,
-        key="show_repeat_plot",
-    )
-
-    # -----------------------------------------------------------
-    # SIDEBAR: ADVANCED OPTIONS
-    # -----------------------------------------------------------
-    animals_to_show = []
-    tissues_to_show = []
-    tissues_filter = []
-    tissues_not_filter = []
-
-    species_na_sidebar = []
-    species_found_sidebar = []
-    stability_choice = "All"
-
-    show_class_cols = False
-    classes_selected = []
-
-    show_high_conf_col = False
-    show_overlap_col = False
-    high_conf_filter = "Show all"
-    experimental_evidence_filter = "Show all"
-
-    show_adv = sidebar_widget_inline_doc(
-        st.sidebar.toggle,
-        "Advanced options",
-        "doc_advanced",
-        value=False,
-        key="show_adv",
-    )
-
-    if show_adv:
-        with st.sidebar.expander("Evolutionary conservation", expanded=True):
-            # link only to the main subsection (as requested)
-            st.sidebar.markdown(
-                f"<div style='margin-top:-2px; margin-bottom:6px;font-size:14px;'>{doc_jump_link('doc_adv_conservation', 'Docs (conservation)')}</div>",
-                unsafe_allow_html=True
-            )
-
-            st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
-
-            animals_to_show_sidebar = st.multiselect(
-                "Show species columns:",
-                list(animal_sidebar_names.values()),
-                default=[],
-                key="show_species_cols",
-            )
-            animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
-
-            st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-            st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
-
-            species_options = list(animal_sidebar_names.values())
-
-            species_found_sidebar = st.multiselect(
-                "Found in:",
-                species_options,
-                default=[],
-                key="cons_species_found",
-            )
-
-            if species_found_sidebar:
-                stability_choice = st.selectbox(
-                    "Structure:",
-                    ["All", "Stable (R/D)", "Unstable (S/I)"],
-                    index=0,
-                    key="cons_stability_choice",
-                )
-            else:
-                stability_choice = "All"
-
-            species_na_sidebar = st.multiselect(
-                "Not found in:",
-                species_options,
-                default=[],
-                key="cons_species_na",
-            )
-
-        with st.sidebar.expander("Tissue expression", expanded=True):
-            st.sidebar.markdown(
-                f"<div style='margin-top:-2px; margin-bottom:6px;font-size:14px;'>{doc_jump_link('doc_adv_tissue', 'Docs (expression)')}</div>",
-                unsafe_allow_html=True
-            )
-
-            st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
-
-            # ✅ CHANGED: user selects individual tissues (grouped by system), not full systems
-            with st.expander("Show tissue columns (select tissues by system):", expanded=False):
-                tissues_to_show_set = set()
-
-                for system_name, sys_tissues in SYSTEM_TISSUES.items():
-                    available = [t for t in sys_tissues if t in tissue_sidebar_names]
-                    if not available:
-                        continue
-
-                    icon = SYSTEM_ICONS.get(system_name)
-                    col_icon, col_exp = st.columns([1.6, 10], gap="small")
-
-                    with col_icon:
-                        if icon is not None:
-                            st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                            st.image(icon, width=110)
-                            st.markdown("</div>", unsafe_allow_html=True)
-
-                    with col_exp:
-                        display_system = system_display_name(system_name)
-                        with st.expander(display_system, expanded=False):
-                            picked_show = st.multiselect(
-                                "Select tissues",
-                                available,
-                                default=[],
-                                key=showcols_key(system_name),
-                            )
-                            tissues_to_show_set.update(picked_show)
-
-                tissues_to_show = sorted(tissues_to_show_set)
-
-            st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-            st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
-
-            with st.expander("Expressed in (select tissues by system):", expanded=False):
-                tissues_filter_set = set()
-
-                for system_name, sys_tissues in SYSTEM_TISSUES.items():
-                    available = [t for t in sys_tissues if t in tissue_sidebar_names]
-                    if not available:
-                        continue
-
-                    icon = SYSTEM_ICONS.get(system_name)
-                    col_icon, col_exp = st.columns([1.6, 10], gap="small")
-
-                    with col_icon:
-                        if icon is not None:
-                            st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                            st.image(icon, width=110)
-                            st.markdown("</div>", unsafe_allow_html=True)
-
-                    with col_exp:
-                        display_system = system_display_name(system_name)
-                        with st.expander(display_system, expanded=False):
-                            picked = st.multiselect(
-                                "Select tissues",
-                                available,
-                                key=f"tree_pos_{system_name}",
-                            )
-                            tissues_filter_set.update(picked)
-
-                tissues_filter = sorted(tissues_filter_set)
-
-            with st.expander("Not expressed in (select tissues by system):", expanded=False):
-                tissues_not_filter_set = set()
-
-                for system_name, sys_tissues in SYSTEM_TISSUES.items():
-                    available = [t for t in sys_tissues if t in tissue_sidebar_names]
-                    if not available:
-                        continue
-
-                    icon = SYSTEM_ICONS.get(system_name)
-                    col_icon, col_exp = st.columns([1.6, 10], gap="small")
-
-                    with col_icon:
-                        if icon is not None:
-                            st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
-                            st.image(icon, width=110)
-                            st.markdown("</div>", unsafe_allow_html=True)
-
-                    with col_exp:
-                        display_system = system_display_name(system_name)
-                        with st.expander(display_system, expanded=False):
-                            picked = st.multiselect(
-                                "Select tissues",
-                                available,
-                                key=f"tree_neg_{system_name}",
-                            )
-                            tissues_not_filter_set.update(picked)
-
-                tissues_not_filter = sorted(tissues_not_filter_set)
-
-        with st.sidebar.expander("Structural class", expanded=True):
-            st.sidebar.markdown(
-                f"<div style='margin-top:-2px; margin-bottom:6px;font-size:14px;'>{doc_jump_link('doc_adv_db_class', 'Docs (structural class)')}</div>",
-                unsafe_allow_html=True
-            )
-
-            st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
-
-            show_class_cols = st.checkbox(
-                "Show Structural class columns",
-                value=False,
-                key="show_class_cols",
-            )
-
-            st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
-            st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
-
-            classes_selected = st.multiselect(
-                "Structural class:",
-                ["R", "D", "I", "S"],
-                default=[],
-                key="class_filter",
-            )
-
-
-
-
-    def apply_preset(preset_name: str):
+# ✅ FIX 1: Reset all filters ALSO above the filters in the sidebar
+if any_filter_active():
+    st.sidebar.markdown(doc_jump_link("doc_reset", "Docs (reset)"), unsafe_allow_html=True)
+    if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_top"):
         reset_all_filters()
-
-        st.session_state["show_adv"] = True
-        st.session_state["sb_conservation"] = "Show all"
-        st.session_state["sb_expression"] = "Show all"
-        st.session_state["sb_structure"] = "Show all"
-        st.session_state["sb_hsa"] = "Show all"
-        st.session_state["show_repeat_plot"] = False
-
-        st.session_state["search_any"] = ""
-        st.session_state["ms_family"] = []
-        st.session_state["ms_repeat"] = []
-        st.session_state["db_filter"] = ["miRBase-full", "miRBase-HC", "MirGeneDB"]
-        st.session_state["db_mirbase_full"] = True
-        st.session_state["db_mirbase_hc"] = True
-        st.session_state["db_mirgendb"] = True
-        st.session_state["class_filter"] = []
-        st.session_state["show_class_cols"] = False
-
-        st.session_state["show_high_conf_col"] = False
-        st.session_state["show_exp_evidence_col"] = False
-        st.session_state["show_overlap_col"] = False
-        st.session_state["high_conf_filter"] = "Show all"
-        st.session_state["experimental_evidence_filter"] = "Show all"
-
-        # clear show-cols selections explicitly (optional but clearer)
-        for sys_name in SYSTEM_TISSUES.keys():
-            st.session_state[showcols_key(sys_name)] = []
-            st.session_state[f"tree_pos_{sys_name}"] = []
-            st.session_state[f"tree_neg_{sys_name}"] = []
-
-        if preset_name == "cardio_mouse":
-            st.session_state["cons_species_found"] = ["M. musculus"]
-            st.session_state["cons_species_na"] = []
-            st.session_state["cons_stability_choice"] = "Stable (R/D)"
-
-            # ✅ Show only the tissues you want as columns (individual, not whole system)
-            st.session_state[showcols_key("1. Cardiorespiratory system")] = [
-                "heart", "lung",
-            ]
-
-            # Filter: expressed in the same tissues (as before)
-            st.session_state["tree_pos_1. Cardiorespiratory system"] = [
-                "heart", "ventricle", "artery", "vein",
-                "blood", "plasma", "serum", "platelet",
-                "lung", "bronchus", "pleurae", "larynx", "pharynx"
-            ]
-            st.session_state["tree_neg_1. Cardiorespiratory system"] = []
-
-        elif preset_name == "brain_primates":
-            st.session_state["cons_species_found"] = ["P. troglodytes", "P. paniscus"]
-            st.session_state["cons_species_na"] = ["M. mulatta", "L. catta"]
-            st.session_state["cons_stability_choice"] = "Stable (R/D)"
-
-            # ✅ Show extra columns -> Show species columns:
-            st.session_state["show_species_cols"] = [
-                "P. troglodytes",
-                "P. paniscus",
-                "M. mulatta",
-                "L. catta",
-            ]
-
-            # ✅ Show (columns) a reasonable neuro subset (edit as you like)
-            st.session_state[showcols_key("3. Neuro-Endocrine system")] = [
-                "brain", "cerebellum",
-            ]
-
-        st.session_state["page"] = 1  # MCGPT: reset pagination when applying presets
         st.rerun()
 
-    with st.sidebar.expander("Example use cases", expanded=False):
-        st.markdown(
-            "<div style='font-size: 15px; line-height: 1.2; margin-top: 2px;'>"
-            "Apply a preset configuration of filters."
-            "</div>",
+search_term = sidebar_widget_inline_doc(
+    st.sidebar.text_input,
+    "Search by name:",
+    "doc_filter_search_any",
+    key="search_any",
+)
+
+# These top-level pass/fail filters were removed from the sidebar.
+# Keep them neutral so old browser/session state cannot silently filter rows.
+conservation_choice = "Show all"
+expression_choice = "Show all"
+structure_choice = "Show all"
+for _k in ["sb_conservation", "sb_expression", "sb_structure"]:
+    st.session_state[_k] = "Show all"
+
+# Database/source filters: checkbox row, not mutually exclusive.
+# On first run after this version, start with all databases selected.
+# After that, user choices are preserved, including selecting none.
+if st.session_state.get("_db_defaults_version") != "v19":
+    st.session_state["db_mirbase_full"] = True
+    st.session_state["db_mirbase_hc"] = True
+    st.session_state["db_mirgendb"] = True
+    st.session_state["db_filter"] = ["miRBase-full", "miRBase-HC", "MirGeneDB"]
+    st.session_state["_db_defaults_version"] = "v19"
+
+# Filtering-criteria presets are selected later in the script, but Streamlit
+# checkbox keys must be updated before the checkbox widgets are instantiated.
+# The preset callback stores the desired sidebar state here, then the next
+# rerun applies it safely at this point.
+pending_sidebar_db_sources = st.session_state.pop("_pending_sidebar_db_sources", None)
+if pending_sidebar_db_sources is not None:
+    pending_sidebar_db_sources = list(pending_sidebar_db_sources or [])
+    st.session_state["db_mirbase_full"] = "miRBase-full" in pending_sidebar_db_sources
+    st.session_state["db_mirbase_hc"] = "miRBase-HC" in pending_sidebar_db_sources
+    st.session_state["db_mirgendb"] = "MirGeneDB" in pending_sidebar_db_sources
+    st.session_state["db_filter"] = pending_sidebar_db_sources
+
+sidebar_label_with_doc("Database:", "doc_filter_database")
+locked_database_mode = st.session_state.get("filtering_mode", "Default") in [
+    "miRBase-full",
+    "miRBase-HC",
+    "MirGeneDB",
+    "Kim et al. optimised",
+]
+db_c1, db_c2, db_c3 = st.sidebar.columns(3)
+with db_c1:
+    db_mirbase_full = st.checkbox("miRBase-full", key="db_mirbase_full", disabled=locked_database_mode)
+with db_c2:
+    db_mirbase_hc = st.checkbox("miRBase-HC", key="db_mirbase_hc", disabled=locked_database_mode)
+with db_c3:
+    db_mirgendb = st.checkbox("MirGeneDB", key="db_mirgendb", disabled=locked_database_mode)
+
+if locked_database_mode:
+    st.sidebar.caption("Database selection is locked by the active Criteria preset.")
+
+database_selected = []
+if db_mirbase_full:
+    database_selected.append("miRBase-full")
+if db_mirbase_hc:
+    database_selected.append("miRBase-HC")
+if db_mirgendb:
+    database_selected.append("MirGeneDB")
+
+# Keep variable name used later, but it now stores a list of selected database sources.
+mirgene_filter = database_selected
+st.session_state["db_filter"] = database_selected
+
+# If a preset previously set the database sources, but the user now changes
+# the sidebar checkboxes manually, stop using the preset override.
+# This makes the Database checkboxes truly interactive again.
+active_preset_sources = st.session_state.get("filtering_preset_db_sources", None)
+if (
+    not locked_database_mode
+    and active_preset_sources is not None
+    and sorted(database_selected) != sorted(list(active_preset_sources or []))
+):
+    st.session_state["filtering_preset_db_sources"] = None
+
+exp_label_col, exp_doc_col = st.sidebar.columns([12, 1], vertical_alignment="center")
+with exp_label_col:
+    show_exp_evidence_col = st.checkbox(
+        "Show Experimental evidence (Kim et al. 2021)",
+        key="show_exp_evidence_col",
+    )
+with exp_doc_col:
+    st.markdown(doc_jump_icon("doc_adv_confidence_evidence"), unsafe_allow_html=True)
+
+st.sidebar.markdown("**Filter Experimental evidence:**")
+experimental_evidence_filter = st.sidebar.selectbox(
+    "Filter Experimental evidence:",
+    [
+        "Show all",
+        "Pass stringent",
+        "Pass lenient",
+        "No pass",
+    ],
+    key="experimental_evidence_filter",
+    label_visibility="collapsed",
+)
+
+hsa_sb_options = ["Show all", "Only hsa-specific", "Not hsa-specific"]
+hsa_choice = sidebar_widget_inline_doc(
+    st.sidebar.radio,
+    "hsa specificity:",
+    "doc_filter_hsa",
+    hsa_sb_options,
+    key="sb_hsa",
+    horizontal=True,
+)
+
+# Family filters removed. Keep neutral variable for downstream compatibility.
+family_selected = []
+
+repeats_selected = sidebar_widget_inline_doc(
+    st.sidebar.multiselect,
+    "Repeat class:",
+    "doc_filter_repeat",
+    sorted(app_df["Repeat_Class"].dropna().unique()) if "Repeat_Class" in app_df.columns else [],
+    key="ms_repeat",
+)
+
+show_repeat_plot = sidebar_widget_inline_doc(
+    st.sidebar.checkbox,
+    "Show repeat class distribution",
+    "doc_repeat_distribution",
+    key="show_repeat_plot",
+)
+
+# -----------------------------------------------------------
+# SIDEBAR: ADVANCED OPTIONS
+# -----------------------------------------------------------
+animals_to_show = []
+tissues_to_show = []
+tissues_filter = []
+tissues_not_filter = []
+
+species_na_sidebar = []
+species_found_sidebar = []
+stability_choice = "All"
+
+show_class_cols = False
+classes_selected = []
+
+show_high_conf_col = False
+show_overlap_col = False
+high_conf_filter = "Show all"
+experimental_evidence_filter = "Show all"
+
+show_adv = sidebar_widget_inline_doc(
+    st.sidebar.toggle,
+    "Advanced options",
+    "doc_advanced",
+    key="show_adv",
+)
+
+if show_adv:
+    with st.sidebar.expander("Evolutionary conservation", expanded=True):
+        # link only to the main subsection (as requested)
+        st.sidebar.markdown(
+            f"<div style='margin-top:-2px; margin-bottom:6px;font-size:14px;'>{doc_jump_link('doc_adv_conservation', 'Docs (conservation)')}</div>",
             unsafe_allow_html=True
         )
 
-        # keep doc link (main section)
-        st.sidebar.markdown(doc_jump_link("doc_use_cases", "Docs (use cases)"), unsafe_allow_html=True)
+        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
 
-        b1, b2 = st.columns(2)
-        with b1:
-            if st.button("Cardio + mouse", use_container_width=True):
-                apply_preset("cardio_mouse")
-        with b2:
-            if st.button("Neuro + great apes", use_container_width=True):
-                apply_preset("brain_primates")
+        animals_to_show_sidebar = st.multiselect(
+            "Show species columns:",
+            list(animal_sidebar_names.values()),
+            key="show_species_cols",
+        )
+        animals_to_show = [animal_sidebar_rev[x] for x in animals_to_show_sidebar]
 
-    st.sidebar.markdown("---")
-    if any_filter_active():
-        # (Reset is a main doc anchor; icon could be made inline too, but left like this)
-        st.sidebar.markdown(doc_jump_link("doc_reset", "Docs (Reset)"), unsafe_allow_html=True)
-        if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_bottom"):
-            reset_all_filters()
-            st.rerun()
+        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
 
+        species_options = list(animal_sidebar_names.values())
+
+        species_found_sidebar = st.multiselect(
+            "Found in:",
+            species_options,
+            key="cons_species_found",
+        )
+
+        if species_found_sidebar:
+            stability_choice = st.selectbox(
+                "Structure:",
+                ["All", "Stable (R/D)", "Unstable (S/I)"],
+                key="cons_stability_choice",
+            )
+        else:
+            stability_choice = "All"
+
+        species_na_sidebar = st.multiselect(
+            "Not found in:",
+            species_options,
+            key="cons_species_na",
+        )
+
+    with st.sidebar.expander("Tissue expression", expanded=True):
+        st.sidebar.markdown(
+            f"<div style='margin-top:-2px; margin-bottom:6px;font-size:14px;'>{doc_jump_link('doc_adv_tissue', 'Docs (expression)')}</div>",
+            unsafe_allow_html=True
+        )
+
+        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
+
+        # ✅ CHANGED: user selects individual tissues (grouped by system), not full systems
+        with st.expander("Show tissue columns (select tissues by system):", expanded=False):
+            tissues_to_show_set = set()
+
+            for system_name, sys_tissues in SYSTEM_TISSUES.items():
+                available = [t for t in sys_tissues if t in tissue_sidebar_names]
+                if not available:
+                    continue
+
+                icon = SYSTEM_ICONS.get(system_name)
+                col_icon, col_exp = st.columns([1.6, 10], gap="small")
+
+                with col_icon:
+                    if icon is not None:
+                        st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                        st.image(icon, width=110)
+                        st.markdown("</div>", unsafe_allow_html=True)
+
+                with col_exp:
+                    display_system = system_display_name(system_name)
+                    with st.expander(display_system, expanded=False):
+                        picked_show = st.multiselect(
+                            "Select tissues",
+                            available,
+                            key=showcols_key(system_name),
+                        )
+                        tissues_to_show_set.update(picked_show)
+
+            tissues_to_show = sorted(tissues_to_show_set)
+
+        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
+
+        with st.expander("Expressed in (select tissues by system):", expanded=False):
+            tissues_filter_set = set()
+
+            for system_name, sys_tissues in SYSTEM_TISSUES.items():
+                available = [t for t in sys_tissues if t in tissue_sidebar_names]
+                if not available:
+                    continue
+
+                icon = SYSTEM_ICONS.get(system_name)
+                col_icon, col_exp = st.columns([1.6, 10], gap="small")
+
+                with col_icon:
+                    if icon is not None:
+                        st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                        st.image(icon, width=110)
+                        st.markdown("</div>", unsafe_allow_html=True)
+
+                with col_exp:
+                    display_system = system_display_name(system_name)
+                    with st.expander(display_system, expanded=False):
+                        picked = st.multiselect(
+                            "Select tissues",
+                            available,
+                            key=f"tree_pos_{system_name}",
+                        )
+                        tissues_filter_set.update(picked)
+
+            tissues_filter = sorted(tissues_filter_set)
+
+        with st.expander("Not expressed in (select tissues by system):", expanded=False):
+            tissues_not_filter_set = set()
+
+            for system_name, sys_tissues in SYSTEM_TISSUES.items():
+                available = [t for t in sys_tissues if t in tissue_sidebar_names]
+                if not available:
+                    continue
+
+                icon = SYSTEM_ICONS.get(system_name)
+                col_icon, col_exp = st.columns([1.6, 10], gap="small")
+
+                with col_icon:
+                    if icon is not None:
+                        st.markdown("<div class='sidebar-icon'>", unsafe_allow_html=True)
+                        st.image(icon, width=110)
+                        st.markdown("</div>", unsafe_allow_html=True)
+
+                with col_exp:
+                    display_system = system_display_name(system_name)
+                    with st.expander(display_system, expanded=False):
+                        picked = st.multiselect(
+                            "Select tissues",
+                            available,
+                            key=f"tree_neg_{system_name}",
+                        )
+                        tissues_not_filter_set.update(picked)
+
+            tissues_not_filter = sorted(tissues_not_filter_set)
+
+    with st.sidebar.expander("Structural class", expanded=True):
+        st.sidebar.markdown(
+            f"<div style='margin-top:-2px; margin-bottom:6px;font-size:14px;'>{doc_jump_link('doc_adv_db_class', 'Docs (structural class)')}</div>",
+            unsafe_allow_html=True
+        )
+
+        st.markdown("<div class='sidebar-section-title'>Show extra columns</div>", unsafe_allow_html=True)
+
+        show_class_cols = st.checkbox(
+            "Show Structural class columns",
+            key="show_class_cols",
+        )
+
+        st.markdown("<hr class='subtle-hr'>", unsafe_allow_html=True)
+        st.markdown("<div class='sidebar-section-title'>Filter extra columns</div>", unsafe_allow_html=True)
+
+        classes_selected = st.multiselect(
+            "Structural class:",
+            ["R", "D", "I", "S"],
+            key="class_filter",
+        )
+
+
+
+
+def apply_preset(preset_name: str):
+    reset_all_filters()
+
+    st.session_state["show_adv"] = True
+    st.session_state["sb_conservation"] = "Show all"
+    st.session_state["sb_expression"] = "Show all"
+    st.session_state["sb_structure"] = "Show all"
+    st.session_state["sb_hsa"] = "Show all"
+    st.session_state["show_repeat_plot"] = False
+
+    st.session_state["search_any"] = ""
+    st.session_state["ms_family"] = []
+    st.session_state["ms_repeat"] = []
+    st.session_state["db_filter"] = ["miRBase-full", "miRBase-HC", "MirGeneDB"]
+    st.session_state["db_mirbase_full"] = True
+    st.session_state["db_mirbase_hc"] = True
+    st.session_state["db_mirgendb"] = True
+    st.session_state["class_filter"] = []
+    st.session_state["show_class_cols"] = False
+
+    st.session_state["show_high_conf_col"] = False
+    st.session_state["show_exp_evidence_col"] = False
+    st.session_state["show_overlap_col"] = False
+    st.session_state["high_conf_filter"] = "Show all"
+    st.session_state["experimental_evidence_filter"] = "Show all"
+
+    # clear show-cols selections explicitly (optional but clearer)
+    for sys_name in SYSTEM_TISSUES.keys():
+        st.session_state[showcols_key(sys_name)] = []
+        st.session_state[f"tree_pos_{sys_name}"] = []
+        st.session_state[f"tree_neg_{sys_name}"] = []
+
+    if preset_name == "cardio_mouse":
+        st.session_state["cons_species_found"] = ["M. musculus"]
+        st.session_state["cons_species_na"] = []
+        st.session_state["cons_stability_choice"] = "Stable (R/D)"
+
+        # ✅ Show only the tissues you want as columns (individual, not whole system)
+        st.session_state[showcols_key("1. Cardiorespiratory system")] = [
+            "heart", "lung",
+        ]
+
+        # Filter: expressed in the same tissues (as before)
+        st.session_state["tree_pos_1. Cardiorespiratory system"] = [
+            "heart", "ventricle", "artery", "vein",
+            "blood", "plasma", "serum", "platelet",
+            "lung", "bronchus", "pleurae", "larynx", "pharynx"
+        ]
+        st.session_state["tree_neg_1. Cardiorespiratory system"] = []
+
+    elif preset_name == "brain_primates":
+        st.session_state["cons_species_found"] = ["P. troglodytes", "P. paniscus"]
+        st.session_state["cons_species_na"] = ["M. mulatta", "L. catta"]
+        st.session_state["cons_stability_choice"] = "Stable (R/D)"
+
+        # ✅ Show extra columns -> Show species columns:
+        st.session_state["show_species_cols"] = [
+            "P. troglodytes",
+            "P. paniscus",
+            "M. mulatta",
+            "L. catta",
+        ]
+
+        # ✅ Show (columns) a reasonable neuro subset (edit as you like)
+        st.session_state[showcols_key("3. Neuro-Endocrine system")] = [
+            "brain", "cerebellum",
+        ]
+
+    st.session_state["page"] = 1  # MCGPT: reset pagination when applying presets
+    st.rerun()
+
+with st.sidebar.expander("Example use cases", expanded=False):
+    st.markdown(
+        "<div style='font-size: 15px; line-height: 1.2; margin-top: 2px;'>"
+        "Apply a preset configuration of filters."
+        "</div>",
+        unsafe_allow_html=True
+    )
+
+    # keep doc link (main section)
+    st.sidebar.markdown(doc_jump_link("doc_use_cases", "Docs (use cases)"), unsafe_allow_html=True)
+
+    b1, b2 = st.columns(2)
+    with b1:
+        if st.button("Cardio + mouse", use_container_width=True):
+            apply_preset("cardio_mouse")
+    with b2:
+        if st.button("Neuro + great apes", use_container_width=True):
+            apply_preset("brain_primates")
+
+st.sidebar.markdown("---")
+if any_filter_active():
+    # (Reset is a main doc anchor; icon could be made inline too, but left like this)
+    st.sidebar.markdown(doc_jump_link("doc_reset", "Docs (Reset)"), unsafe_allow_html=True)
+    if st.sidebar.button("Reset all filters", use_container_width=True, key="reset_bottom"):
+        reset_all_filters()
+        st.rerun()
+
+if selected_page == "App":
     # -----------------------------------------------------------
     # APPLY FILTERS
     # -----------------------------------------------------------
@@ -3846,13 +3947,13 @@ with tab_app:
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("---")
-    st.caption("pre-miRNA Annotation Browser — Streamlit App")
+    st.caption("human pre-miRNA browser - Streamlit App")
 
 
 # ===========================================================
 # TAB 2 — ABLATION ANALYSIS
 # ===========================================================
-with tab_sensitivity:
+if selected_page == "Criteria":
     st.markdown(
         """
         <style>
@@ -3924,13 +4025,24 @@ with tab_sensitivity:
         unsafe_allow_html=True,
     )
     st.title("Criteria")
+    st.markdown(
+        " | ".join([
+            doc_jump_link("doc_filtering_criteria", "Docs (criteria)"),
+            doc_jump_link("doc_filtering_presets", "Docs (presets)"),
+            doc_jump_link("doc_adv_conservation", "Docs (conservation)"),
+            doc_jump_link("doc_adv_tissue", "Docs (expression)"),
+            doc_jump_link("doc_adv_db_class", "Docs (structural class)"),
+            doc_jump_link("doc_benchmark", "Docs (benchmark)"),
+        ]),
+        unsafe_allow_html=True,
+    )
+
     def _filtering_settings_changed():
         # Changing criteria only updates the counts on this page.
         # The main table is changed only after explicitly clicking
         # "Apply criteria to main table" again.
         st.session_state["apply_ablation_to_main"] = False
         st.session_state["_switch_to_app_after_apply"] = False
-        st.session_state["_stay_on_filtering_tab"] = True
 
     def _set_database_sources(sources):
         # Sidebar database checkboxes are instantiated before this page is rendered.
@@ -4213,7 +4325,6 @@ with tab_sensitivity:
 
     def _mark_apply_state():
         # Apply criteria to the App table, but never navigate automatically.
-        st.session_state["_stay_on_filtering_tab"] = True
         if st.session_state.get("apply_ablation_to_main", False):
             st.session_state["_switch_to_app_after_apply"] = True
         else:
@@ -4221,7 +4332,6 @@ with tab_sensitivity:
 
     st.checkbox(
         "Apply criteria to main table",
-        value=False,
         key="apply_ablation_to_main",
         help=(
             "Click this after choosing criteria to update the main App table with the filtering-retained catalog. "
@@ -4556,7 +4666,7 @@ with tab_sensitivity:
 # TAB 3 — DOCUMENTATION (split into sections + granular anchors)
 # ✅ CHANGED: updated tissue “Show columns” description (individual tissues)
 # ===========================================================
-with tab_docs:
+if selected_page == "Documentation":
     st.markdown(
         """
         <style>
@@ -4572,4 +4682,88 @@ with tab_docs:
         """,
         unsafe_allow_html=True,
     )
+    st.markdown(
+        """
+        <style>
+        .doc-index{
+            display:grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.9rem;
+            margin: 0.4rem 0 1.2rem 0;
+        }
+        .doc-index-group{
+            border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+            border-radius: 0.45rem;
+            padding: 0.85rem 0.9rem;
+            background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+        }
+        .doc-index-heading{
+            font-weight: 900;
+            font-size: 0.92rem;
+            margin-bottom: 0.55rem;
+        }
+        .doc-index-item{
+            display:grid;
+            grid-template-columns: 2.1rem minmax(0, 1fr);
+            align-items: baseline;
+            gap: 0.45rem;
+            padding: 0.22rem 0;
+            text-decoration: none !important;
+            color: inherit !important;
+            font-weight: 650;
+        }
+        .doc-index-item:hover span:last-child{
+            text-decoration: underline;
+        }
+        .doc-index-number{
+            opacity: 0.58;
+            font-variant-numeric: tabular-nums;
+            font-weight: 800;
+        }
+        @media (max-width: 900px){
+            .doc-index{ grid-template-columns: 1fr; }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.subheader("Documentation")
+
+    doc_index_groups = [
+        ("Start", ["overview", "table_overview", "integrated_annotation", "interface"]),
+        ("Filtering", [
+            "key_features", "search_by_name", "database_filter", "experimental_evidence",
+            "human_specificity", "repeat_class", "repeat_distribution", "advanced_options",
+        ]),
+        ("Criteria", [
+            "criteria", "criteria_presets", "custom_criteria", "kim_comparison",
+            "benchmark", "precision_recall",
+        ]),
+        ("Advanced Fields", ["conservation", "tissue_expression", "structural_class"]),
+        ("Workflow", ["example_use_cases", "reset", "data_export"]),
+        ("Project", ["repository_contents", "license", "citation", "notes"]),
+    ]
+
+    doc_index_html = ['<nav class="doc-index" aria-label="Documentation index">']
+    running_number = 1
+    for group_title, section_keys in doc_index_groups:
+        doc_index_html.append('<section class="doc-index-group">')
+        doc_index_html.append(f'<div class="doc-index-heading">{group_title}</div>')
+        for section_key in section_keys:
+            section = DOC_SECTIONS[section_key]
+            anchor = section["anchor"]
+            title = section["title"]
+            doc_index_html.append(
+                f'<a class="doc-index-item" href="#{anchor}" data-doc-id="{anchor}" '
+                f"onclick=\"if (window.parent && window.parent.mirrfNav) "
+                f"{{ window.parent.mirrfNav('{anchor}'); }} return false;\">"
+                f'<span class="doc-index-number">{running_number:02d}</span>'
+                f'<span>{title}</span>'
+                f'</a>'
+            )
+            running_number += 1
+        doc_index_html.append("</section>")
+    doc_index_html.append("</nav>")
+    st.markdown("".join(doc_index_html), unsafe_allow_html=True)
+    st.markdown("---")
     st.markdown(load_local_readme(), unsafe_allow_html=True)
