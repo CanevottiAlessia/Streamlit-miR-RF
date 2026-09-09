@@ -63,7 +63,7 @@ Please refer to:
 
 > **An integrative evidence framework and interactive resource for annotating the human pre-miRNA repertoire** by Canevotti et al for a complete overview/description of the features included in this browser.
 
-Briefly, this resource allows the integration, visualization and filtering of human pre-miRNAs annotations across a range of database-catalogs and custom derived computational evidence for their support. These include:
+Briefly, this resource allows the integration, visualization and filtering of human pre-miRNA annotations across a range of database-catalogs and custom derived computational evidence for their support. These include:
 
 * miR-RF structural stability classes (`R`, `D`, `I`, `S`);
 * multi-species conservation profiles;
@@ -119,11 +119,11 @@ Search for one or more miRNAs across the table.
 
 Filter entries according to database/source annotation.
 
-The options are **not mutually exclusive**: selecting multiple sources retains miRNA/s matching any selected source.
+The options are **not mutually exclusive**: selecting multiple sources retains miRNAs matching any selected source.
 
-- **miRBase-full**: Retain miRNA/s present in miRBase.
-- **miRBase-HC**: Retain miRNA/s annotated as miRBase high-confidence.
-- **MirGeneDB**: Retain miRNA/s present in MirGeneDB.
+- **miRBase-full**: Retain miRNAs present in miRBase.
+- **miRBase-HC**: Retain miRNAs annotated as miRBase high-confidence.
+- **MirGeneDB**: Retain miRNAs present in MirGeneDB.
 
 Selections are combined with logical `OR` within this filter.
 
@@ -228,7 +228,7 @@ At the top of the Criteria page, the **Criteria setup** buttons define the start
 | **Kim et al. optimised** | Optimal configuration for maximum F1-score on the Kim et al in-vitro Microprocessor assay (See supplementary Dataset S16 in Canevotti et al).                                |
 | **Custom**               | Allows the user to manually select and tune the evidence criteria.                           |
 
-For database-driven presents, the conservation, expression and structural-class criteria are intentionally disabled. In the tables with evaluations metrics these configurations are labelled   **<Database-name> + filters**, because the retained set is defined by the selected database source and any active sidebar filters, but criteria are not applied.
+For database-driven presets, the conservation, expression and structural-class criteria are intentionally disabled. In the tables with evaluations metrics these configurations are labelled   **<Database-name> + filters**, because the retained set is defined by the selected database source and any active sidebar filters, but criteria are not applied.
 
 ---
 
@@ -248,7 +248,7 @@ For example, if all three criteria are active and the minimum is set to `2`, an 
 
 When switching to **Custom**, the default configuration is always reapplied at first. Users can apply any modification starting from this preset.
 
-Deault configuration:
+Default configuration:
 
 * conservation ≥ 3 species;
 * expression RPMM ≥ 1.5 in at least 1 tissue;
@@ -260,12 +260,12 @@ Deault configuration:
 
 ### Comparison w.r.t Kim et al
 
-For any active configuration, a summary table is compute to illustrate key features w.r.t the Kim et al in vitro Microprocessor processing benchmark. A brief summary is reported in the table below.
+For any active configuration, a summary table is computed to illustrate key features w.r.t the Kim et al in vitro Microprocessor processing benchmark. A brief summary is reported in the table below.
 
 | Count                              | Meaning                                                                                                        |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Supported by criteria**           | Number of miRNA/s compatible with the selected evidence criteria only.                                             |
-| **Supported by criteria +active filters** | Number of miRNA/s retained after applying the active sidebar filters on the top of the evidence criteria. |
+| **Supported by criteria**           | Number of miRNAs compatible with the selected evidence criteria only.                                             |
+| **Supported by criteria +active filters** | Number of miRNAs retained after applying the active sidebar filters on the top of the evidence criteria. |
 
 For database-specific presets, **Supported by criteria** is not shown because evidence criteria are not used.
 
@@ -273,7 +273,7 @@ For database-specific presets, **Supported by criteria** is not shown because ev
 
 ### Comparison with default settings
 
-For any change/selection, the metrics described above, are summarized in the form of tables including descriptive statistics and key perfomances metrics w.r.t the reference benchmark.
+For any change/selection, the metrics described above, are summarized in the form of tables including descriptive statistics and key perfomance metrics w.r.t the reference benchmark.
 Kim et al introduced both a "stringent" and a "lenient" set of rules to identify candidate Microprocessor-processed miRNAs in their in vitro assay. Evaluation metrics are computed and reported according to both sets. Consequently, the summary tables report the following metrics:
 
 * **Precision**;
@@ -413,8 +413,6 @@ The resulting table enables inspection of whether each locus:
 * `s8_new` – curated dataset used by the app
 * `*.png` – icons used in the interface
 * `README.md` – documentation
-
-If the deployed app uses a differently named input table, update the dataset filename above accordingly.
 
 ---
 
