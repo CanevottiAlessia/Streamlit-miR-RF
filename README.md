@@ -146,7 +146,7 @@ Entries with unavailable experimental-evidence information are reported as `NA` 
 
 ## 🧍 Human specific miRNAs
 
-Display or hide human-specific or pre-miRNAs.
+Display or hide human-specific pre-miRNAs.
 - **Show all**: No human-specificity filtering is applied.
 - **Only hsa-specific**: Retain only pre-miRNAs annotated as human-specific.
 - **Not hsa-specific**: Exclude human-specific pre-miRNAs and retain all other entries.
