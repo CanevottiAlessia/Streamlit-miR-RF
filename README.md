@@ -20,6 +20,21 @@ Users can define flexible, multi-parameter filtering strategies tailored to spec
 
 ---
 
+## 🚀 Access the app
+
+The application is already deployed and ready to use - no installation required:
+
+👉 **http://beaconlab.it/miRF/**
+
+Advanced users who prefer to run a local instance (e.g. to inspect or modify the code) can do so directly with Streamlit:
+
+​```bash
+git clone https://github.com/CanevottiAlessia/Streamlit-miR-RF.git
+cd Streamlit-miR-RF
+pip install -r requirements.txt
+streamlit run app.py
+​```
+
 # 1. Basic usage
 
 ## 📊 Overview
