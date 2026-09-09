@@ -1,4 +1,4 @@
 streamlit
-pandas
+pandas<3
 altair
 Pillow
