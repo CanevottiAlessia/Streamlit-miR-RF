@@ -42,13 +42,13 @@ streamlit run app.py
 
 ## 📊 Overview
 
-pre-miRNAs supported by the evidence layers specified in the **Criteria section** are displayed in the form of an interactive table featuring:
+Pre-miRNAs supported by the evidence layers specified in the **Criteria section** are displayed in the form of an interactive table featuring:
 
 * **Sticky header** and **sticky first column** for improved navigation
 * **Color-coded cells** with an integrated legend indicating:
 
   * pass/fail status for **structure**, **conservation**, and **expression**
-  * **human specific annotations**
+  * **human-specific annotations**
   * **repeat element annotation**
   * **species-level conservation**
   * **tissue expression values**
@@ -202,7 +202,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
 ## 💻 Criteria
 
-The **Criteria** page allows users to explore how different evidence-based rules affect the catalog of supported pre-miRNAs visualized in the app. It is designed to compare the default selection, based on the criteria and parametrisation introduced by Canevotti et al., with alternative database- or evidence-driven configurations. Entering **Custom mode** allows users to set custom thresholds and criteria combinations.
+The **Criteria** page allows users to explore how different evidence-based rules affect the catalog of supported pre-miRNAs visualised in the app. It is designed to compare the default selection, based on the criteria and parametrisation introduced by Canevotti et al., with alternative database- or evidence-driven configurations. Entering **Custom mode** allows users to set custom thresholds and criteria combinations.
 
 > [!IMPORTANT]
 > This page does **not** automatically modify the main table in the **App** tab.
@@ -267,7 +267,7 @@ For any active configuration, a summary table is computed to illustrate key feat
 | Count                              | Meaning                                                                                                        |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | **Supported by criteria**           | Number of miRNAs compatible with the selected evidence criteria only.                                             |
-| **Supported by criteria + active filters** | Number of miRNAs retained after applying the active sidebar filters on the top of the evidence criteria. |
+| **Supported by criteria + active filters** | Number of miRNAs retained after applying the active sidebar filters on top of the evidence criteria. |
 
 For database-specific presets, **Supported by criteria** is not shown because evidence criteria are not used.
 
@@ -275,7 +275,7 @@ For database-specific presets, **Supported by criteria** is not shown because ev
 
 ### Comparison with default settings
 
-For any change/selection, the metrics described above are summarized in the form of tables including descriptive statistics and key performance metrics w.r.t the reference benchmark.
+For any change/selection, the metrics described above are summarised in the form of tables including descriptive statistics and key performance metrics w.r.t the reference benchmark.
 Kim et al. introduced both a "stringent" and a "lenient" set of rules to identify candidate Microprocessor-processed miRNAs in their in vitro assay. Evaluation metrics are computed and reported according to both sets. Consequently, the summary tables report the following metrics:
 
 * **Precision**;
@@ -284,7 +284,7 @@ Kim et al. introduced both a "stringent" and a "lenient" set of rules to identif
 * supported entries included (S.I.);
 * not-supported entries included (N.S.I);
 * supported entries not included (S.N.I);
-* entries with unavailable experimental evidence
+* entries with unavailable experimental evidence.
 
 for both the lenient and the stringent "truth" set.
 
