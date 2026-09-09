@@ -61,9 +61,9 @@ The table updates dynamically according to the selected sidebar filters and can 
 
 Please refer to:
 
-> **An integrative evidence framework and interactive resource for annotating the human pre-miRNA repertoire** by Canevotti et al for a complete overview/description of the features included in this browser.
+> **An integrative evidence framework and interactive resource for annotating the human pre-miRNA repertoire** by Canevotti et al. for a complete overview/description of the features included in this browser.
 
-Briefly, this resource allows the integration, visualization and filtering of human pre-miRNA annotations across a range of database-catalogs and custom derived computational evidence for their support. These include:
+Briefly, this resource allows the integration, visualization and filtering of human pre-miRNA annotations across a range of database catalogs and custom-derived computational evidence for their support. These include:
 
 * miR-RF structural stability classes (`R`, `D`, `I`, `S`);
 * multi-species conservation profiles;
@@ -133,7 +133,7 @@ If no database/source is selected, no entries are retained by the database filte
 
 ## 🧪 Experimental evidence
 
-Experimental-evidence information, according to the Kim et al *in vitro* Microprocessor processing assay, can be displayed and used to select pre-miRNAs.
+Experimental-evidence information, according to the Kim et al. *in vitro* Microprocessor processing assay, can be displayed and used to select pre-miRNAs.
 
 - **Show all**: No experimental-evidence filtering is applied.
 - **Pass stringent**: Retain entries with the highest experimental-evidence support.
@@ -144,7 +144,7 @@ Entries with unavailable experimental-evidence information are reported as `NA` 
 
 ---
 
-## 🧍 Human specific miRNAs
+## 🧍 Human-specific miRNAs
 
 Display or hide human-specific pre-miRNAs.
 - **Show all**: No human-specificity filtering is applied.
@@ -200,7 +200,7 @@ These exports are intended to support downstream analyses and custom pipelines.
 
 ## 💻 Criteria
 
-The **Criteria** page allows users to explore how different evidence-based rules affect the catalog supported pre-miRNAs visualized in the app. It is designed to compare the default selection -based on the criteria and parametrization introduced by Canevotti et al-  with alternative database- or evidence-driven configurations. Entering **Custom mode** allows users to set custom thresholds and criteria combinations.
+The **Criteria** page allows users to explore how different evidence-based rules affect the catalog of supported pre-miRNAs visualized in the app. It is designed to compare the default selection, based on the criteria and parametrisation introduced by Canevotti et al., with alternative database- or evidence-driven configurations. Entering **Custom mode** allows users to set custom thresholds and criteria combinations.
 
 > [!IMPORTANT]
 > This page does **not** automatically modify the main table in the **App** tab.
@@ -225,10 +225,10 @@ At the top of the Criteria page, the **Criteria setup** buttons define the start
 | **miRBase-full**         | Complete miRBase catalog (miRBase-full); evidence criteria are disabled.    |
 | **miRBase-HC**           | miRBase high-confidence subset (miRBase-HC); evidence criteria are disabled.                     |
 | **MirGeneDB**            | MirGeneDB database; evidence criteria are disabled.                                   |
-| **Kim et al. optimised** | Optimal configuration for maximum F1-score on the Kim et al in-vitro Microprocessor assay (See supplementary Dataset S16 in Canevotti et al).                                |
+| **Kim et al. optimised** | Optimal configuration for maximum F1-score on the Kim et al. in-vitro Microprocessor assay (See supplementary Dataset S16 in Canevotti et al.).                                |
 | **Custom**               | Allows the user to manually select and tune the evidence criteria.                           |
 
-For database-driven presets, the conservation, expression and structural-class criteria are intentionally disabled. In the tables with evaluations metrics these configurations are labelled   **<Database-name> + filters**, because the retained set is defined by the selected database source and any active sidebar filters, but criteria are not applied.
+For database-driven presets, the conservation, expression and structural-class criteria are intentionally disabled. In the tables with evaluation metrics these configurations are labelled   **<Database-name> + filters**, because the retained set is defined by the selected database source and any active sidebar filters, but criteria are not applied.
 
 ---
 
@@ -258,14 +258,14 @@ Default configuration:
 
 ---
 
-### Comparison w.r.t Kim et al
+### Comparison w.r.t Kim et al.
 
-For any active configuration, a summary table is computed to illustrate key features w.r.t the Kim et al in vitro Microprocessor processing benchmark. A brief summary is reported in the table below.
+For any active configuration, a summary table is computed to illustrate key features w.r.t the Kim et al. in vitro Microprocessor processing benchmark. A brief summary is reported in the table below.
 
 | Count                              | Meaning                                                                                                        |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | **Supported by criteria**           | Number of miRNAs compatible with the selected evidence criteria only.                                             |
-| **Supported by criteria +active filters** | Number of miRNAs retained after applying the active sidebar filters on the top of the evidence criteria. |
+| **Supported by criteria + active filters** | Number of miRNAs retained after applying the active sidebar filters on the top of the evidence criteria. |
 
 For database-specific presets, **Supported by criteria** is not shown because evidence criteria are not used.
 
@@ -273,8 +273,8 @@ For database-specific presets, **Supported by criteria** is not shown because ev
 
 ### Comparison with default settings
 
-For any change/selection, the metrics described above, are summarized in the form of tables including descriptive statistics and key perfomance metrics w.r.t the reference benchmark.
-Kim et al introduced both a "stringent" and a "lenient" set of rules to identify candidate Microprocessor-processed miRNAs in their in vitro assay. Evaluation metrics are computed and reported according to both sets. Consequently, the summary tables report the following metrics:
+For any change/selection, the metrics described above are summarized in the form of tables including descriptive statistics and key performance metrics w.r.t the reference benchmark.
+Kim et al. introduced both a "stringent" and a "lenient" set of rules to identify candidate Microprocessor-processed miRNAs in their in vitro assay. Evaluation metrics are computed and reported according to both sets. Consequently, the summary tables report the following metrics:
 
 * **Precision**;
 * **Recall**;
@@ -300,7 +300,7 @@ The scatterplots summarise benchmark performance visually:
 | **y-axis**      | Precision |
 | **Point label** | F1 score  |
 
-Separate plots are shown for the **Stringent** and **Lenient** Kim et al validation sets.
+Separate plots are shown for the **Stringent** and **Lenient** Kim et al. validation sets.
 
 ---
 
