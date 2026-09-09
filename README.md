@@ -29,8 +29,9 @@ The application is already deployed and ready to use - no installation required:
 Advanced users who prefer to run a local instance (e.g. to inspect or modify the code) can do so directly with Streamlit:
 
 ```
-​git clone https://github.com/CanevottiAlessia/Streamlit-miR-RF.git
-cd Streamlit-miR-RF
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 streamlit run app.py
 ```
